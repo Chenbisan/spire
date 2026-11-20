@@ -24,10 +24,10 @@ function shots(list,col,h){
 }
 function draw(){
   const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
-  const sc=Math.min(W,H)/(2*CFG.arenaR);ctx.setTransform(sc,0,0,sc,W/2,H/2);
+  const VR=Math.max(CFG.arenaR,spawnRadius()-15),sc=Math.min(W,H)/(2*VR);ctx.setTransform(sc,0,0,sc,W/2,H/2); // view zooms out as the spawn ring grows
   ctx.strokeStyle=C.grid;ctx.lineWidth=1.5;
-  for(let r=80;r<=320;r+=80){ctx.beginPath();ctx.arc(0,0,r,0,6.283);ctx.stroke()}
-  ctx.beginPath();ctx.moveTo(-330,0);ctx.lineTo(330,0);ctx.moveTo(0,-330);ctx.lineTo(0,330);ctx.stroke();
+  for(let r=80;r<=VR;r+=80){ctx.beginPath();ctx.arc(0,0,r,0,6.283);ctx.stroke()}
+  ctx.beginPath();ctx.moveTo(-VR-10,0);ctx.lineTo(VR+10,0);ctx.moveTo(0,-VR-10);ctx.lineTo(0,VR+10);ctx.stroke();
   const R=run,tr=CFG.towerR;
   if(R){
     ctx.setLineDash([6,8]);ctx.strokeStyle=C.acc;ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(0,0,R.s.range,0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;

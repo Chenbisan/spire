@@ -1,10 +1,11 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.15.0';
+const APP_VERSION='1.15.1';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
-  step:1/60, waveLen:20, arenaR:320, spawnR:335, towerR:14, bulletSpd:420, ebSpd:120,
+  step:1/60, waveLen:20, arenaR:320, spawnR:335, spawnGap:40,  // enemies spawn at least spawnGap m beyond your range
+  towerR:14, bulletSpd:420, ebSpd:120,
   tierUnlockWave:25,                       // reach this wave to unlock the next tier
   tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:2.2**(t-1),  // coin: the tier coin multiplier, exponential so higher tiers pay off
            shard:t<2?0:1.5**(t-2)}),
@@ -34,7 +35,7 @@ const ST=[
  {k:'multiTargets',g:'Attack',n:'Multishot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
  {k:'bounceChance',g:'Attack',n:'Bounce shot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
  {k:'bounceTargets',g:'Attack',n:'Bounce shot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
- {k:'bounceRange',g:'Attack',n:'Bounce shot range',base:60,ra:3,wa:2,max:250,c:[12,1.16],w:[25,1.22],u:' m'},
+ {k:'bounceRange',g:'Attack',n:'Bounce shot range',base:60,ra:3,wa:2,maxOfRange:.4,c:[12,1.16],w:[25,1.22],u:' m'},
  {k:'health',g:'Defense',n:'Health',base:30,mul:1,ra:.4,wm:1.08,c:[4,1.14],w:[12,1.2]},
  {k:'regen',g:'Defense',n:'Regen',base:.4,mul:1,ra:.4,wm:1.08,c:[6,1.15],w:[15,1.2],u:'/s'},
  {k:'barrier',g:'Defense',n:'Barrier health (of max health)',base:0,ra:.02,wa:.01,max:1,c:[12,1.16],w:[30,1.25],p:1},

@@ -3,12 +3,18 @@
 const labLv=k=>Math.min(LK[k].max,save.lab[k]||0),labVal=k=>LK[k].val(labLv(k));
 const speeds=()=>[1,2,3,5,8,12,16,24].filter(s=>s<=labVal('speed'));
 // ================= stats =================
-function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;return s.max!=null?Math.min(v,s.max):v}
-const capped=(s,r,w)=>s.max!=null&&valAt(s,r,w)>=s.max-1e-9;
+// maxOfRange: the stat is capped at that share of your current range (bounce range)
+const curRange=()=>run&&run.s&&run.s.range!=null?run.s.range:valAt(SK.range,0,save.ws.range||0);
+const statMax=s=>s.maxOfRange?curRange()*s.maxOfRange:s.max;
+function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;const m=statMax(s);return m!=null?Math.min(v,m):v}
+// enemies always spawn beyond your range
+const spawnRadius=()=>run&&run.s?Math.max(CFG.spawnR,run.s.range+CFG.spawnGap):CFG.spawnR;
+const capped=(s,r,w)=>{const m=statMax(s);return m!=null&&valAt(s,r,w)>=m-1e-9};
 function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(const s of ST)run.s[s.k]=valAt(s,run.lv[s.k]||0,save.ws[s.k]||0);
   // cards and modules on top (stat caps still apply)
   const F=loadoutFx();for(const k in F.mul)run.s[k]*=F.mul[k];for(const k in F.add)run.s[k]+=F.add[k];
   for(const s of ST)if(s.max!=null)run.s[s.k]=Math.min(run.s[s.k],s.max);
+  run.s.bounceRange=Math.min(run.s.bounceRange,run.s.range*SK.bounceRange.maxOfRange);
   run.fx=F;run.waveLen=CFG.waveLen*(1-F.rush);
   const oldBar=run.barMax||0;run.barMax=run.s.health*run.s.barrier;run.bar=Math.min(run.barMax,(run.bar||0)+Math.max(0,run.barMax-oldBar)); // upgrades add their extra right away
   if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
@@ -33,7 +39,7 @@ function spawnChance(w){const o={};let left=1;for(const t of TYPES){const d=ET[t
 function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;acc+=d.freq;if(r<acc)return t}return'basic'}
 function spawn(t,x,y){
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
-  if(x==null){x=Math.cos(a)*CFG.spawnR;y=Math.sin(a)*CFG.spawnR}
+  if(x==null){const sr=spawnRadius();x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
   e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;
@@ -128,7 +134,7 @@ function update(dt){
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
       if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=2?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
-        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,CFG.spawnR-d);if(k>0){e.x+=e.x/d*k;e.y+=e.y/d*k;e.px=e.x;e.py=e.y;save.stats.kbs++}}
+        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,spawnRadius()-d);if(k>0){e.x+=e.x/d*k;e.y+=e.y/d*k;e.px=e.x;e.py=e.y;save.stats.kbs++}}
         if(b.bn>0){const n=nearestOther(e.x,e.y,e,s.bounceRange);if(n){b.bn--;b.rx=b.x=b.px=e.x;b.ry=b.y=b.py=e.y;b.e=n;b.g=n.gen;b.l=2;drop=false;save.stats.bounces++}}}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
   }
@@ -140,11 +146,12 @@ function update(dt){
   for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}
 }
 // ---- crowding: enemies push each other apart (spatial grid, so it stays cheap with hundreds) ----
-const SEPC=48,SEPN=16,SEPO=SEPC*SEPN/2,sepHead=new Int32Array(SEPN*SEPN);let sepNext=new Int32Array(256);
+const SEPC=48;let SEPN=16,SEPO=SEPC*SEPN/2,sepHead=new Int32Array(SEPN*SEPN),sepNext=new Int32Array(256);
 const sepCell=v=>Math.max(0,Math.min(SEPN-1,Math.floor((v+SEPO)/SEPC)));
 function separate(){
   const n=enemies.length;if(n<2)return;
   if(sepNext.length<n)sepNext=new Int32Array(n*2);
+  const N=Math.ceil(2*(spawnRadius()+60)/SEPC);if(N!==SEPN){SEPN=N;SEPO=SEPC*N/2;sepHead=new Int32Array(N*N)} // grid grows with the arena
   sepHead.fill(-1);
   for(let i=0;i<n;i++){const e=enemies[i];if(e.dead)continue;const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i}
   const tr=CFG.towerR,k=CFG.sepPush;

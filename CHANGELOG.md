@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.15.1 — 2026-11-20
+- **Bounce range is capped at 40% of your range,** so shots no longer bounce across the whole map. The upgrade shows "max" at the cap, and the cap grows as your range does.
+- **Enemies always spawn beyond your range:** the spawn ring stays at least 40 m outside your range, and the arena zooms out to fit, so you can't out-range the spawn.
+
 ## 1.15.0 — 2026-11-20
 - **Shards are earned offline too,** at your best shards per game-hour (from tier 2+ runs of at least 2 game-minutes), with the same speed and Lab bonuses as offline coins. The welcome-back screen, Workshop, start screen and Lifetime stats show the shard rate.
 
