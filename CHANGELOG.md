@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.7.0 — 2026-11-20
+- **🕘 Battle history:** a new clock button at the top right (and a button on the end-of-run screen) lists your last 30 runs: tier, wave, date, coins, coins per hour, shards, kills and run time. Runs that set a new best wave are tagged, the best coins-per-hour run gets a ★, and runs you ended yourself say so. Runs played before this update aren't in the list.
+
 ## 1.6.0 — 2026-11-20
 - **Better enemy info** (tap the Enemy stats in the top bar):
   - **Wave info** now shows each enemy's chance to spawn, plus a wave summary: time left, how many enemies have spawned, how many are on the field, the next boss, and how much enemies grow per wave and per tier.

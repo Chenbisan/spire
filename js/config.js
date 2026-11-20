@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.6.0';
+const APP_VERSION='1.7.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -14,6 +14,7 @@ const CFG={
   shardRate:.1,              // shards per kill = enemy coin value × this × tier shard mult (tier 2+ only)
   offlineMinRun:120,         // a run must last this many game seconds to set the offline rate
   offlineMinAway:60,          // offline cap and speed come from the Lab
+  histMax:30,                // battle history keeps this many runs
   bossEvery:10, maxDmgNums:50, maxParts:240,
   tracerLife:.12, maxTracers:300, streakMax:90,   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
   sepGap:.9, sepPush:.5          // enemies keep (sum of sizes × sepGap) apart; sepPush = how hard they shove per step

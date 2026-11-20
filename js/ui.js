@@ -36,7 +36,7 @@ function showOv(kind){
   ovTier=Math.min(ovTier,save.tierMax);
   if(kind==='start')c.innerHTML=`<h2>Hold the center</h2><p>Your spire fires automatically. Spend cash on upgrades during a run; coins carry over to the workshop. Reach wave ${CFG.tierUnlockWave} to unlock the next tier.</p>${tierPicker()}<button class="go" id="goBtn">Start run</button>`;
   else{const R=run,m=Math.floor(R.time/60),s=Math.floor(R.time%60);
-    c.innerHTML=`<h2>Fell on wave ${R.wave}</h2><p>Tier ${R.tier} · best ${save.best[R.tier]||0}</p><div class="grid2"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':''}</div><div><span>Offline rate</span>${fmt(save.bestCph)}/h${R.time<CFG.offlineMinRun?' (run too short to count)':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div><div><span>Cash earned</span>${fmt(R.cashEarned)}</div><div><span>Run time</span>${m}m ${s}s (game time)</div></div><button id="toWs" style="width:100%;margin-bottom:8px">Open workshop (${fmt(save.coins)} coins)</button>${tierPicker()}<button class="go" id="goBtn">${autoTimer?`Run again · auto in <span id="autoTxt">${autoLeft}</span>s`:'Run again'}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
+    c.innerHTML=`<h2>Fell on wave ${R.wave}</h2><p>Tier ${R.tier} · best ${save.best[R.tier]||0}</p><div class="grid2"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':''}</div><div><span>Offline rate</span>${fmt(save.bestCph)}/h${R.time<CFG.offlineMinRun?' (run too short to count)':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div><div><span>Cash earned</span>${fmt(R.cashEarned)}</div><div><span>Run time</span>${m}m ${s}s (game time)</div></div><button id="toHist" style="width:100%;margin-bottom:8px">Battle history</button><button id="toWs" style="width:100%;margin-bottom:8px">Open workshop (${fmt(save.coins)} coins)</button>${tierPicker()}<button class="go" id="goBtn">${autoTimer?`Run again · auto in <span id="autoTxt">${autoLeft}</span>s`:'Run again'}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
 }
 $('ovCard').addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
@@ -44,6 +44,7 @@ $('ovCard').addEventListener('click',e=>{
   else if(t.id==='goBtn'){stopAuto();newRun(ovTier)}
   else if(t.id==='stopAuto'){stopAuto();showOv('over')}
   else if(t.id==='toWs'){ui.tab='Workshop';buildPanel()}
+  else if(t.id==='toHist')openModal('history');
 });
 const ui={tab:'Upgrades',mult:1};let rows=[];
 const TABS=['Upgrades','Workshop','Lab'];   // Ultimates and Modules go here later
@@ -118,7 +119,7 @@ function settingsClick(b){
   if(a==='export'){const code=btoa(unescape(encodeURIComponent(JSON.stringify(save))));tx.value=code;tx.select();
     navigator.clipboard?.writeText(code).then(()=>toast('Backup code copied'),()=>toast('Select the code and copy it'))||toast('Select the code and copy it')}
   else if(a==='import'){try{const s=JSON.parse(decodeURIComponent(escape(atob(tx.value.trim()))));if(s.v!==1)throw 0;save=Object.assign(fresh(),s,{set:Object.assign(fresh().set,s.set)});persist();recalc();toast('Save imported');buildPanel();if(!run)showOv('start');openModal('settings')}catch(e){toast('That code did not work')}}
-  else if(a==='abandon'){if(run&&!run.over){closeModal();gameOver()}}
+  else if(a==='abandon'){if(run&&!run.over){closeModal();gameOver(true)}}
   else if(a==='reset'){if(Date.now()-resetArm<3000){stopAuto();save=fresh();persist();run=null;enemies.length=bullets.length=ebs.length=0;ovTier=1;showOv('start');buildPanel();buildSpeeds();closeModal();toast('Progress reset')}else{resetArm=Date.now();b.textContent='Click again to confirm'}}
 }
 function optChange(e){if(e.target.id==='optDn')save.set.dmgNums=e.target.checked;if(e.target.id==='optPf')save.set.perf=e.target.checked;
@@ -128,12 +129,21 @@ function optChange(e){if(e.target.id==='optDn')save.set.dmgNums=e.target.checked
 $('panel').addEventListener('change',optChange);
 // ---- modals: settings (gear) and help (?) ----
 const modal=$('modal'),mBody=$('mBody');let modalKind=null;
-function openModal(kind){modalKind=kind;$('mTitle').textContent={help:'How to play',settings:'Settings',enemies:'Enemies this wave'}[kind];
-  mBody.innerHTML=kind==='help'?helpHtml():kind==='enemies'?enemyHtml():settingsHtml();modal.hidden=false;mBody.scrollTop=0;$('mClose').focus()}
+function openModal(kind){modalKind=kind;$('mTitle').textContent={help:'How to play',settings:'Settings',enemies:'Enemies this wave',history:'Battle history'}[kind];
+  mBody.innerHTML=kind==='help'?helpHtml():kind==='enemies'?enemyHtml():kind==='history'?historyHtml():settingsHtml();modal.hidden=false;mBody.scrollTop=0;$('mClose').focus()}
 function closeModal(){modal.hidden=true;modalKind=null}
+function refreshHistory(){if(modalKind==='history')mBody.innerHTML=historyHtml()}
 $('setBtn').addEventListener('click',()=>modalKind==='settings'?closeModal():openModal('settings'));
 $('helpBtn').addEventListener('click',()=>modalKind==='help'?closeModal():openModal('help'));
 $('mClose').addEventListener('click',closeModal);
+$('histBtn').addEventListener('click',()=>modalKind==='history'?closeModal():openModal('history'));
+const dur=s=>{s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${m}m`:`${m}m ${x}s`};
+function historyHtml(){const H=save.hist;
+  if(!H.length)return`<p class="note">No runs yet. Your last ${CFG.histMax} runs will show up here when they end.</p>`;
+  const top=Math.max(...H.map(h=>h.cph));
+  return`<p class="note">Your last ${CFG.histMax} runs, newest first. Run time and coins per hour are in game time.</p><div class="hist">${H.map(h=>{const d=new Date(h.at);
+    return`<div class="hrow"><div class="htop"><b>Tier ${h.t}</b><b>Wave ${h.w}</b>${h.best?'<span class="tag">best wave</span>':''}${h.quit?'<span class="tag mute">ended early</span>':''}<span class="hdate">${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+    <div class="hst"><span>Coins <b class="coin">${fmt(h.c)}</b></span><span>Coins/hour <b class="coin">${fmt(h.cph)}</b>${h.cph===top&&H.length>1?' ★':''}</span>${h.t>=2?`<span>Shards <b class="shard">${fmt(h.s)}</b></span>`:''}<span>Kills <b>${fmt(h.k)}</b></span><span>Time <b>${dur(h.time)}</b></span></div></div>`}).join('')}</div>`}
 $('eBtn').addEventListener('click',()=>modalKind==='enemies'?closeModal():openModal('enemies'));
 let eTabW=0,eTabT=0,eTab='wave',eSig='';
 const pct=v=>(v*100).toFixed(v<.1&&v>0?1:0)+'%';

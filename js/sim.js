@@ -60,11 +60,14 @@ function hitTower(v,att){
   if(R.hp<=0)gameOver();
 }
 function nearest(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
-function gameOver(){
+function gameOver(quit){
   const R=run;if(R.over)return;R.over=true;R.hp=0;save.runs++;
   R.cph=R.time>0?R.coins/R.time*3600:0;R.newBest=false;
   if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
-  if((save.best[R.tier]||0)<R.wave)save.best[R.tier]=R.wave;
+  const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;
+  if(prevBest<R.wave)save.best[R.tier]=R.wave;
+  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,c:R.coins,s:R.shards,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
+  save.hist.length=Math.min(save.hist.length,CFG.histMax);
   persist();ovTier=R.tier;startAuto();showOv('over');buildPanel();
 }
 // ================= simulation (fixed step) =================
