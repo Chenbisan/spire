@@ -8,6 +8,7 @@
 --ink:light-dark(#14181b,#e7ede8);--mute:light-dark(#5e6569,#8a979d);--acc:light-dark(#0b8f80,#34d1bf);
 --gold:light-dark(#9a6b00,#ffcc4d);--hot:light-dark(#d8432a,#ff6b4a);
 --arena:light-dark(#f6f4ec,#080d10);--grid:light-dark(#e3e0d5,#131c21);
+--shard:light-dark(#6f4fd0,#b49aff);
 --e1:light-dark(#3a4146,#dfe6e1);--e2:light-dark(#c38600,#ffcc4d);--e3:light-dark(#d8432a,#ff6b4a);--e4:light-dark(#6f4fd0,#b49aff);--e5:light-dark(#c8174f,#ff3d6e)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
@@ -23,7 +24,9 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .brand{font:700 26px/1 'Chakra Petch',sans-serif;letter-spacing:.02em}
 .chips{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:'Chakra Petch',sans-serif;font-size:17px}
 .chips span{color:var(--mute);font-size:13px;margin-right:6px}
-.cash{color:var(--acc)}.coin{color:var(--gold)}
+.cash{color:var(--acc)}.coin{color:var(--gold)}.shard{color:var(--shard)}
+.icons{margin-left:auto;display:flex;gap:6px}
+.ib{min-width:40px;padding:0;display:grid;place-items:center;font:700 18px 'Chakra Petch',sans-serif;border-radius:10px}
 .hp{flex:1 1 200px;max-width:380px;height:12px;border-radius:6px;background:var(--grid);overflow:hidden;position:relative}
 .hp i{position:absolute;inset:0;background:var(--acc);transform-origin:left;will-change:transform}
 .hpt{font:500 13px 'Chakra Petch',sans-serif;color:var(--mute);white-space:nowrap}
@@ -48,8 +51,8 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .ctrl .sp{display:flex;gap:4px}.ctrl .sp button{min-width:44px;padding:0 8px}
 .ctrl .grow{flex:1}
 .side{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
-.tabs{display:flex;gap:4px;padding:10px;border-bottom:1px solid var(--line);overflow-x:auto}
-.tabs button{flex:1 0 auto;padding:0 7px;font-size:14px}
+.tabs{display:flex;gap:4px;padding:10px;border-bottom:1px solid var(--line)}
+.tabs button{flex:1 1 auto;padding:0 4px;font-size:14px}
 .body{padding:10px;overflow-y:auto;flex:1}
 .mults{display:flex;gap:4px;margin-bottom:8px}.mults button{flex:1}
 .note{color:var(--mute);font-size:13px;margin:4px 2px 10px}
@@ -65,12 +68,18 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 textarea{width:100%;min-height:80px;font:12px/1.4 monospace;background:var(--arena);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
 .set .btns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
 .danger{color:var(--hot)}
-.wb{position:fixed;z-index:8}
+.wb,.modal{position:fixed;z-index:8}
+.card.wide{width:min(620px,100%);display:flex;flex-direction:column;padding:0;overflow:hidden}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 10px;border-bottom:1px solid var(--line)}.mhead h2{margin:0;font-size:26px}
+.mbody{overflow-y:auto;flex:1;min-height:0;padding:14px 18px 18px}
+.help h3{font:700 15px 'Chakra Petch',sans-serif;margin:16px 0 6px;color:var(--ink)}.help p{color:var(--ink);margin:0 0 8px}.help ul{margin:0;padding-left:20px}.help li{margin:0 0 5px}
+.mob{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)}.mob p{margin:2px 0 0;color:var(--mute)}.mob .v{font:500 12px 'Chakra Petch',sans-serif;color:var(--mute)}
+.help .note{margin-top:10px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
 .toast.show{opacity:1}
 .probe{position:absolute;width:0;height:0;overflow:hidden}
 @media(max-width:860px){.wrap{grid-template-columns:1fr;grid-template-rows:minmax(0,1.2fr) minmax(0,1fr)}.side{border-left:0;border-top:1px solid var(--line)}
-.top{padding:8px 12px;gap:6px 14px}.brand{font-size:20px}.chips{font-size:15px;gap:4px 12px}.hp{flex-basis:120px}
+.top{padding:8px 12px;gap:6px 14px}.icons{order:-1;margin-left:auto}.brand{order:-2}.brand{font-size:20px}.chips{font-size:15px;gap:4px 12px}.hp{flex-basis:120px}
 .tabs{padding:6px}.body{padding:6px 10px}.ctrl{padding:6px 8px}.row{padding:5px 2px}.card{padding:16px}.card h2{font-size:26px}}
 @media(max-width:420px){.ctrl{gap:4px}.ctrl button{padding:0 8px}.ctrl .sp button{min-width:38px;padding:0 4px}}
 @media(prefers-reduced-motion:reduce){.toast{transition:none}}

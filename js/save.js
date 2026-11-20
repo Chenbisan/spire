@@ -1,7 +1,7 @@
 // Spire — save/load (localStorage) and offline earnings.
 // ================= save =================
 const KEY='spire-save-v1';
-const fresh=()=>({v:1,bestCph:0,lastSeen:0,coins:0,ws:{},lab:{},tierMax:1,best:{},runs:0,kills:0,set:{dmgNums:true,perf:false,speed:1,auto:true,autoDelay:5,ab:{}}});
+const fresh=()=>({v:1,bestCph:0,lastSeen:0,coins:0,shards:0,ws:{},lab:{},tierMax:1,best:{},runs:0,kills:0,set:{dmgNums:true,perf:false,speed:1,auto:true,autoDelay:5,ab:{}}});
 let save=fresh();
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)save=Object.assign(fresh(),s,{set:Object.assign(fresh().set,s.set)})}catch(e){}
 function persist(){save.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.stringify(save))}catch(e){}}

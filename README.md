@@ -20,12 +20,15 @@ python -m http.server 8000
 
 - **Runs:** the spire fires automatically. A new wave starts every 20 s of game time, and a boss arrives every 10 waves. Enemy types are basic (square), fast (triangle), tank (large square), ranged (diamond, stops outside base range) and boss (hexagon).
 - **Cash:** earned from kills and wave bonuses, spent on in-run upgrades (Attack / Defense / Utility). It resets every run.
-- **Coins:** earned from kills, permanent, spent in the Workshop (tower stats) and the Lab (meta upgrades).
+- **Coins:** earned from kills, permanent, spent in the Workshop (tower stats).
+- **Shards:** only drop from enemies on tier 2 and up (1.5× more per tier above that), permanent, spent in the Lab (meta upgrades).
 - **Tiers:** reaching wave 25 unlocks the next tier, which has tougher enemies and more coins.
 - **Auto-restart:** a run that ends restarts after a short countdown, which you can change or turn off in Settings.
 - **Offline earnings:** your best coins-per-game-hour (from runs of at least 2 game-minutes) is paid out while you're away. The Lab raises the offline speed and cap.
 
 ### Lab
+
+Paid in shards.
 
 | Research | Effect |
 |---|---|
@@ -37,6 +40,9 @@ python -m http.server 8000
 
 ### Controls
 
+- **?** (top right) explains the rules and every enemy type
+- **Gear** (top right) opens Settings: options, save backup, end run, reset
+
 - `Space` pause / resume
 - `1`–`8` game speed (unlocked speeds only)
 - **FPS** button shows frame rate, simulation cost and entity counts
@@ -45,9 +51,9 @@ python -m http.server 8000
 
 All balance numbers are in `js/config.js`:
 
-- `CFG`: wave length, enemy scaling, spawn counts, tier multipliers, rewards, offline rules
+- `CFG`: wave length, enemy scaling, spawn counts, tier multipliers, rewards (including `shardRate`), offline rules
 - `ST`: tower stats, per-level gains, cash and coin costs
-- `ET`: enemy types
+- `ET`: enemy types, including the name and description shown in Help
 - `LAB`: Lab research, effects and costs
 
 ## Code layout
@@ -61,7 +67,7 @@ All balance numbers are in `js/config.js`:
 | `js/save.js` | localStorage save/load, offline earnings |
 | `js/sim.js` | Run state, stats, fixed-step `update()`, auto-buyer |
 | `js/render.js` | Canvas drawing |
-| `js/ui.js` | HUD, overlays, upgrade panel, settings, controls, auto-restart |
+| `js/ui.js` | HUD, overlays, upgrade panel, Settings and Help windows, controls, auto-restart |
 | `js/main.js` | Main loop and boot (loaded last) |
 
 These are classic `<script>` files, not ES modules, so the game keeps working from `file://` (browsers block module imports there). They share one global scope and load in the order listed in `index.html`. Code that runs at load time may only use things from files above it; anything inside a function can use any file.

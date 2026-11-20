@@ -13,7 +13,7 @@ function newRun(tier){
   stopAuto();
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
   enemies.length=bullets.length=ebs.length=dnums.length=parts.length=0;
-  run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
+  run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
   recalc();run.hp=run.s.health;run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
@@ -35,6 +35,7 @@ function kill(e){
   const R=run;e.dead=true;R.kills++;save.kills++;
   const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave);R.cash+=c;R.cashEarned+=c;
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;
+  if(R.tm.shard){const sh=e.d.coin*CFG.shardRate*R.tm.shard;save.shards+=sh;R.shards+=sh}
   for(let i=0;i<4&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
 }
 function damage(e,v,crit){
