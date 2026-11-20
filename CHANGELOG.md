@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.11.0 — 2026-11-20
+- **Upgrades and Workshop are split into Attack, Defense and Utility sections** with a switcher under the ×1 / ×10 / Max buttons, so each list is short. Each tab remembers its section after a refresh. Auto-buy toggles show for the section you're looking at.
+
 ## 1.10.1 — 2026-11-20
 - The **Wave bonus** upgrade is now called **Cash interest**: the cash you get at the start of every wave. Your upgrade levels carry over.
 

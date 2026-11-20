@@ -71,11 +71,14 @@ function buildPanel(){
     labRows=[...P.querySelectorAll('[data-lab]')].map(b=>({l:LK[b.dataset.lab],b,v:b.parentNode.querySelector('.v')}));
     return refreshPanel()}
   const ws=ui.tab==='Workshop';
-  let h=`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`;
+  const sec=GROUPS.includes((save.set.sub||{})[ui.tab])?save.set.sub[ui.tab]:'Attack';
+  let h=`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`
+    +`<div class="subs">${GROUPS.map(g=>`<button data-sub="${g}" class="${g===sec?'on':''}">${g}</button>`).join('')}</div>`;
   if(ws){h+='<p class="note">Permanent upgrades, paid in coins. They apply to every run, including the one in progress. Values shown are your starting values.</p>'+`<p class="note">Offline rate: <b class="coin">${fmt(offlineRate())} coins/hour</b></p>`;
-    for(const g of['Attack','Defense','Utility'])h+=`<div class="gh">${g}</div>`+ST.filter(s=>s.g===g).map(rowHtml).join('')}
+    h+=ST.filter(s=>s.g===sec).map(rowHtml).join('')}
   else{h+=!run||run.over?'<p class="note">Start a run to buy in-run upgrades.</p>':'<p class="note">Paid in cash, which resets every run.</p>';
-    for(const g of GROUPS)h+=`<div class="gh ghx"><span>${g}</span>${labLv('auto')?`<label class="ab"><input type="checkbox" data-ab="${g}" ${save.set.ab[g]?'checked':''}> Auto-buy</label>`:''}</div>`+ST.filter(s=>s.g===g&&!s.ws).map(rowHtml).join('')}
+    if(labLv('auto'))h+=`<label class="ab abs"><input type="checkbox" data-ab="${sec}" ${save.set.ab[sec]?'checked':''}> Auto-buy ${sec.toLowerCase()} upgrades</label>`;
+    h+=ST.filter(s=>s.g===sec&&!s.ws).map(rowHtml).join('')}
   P.innerHTML=h;
   rows=[...P.querySelectorAll('.row')].map(r=>({s:SK[r.dataset.k],v:r.querySelector('.v'),b:r.querySelector('.buy')}));
   refreshPanel();
@@ -98,6 +101,7 @@ function refreshPanel(){
 }
 $('panel').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.sub){save.set.sub=Object.assign({},save.set.sub,{[ui.tab]:b.dataset.sub});persist();return buildPanel()}
   if(b.dataset.mult){ui.mult=save.set.mult=b.dataset.mult==='Max'?'Max':+b.dataset.mult;persist();return buildPanel()}
   if(b.dataset.lab){const l=LK[b.dataset.lab],c=labCost(l);if(labLv(l.k)>=l.max||save.shards<c)return;save.shards-=c;save.lab[l.k]=labLv(l.k)+1;save.stats.lab++;save.stats.labShards+=c;persist();
     if(l.k==='speed')buildSpeeds();if(l.k==='auto')toast('Auto-buy toggles added to the Upgrades tab');refreshPanel();return}
@@ -216,7 +220,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li><b>Modules</b> are gear for the spire's ${MOD_SLOTS.length} slots (${MOD_SLOTS.map(s=>s.n).join(', ')}). Each adds a stat per level and has a special effect that gets stronger every ${MOD.per} levels as it ranks up: ${RARITY.join(', ')}.</li>
   <li>Both are bought directly, with no random draws, and you can swap them any time, even mid-run.</li></ul>
   <h3>Upgrades</h3><ul>
-  <li>The <b>Upgrades</b> tab has three sections. <b>Attack</b>: damage, attack speed, crits and range. <b>Defense</b>: health, regen, damage reduction and thorns (hits back for part of the attacker's max health). <b>Utility</b>: more cash and coins.</li>
+  <li>The <b>Upgrades</b> and <b>Workshop</b> tabs each have three sections; switch between them with the Attack / Defense / Utility buttons. <b>Attack</b>: damage, attack speed, crits and range. <b>Defense</b>: health, regen, damage reduction and thorns (hits back for part of the attacker's max health). <b>Utility</b>: more cash and coins.</li>
   <li><b>Workshop</b> levels are your starting values in every run. In-run levels stack on top.</li>
   <li><b>Lab</b> research raises offline earnings, unlocks faster game speeds, discounts the Workshop and adds auto-buyers.</li>
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>

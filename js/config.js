@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.10.1';
+const APP_VERSION='1.11.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -42,7 +42,7 @@ const LAB=[
  {k:'offCap',n:'Offline duration',d:'How long offline earnings keep counting.',max:12,c:[15,1.5],val:l=>24+4*l,f:v=>v+'h'},
  {k:'speed',n:'Overdrive',d:'Unlocks faster game speeds.',max:3,c:[200,5],val:l=>[8,12,16,24][l],f:v=>'up to '+v+'×'},
  {k:'disc',n:'Workshop discount',d:'Cheaper workshop upgrades.',max:15,c:[30,1.5],val:l=>.02*l,f:v=>'−'+Math.round(v*100)+'%'},
- {k:'auto',n:'Auto-buyer',d:'Adds auto-buy toggles to the Attack, Defense and Utility sections of the Upgrades tab. Buys the cheapest upgrade first.',max:1,c:[150,1],val:l=>l,f:v=>v?'unlocked':'locked'},
+ {k:'auto',n:'Auto-buyer',d:'Adds an auto-buy toggle to each section (Attack, Defense, Utility) of the Upgrades tab. Buys the cheapest upgrade first.',max:1,c:[150,1],val:l=>l,f:v=>v?'unlocked':'locked'},
 ];
 const LK=Object.fromEntries(LAB.map(l=>[l.k,l]));
 // Enemy shapes as unit polygons (scaled by sz). Used by the canvas and the Help icons.
