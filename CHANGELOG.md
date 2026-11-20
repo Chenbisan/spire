@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.4.0 — 2026-11-20
+- **Update banner:** when a new version of Spire is published, a banner at the top says so. Tap it to refresh into the new version (your progress is saved first). It warns you if a run is in progress, since refreshing ends it. Tap ✕ to hide it until the next update.
+- The health ring around the spire is gone. Health is shown in the bar at the top.
+
 ## 1.3.0 — 2026-11-20
 - **Smoother shots at high speed:** shots now leave a short streak behind them instead of jumping, and a shot that lands within a single frame (common at 12× and up) shows a quick fading tracer, so you can always see your spire firing.
 - **One Upgrades tab:** Attack, Defense and Utility are now sections of a single Upgrades tab, laid out like the Workshop. The side panel has three tabs: Upgrades, Workshop and Lab.

@@ -20,7 +20,7 @@ function hud(){
   else{TX('hpTxt','–')}
   const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
   if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame\n${enemies.length} enemies  ·  ${bullets.length} shots  ·  ${ebs.length} enemy shots`;
-  refreshPanel();
+  refreshPanel();if(typeof updRunNote==='function')updRunNote();
 }
 let ovTier=save.tierMax;
 const shardsOn=()=>save.tierMax>=2||save.shards>0;

@@ -71,6 +71,7 @@ All balance numbers are in `js/config.js`:
 | `js/save.js` | localStorage save/load, offline earnings |
 | `js/sim.js` | Run state, stats, fixed-step `update()`, auto-buyer |
 | `js/render.js` | Canvas drawing |
+| `js/update.js` | "New version available" banner and refresh |
 | `js/ui.js` | HUD, overlays, upgrade panel, Settings and Help windows, controls, auto-restart |
 | `js/main.js` | Main loop and boot (loaded last) |
 
@@ -96,7 +97,9 @@ To release:
 
 1. Bump `APP_VERSION` in `js/config.js`.
 2. Add a `## X.Y.Z — date` section at the top of `CHANGELOG.md`, written for players.
-3. Commit, then tag the commit `vX.Y.Z`.
+3. Commit, push to `main`, then tag the commit `vX.Y.Z`.
+
+Players with the hosted game open see a "Version X is available" banner within about 10 minutes of the push (sooner when they switch back to the tab). It compares the live `APP_VERSION` with the one they're running, so a change that doesn't bump `APP_VERSION` won't be announced.
 
 The save format has its own number (`v` in the save, `spire-save-v1` key), which only changes when the save layout changes.
 

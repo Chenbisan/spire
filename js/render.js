@@ -53,7 +53,6 @@ function draw(){
     // tower
     ctx.fillStyle=C.acc;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();
     ctx.fillStyle=C.arena;ctx.beginPath();ctx.arc(0,0,tr*.4,0,6.283);ctx.fill();
-    ctx.strokeStyle=C.acc;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,tr+6,-Math.PI/2,-Math.PI/2+6.283*Math.max(0,R.hp/R.s.health));ctx.stroke();
     if(dnums.length){ctx.font="600 11px 'Chakra Petch',sans-serif";ctx.textAlign='center';
       for(const n of dnums){ctx.fillStyle=n.c?C.gold:C.ink;ctx.globalAlpha=Math.min(1,n.l*2);ctx.fillText(n.b?'block':fmt(n.v),n.x,n.py+(n.y-n.py)*A)}ctx.globalAlpha=1}
   }else{ctx.fillStyle=C.acc;ctx.beginPath();ctx.arc(0,0,tr,0,6.283);ctx.fill()}
