@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.12.0';
+const APP_VERSION='1.13.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -22,18 +22,18 @@ const CFG={
 // stat: base, ra = per in-run level, wa/wm = per workshop level, c/w = [cost, growth]
 const ST=[
  {k:'damage',g:'Attack',n:'Damage',base:3,mul:1,ra:.35,wm:1.08,c:[4,1.14],w:[12,1.2]},
- {k:'aspd',g:'Attack',n:'Attack speed',base:1,ra:.06,wa:.03,max:10,c:[6,1.16],w:[15,1.22],u:'/s'},
- {k:'crit',g:'Attack',n:'Crit chance',base:.02,ra:.01,wa:.005,max:.8,c:[8,1.15],w:[20,1.25],p:1},
+ {k:'aspd',g:'Attack',n:'Attack speed',base:1,ra:.06,wa:.03,max:25,c:[6,1.16],w:[15,1.22],u:'/s'},
+ {k:'crit',g:'Attack',n:'Crit chance',base:.02,ra:.01,wa:.005,max:1,c:[8,1.15],w:[20,1.25],p:1},
  {k:'critMult',g:'Attack',n:'Crit damage',base:1.5,ra:.1,wa:.05,c:[10,1.15],w:[20,1.22],x:1},
  {k:'superCrit',g:'Attack',n:'Super crit chance (of crits)',base:0,ra:.01,wa:.005,max:.8,c:[20,1.18],w:[40,1.25],p:1},
  {k:'superMult',g:'Attack',n:'Super crit damage',base:2,ra:.1,wa:.05,c:[20,1.17],w:[40,1.22],x:1},
- {k:'range',g:'Attack',n:'Range',base:110,ra:3,wa:2,max:300,c:[8,1.16],w:[25,1.25]},
- {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.02,c:[15,1.17],w:[30,1.25],p:1,u:' per unit'},
+ {k:'range',g:'Attack',n:'Range',base:110,ra:3,wa:2,max:340,c:[8,1.16],w:[25,1.25],u:' m'},
+ {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.02,c:[15,1.17],w:[30,1.25],p:1,u:' per m'},
  {k:'multiChance',g:'Attack',n:'Multishot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
  {k:'multiTargets',g:'Attack',n:'Multishot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
  {k:'bounceChance',g:'Attack',n:'Bounce shot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
  {k:'bounceTargets',g:'Attack',n:'Bounce shot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
- {k:'bounceRange',g:'Attack',n:'Bounce shot range',base:60,ra:3,wa:2,max:250,c:[12,1.16],w:[25,1.22]},
+ {k:'bounceRange',g:'Attack',n:'Bounce shot range',base:60,ra:3,wa:2,max:250,c:[12,1.16],w:[25,1.22],u:' m'},
  {k:'health',g:'Defense',n:'Health',base:30,mul:1,ra:.4,wm:1.08,c:[4,1.14],w:[12,1.2]},
  {k:'regen',g:'Defense',n:'Regen',base:.4,mul:1,ra:.4,wm:1.08,c:[6,1.15],w:[15,1.2],u:'/s'},
  {k:'barrier',g:'Defense',n:'Barrier health (of max health)',base:0,ra:.02,wa:.01,max:1,c:[12,1.16],w:[30,1.25],p:1},
@@ -43,7 +43,7 @@ const ST=[
  {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.5,c:[20,1.2],w:[40,1.28],p:1},
  {k:'lifesteal',g:'Defense',n:'Lifesteal (of damage dealt)',base:0,ra:.002,wa:.001,max:.2,c:[20,1.2],w:[40,1.28],p:1},
  {k:'kbChance',g:'Defense',n:'Knockback chance',base:0,ra:.01,wa:.005,max:.8,c:[12,1.16],w:[25,1.25],p:1},
- {k:'kbForce',g:'Defense',n:'Knockback force',base:10,ra:1,wa:.8,max:120,c:[12,1.16],w:[25,1.22]},
+ {k:'kbForce',g:'Defense',n:'Knockback force',base:10,ra:1,wa:.8,max:120,c:[12,1.16],w:[25,1.22],u:' m'},
  {k:'cashBonus',g:'Utility',n:'Cash per kill',base:1,ra:.05,wa:.04,c:[10,1.15],w:[20,1.2],x:1},
  {k:'waveCash',g:'Utility',n:'Cash interest',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
  {k:'coinBonus',g:'Utility',n:'Coins per kill',base:1,ra:.03,wa:.05,c:[15,1.17],w:[25,1.2],x:1},
@@ -80,10 +80,10 @@ const RANKS=['','Normal','Elite','Boss'];
 const ET={
  basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:1,sh:'square',c:'e1'},
  fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:1,sh:'triangle',rot:'face',c:'e2',from:3,freq:.25},
- ranged:{n:'Ranged',r:1,d:'Stops outside a new spire\'s range and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:2,sh:'diamond',c:'e4',from:12,freq:.12,stop:125},
+ ranged:{n:'Ranged',r:1,d:'Stops 125 m out, beyond a new spire\'s range, and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:2,sh:'diamond',c:'e4',from:12,freq:.12,stop:125},
  tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,freq:.12,bar:1},
  shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,freq:.05,bar:1,shield:3},
- healer:{n:'Healer',r:2,d:'Every second, heals enemies around it by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.05,bar:1,heal:.1,healR:70},
+ healer:{n:'Healer',r:2,d:'Every second, heals enemies within 70 m by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.05,bar:1,heal:.1,healR:70},
  splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,freq:.05,bar:1,split:3},
  boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:250,dmg:12,spd:9,weight:10,sz:22,cash:60,coin:40,sh:'hexagon',rot:'spin',c:'e5',bar:1}
 };
@@ -92,20 +92,14 @@ const TYPES=Object.keys(ET);
 const PC=v=>{const p=+(v*100).toFixed(1);return(p<10?p:Math.round(p))+'%'};
 // drops: chips from bosses (Cards), alloy from elites (Modules); both grow with wave and tier
 const DROPS={chips:(w,t)=>2*(1+w/20)*1.4**(t-1), alloy:(w,t)=>(1+w/50)*1.4**(t-1)};
-// Cards: passive perks bought with chips, equipped into slots, levelled up to 5 stars. v = value per star.
-const CARD={buy:10, up:[10,20,40,80], slots0:3, slotCost:[40,120,300]}; // up[i]: star i+1 → i+2; slotCost: 4th, 5th, 6th slot
+// Equipment: items that add a mechanic (not plain stats; those come from upgrades). Bought with chips (boss drops),
+// equipped into slots, levelled to 5 stars. v = value per star. (Internally still save.cards / CARDS so old saves load.)
+const CARD={buy:10, up:[10,20,40,80], slots0:2, slotCost:[40,120,300]}; // up[i]: star i+1 → i+2; slotCost: 3rd, 4th, 5th slot
 const CARDS=[
- {k:'sharp',n:'Sharpshooter',v:[.1,.2,.3,.45,.6],f:v=>`+${PC(v)} damage`,fx:(F,v)=>F.mul.damage*=1+v},
- {k:'rapid',n:'Rapid Fire',v:[.05,.1,.15,.2,.3],f:v=>`+${PC(v)} attack speed`,fx:(F,v)=>F.mul.aspd*=1+v},
- {k:'eagle',n:'Eagle Eye',v:[5,10,15,22,30],f:v=>`+${v} range`,fx:(F,v)=>F.add.range+=v},
- {k:'lucky',n:'Lucky Shot',v:[.02,.04,.06,.08,.1],f:v=>`+${PC(v)} crit chance`,fx:(F,v)=>F.add.crit+=v},
- {k:'fort',n:'Fortify',v:[.1,.2,.3,.45,.6],f:v=>`+${PC(v)} max health`,fx:(F,v)=>F.mul.health*=1+v},
- {k:'mend',n:'Mending',v:[.2,.4,.6,.8,1],f:v=>`+${PC(v)} regen`,fx:(F,v)=>F.mul.regen*=1+v},
- {k:'frost',n:'Frost Field',v:[.05,.1,.15,.2,.25],f:v=>`enemies in range move ${PC(v)} slower`,fx:(F,v)=>F.slowAura=Math.max(F.slowAura,v)},
- {k:'wind',n:'Second Wind',v:[.2,.3,.4,.5,.6],f:v=>`once per run, survive a killing blow with ${PC(v)} health`,fx:(F,v)=>F.revive=Math.max(F.revive,v)},
- {k:'rush',n:'Wave Rush',v:[.05,.1,.15,.2,.25],f:v=>`waves are ${PC(v)} shorter`,fx:(F,v)=>F.rush=Math.max(F.rush,v)},
- {k:'bounty',n:'Bounty',v:[.1,.2,.3,.4,.5],f:v=>`+${PC(v)} cash`,fx:(F,v)=>F.mul.cashBonus*=1+v},
- {k:'prosp',n:'Prospector',v:[.05,.1,.15,.2,.25],f:v=>`+${PC(v)} coins`,fx:(F,v)=>F.mul.coinBonus*=1+v},
+ {k:'wind',n:'Second Wind',col:'acc',icon:'<path d="M12 20s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.4C19 15.6 12 20 12 20z"/><path d="M8 12.5h2.2l1.2-2.5 1.6 4.5 1.2-2h1.8"/>',
+  v:[.2,.3,.4,.5,.6],f:v=>`once per run, survive a killing blow with ${PC(v)} health`,fx:(F,v)=>F.revive=Math.max(F.revive,v)},
+ {k:'rush',n:'Wave Rush',col:'gold',icon:'<path d="M3 6l7 6-7 6z"/><path d="M12 6l7 6-7 6z"/><path d="M21 5v14"/>',
+  v:[.05,.1,.15,.2,.25],f:v=>`waves are ${PC(v)} shorter`,fx:(F,v)=>F.rush=Math.max(F.rush,v)},
 ];
 // Modules: one per slot, bought and levelled with alloy. Every 10 levels the rarity goes up (an ascension, costing CFG×ascend),
 // which raises the module's special effect. main: stat bonus per level (mul = +per×lvl %, add = flat).

@@ -28,7 +28,7 @@ python -m http.server 8000
 - **Cash:** earned from kills and cash interest (paid at the start of every wave), spent in the Upgrades tab (Attack / Defense / Utility sections, as in the Workshop). It resets every run.
 - **Coins:** earned from kills, permanent, spent in the Workshop (tower stats).
 - **Shards:** only drop from enemies on tier 2 and up (1.5× more per tier above that), permanent, spent in the Lab (meta upgrades).
-- **Chips** drop from bosses and buy **Cards**: 11 perks (damage, range, slow field, Second Wind, shorter waves…) equipped into 3 slots (up to 6), each levelled to 5 stars.
+- **Chips** drop from bosses and buy **Equipment**: items that add a mechanic rather than plain stats (Second Wind, Wave Rush), equipped into slots and levelled to 5 stars. Plain stat boosts come from upgrades instead.
 - **Alloy** drops from elites and buys **Modules**: one per slot (Cannon, Armor, Core, Generator), 2 choices each, levelled to 40. Every 10 levels a module ranks up (Common → Rare → Epic → Legendary), boosting its special effect.
 - Both are bought directly (no random draws) and can be swapped mid-run.
 - **Tiers:** reaching wave 25 unlocks the next tier, which has tougher enemies and more coins.
@@ -66,7 +66,7 @@ All balance numbers are in `js/config.js`:
 - `ST`: tower stats, per-level gains, cash and coin costs
 - `ET`: enemy types: rank, shape, colour, stats, abilities, and the name and description shown in Help (shapes are in `SHAPES`)
 - `LAB`: Lab research, effects and costs
-- `CARDS` / `CARD`, `MODS` / `MOD` / `MOD_SLOTS` / `RARITY`, `DROPS`: cards, modules, their prices, and chip/alloy drop rates
+- `CARDS` / `CARD` (equipment), `MODS` / `MOD` / `MOD_SLOTS` / `RARITY`, `DROPS`: cards, modules, their prices, and chip/alloy drop rates
 
 ## Code layout
 
@@ -79,7 +79,7 @@ All balance numbers are in `js/config.js`:
 | `js/save.js` | localStorage save/load, offline earnings |
 | `js/sim.js` | Run state, stats, fixed-step `update()`, auto-buyer |
 | `js/render.js` | Canvas drawing |
-| `js/loadout.js` | Cards and Modules: combined effects, the two tabs, buying and equipping |
+| `js/loadout.js` | Equipment and Modules: combined effects, the two tabs, buying and equipping |
 | `js/update.js` | "New version available" banner and refresh |
 | `js/ui.js` | HUD, overlays, upgrade panel, Settings and Help windows, controls, auto-restart |
 | `js/main.js` | Main loop and boot (loaded last) |
@@ -114,5 +114,6 @@ The save format has its own number (`v` in the save, `spire-save-v1` key), which
 
 ## Ideas / next up
 
-- Ultimate weapons (chain lightning, slow field): new tab
+- Ultimate weapons (chain lightning, slow field / Frost Field): new tab
+- More equipment (each adding a new mechanic)
 - More Lab research

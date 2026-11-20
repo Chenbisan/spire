@@ -1,5 +1,12 @@
 # What's new in Spire
 
+## 1.13.0 — 2026-11-20
+- **Cards are now Equipment,** with a new look: your equipped items sit in glowing slots at the top, and the armory below shows each item as a tile with its own icon.
+- **Equipment only adds new abilities now.** Second Wind and Wave Rush stay. The cards that only raised a stat (Sharpshooter, Rapid Fire, Eagle Eye, Lucky Shot, Fortify, Mending, Bounty, Prospector) and Frost Field (saved for a future ultimate weapon) are gone, and **every chip you spent on them is refunded**.
+- **Higher upgrade caps instead:** attack speed now goes up to 25/s (was 10), crit chance to 100% (was 80%) and range to 340 (was 300), so upgrades can take those stats further. Damage, health, regen, cash and coins were already uncapped.
+- **Distances are in metres:** range, bounce shot range, knockback force and enemy speed (m/s) now show an "m", and damage per distance is per metre.
+- **The top bar no longer jumps around:** it has a fixed two-row layout (currencies and buttons on top, enemy stats and health below), and numbers keep a steady width as they change.
+
 ## 1.12.0 — 2026-11-20
 - **New Attack upgrades:**
   - **Multishot chance / targets:** a chance for each shot to also fire at more enemies in range (1 extra to start, up to 8).

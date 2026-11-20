@@ -1,8 +1,8 @@
-// Spire — Cards and Modules: their combined effects, and the two side-panel tabs.
+// Spire — Equipment (internally 'cards') and Modules: their combined effects, and the two side-panel tabs.
 // Data (CARDS, MODS, prices, drops) lives in config.js.
 const cardLv=k=>save.cards[k]||0, modLv=k=>save.mods[k]||0;
 const modRarity=l=>Math.min(RARITY.length-1,Math.floor((Math.max(1,l)-1)/MOD.per));
-const modMain=(m,l)=>m.mul?`+${PC(m.per*l)} ${m.st==='aspd'?'attack speed':SK[m.st].n.toLowerCase()}`:m.st==='crit'?`+${(m.per*l*100).toFixed(1)}% crit chance`:`+${fmt(m.per*l)} ${SK[m.st].n.toLowerCase()}`;
+const modMain=(m,l)=>m.mul?`+${PC(m.per*l)} ${m.st==='aspd'?'attack speed':SK[m.st].n.toLowerCase()}`:m.st==='crit'?`+${(m.per*l*100).toFixed(1)}% crit chance`:`+${fmt(m.per*l)}${SK[m.st].u||''} ${SK[m.st].n.toLowerCase()}`;
 const modCost=l=>MOD.cost(l)*(l%MOD.per===0?MOD.ascend:1); // l → l+1; crossing into a new rarity costs more
 function loadoutFx(){
   const F={mul:{},add:{},slowAura:0,slowHit:0,revive:0,rush:0,eliteDmg:0,multi:0,interest:0,drop:0};
@@ -13,17 +13,23 @@ function loadoutFx(){
   return F;
 }
 const stars=l=>'★'.repeat(l)+'☆'.repeat(5-l);
+const eqIcon=c=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="var(--${c.col})" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${c.icon}</svg>`;
 function cardsHtml(){
-  const used=save.cardEq.length,next=CARD.slotCost[save.cardSlots-CARD.slots0];
-  let h=`<p class="note">Cards are perks you buy with <b class="chip">chips</b>, which bosses drop. Equip up to ${save.cardSlots} at a time and level each one to 5 stars. Changes apply right away, mid-run too.</p>
-  <div class="lhead"><span>Chips <b class="chip">${fmt(save.chips)}</b></span><span>Slots <b>${used} / ${save.cardSlots}</b></span>${next!=null?`<button class="chip" data-cslot ${save.chips>=next?'':'disabled'}>+1 slot · ${fmt(next)}</button>`:''}</div>`;
-  const row=c=>{const l=cardLv(c.k),eq=save.cardEq.includes(c.k),mx=l>=5,cost=l?CARD.up[l-1]:CARD.buy;
+  const used=save.cardEq.length,next=CARD.slotCost[save.cardSlots-CARD.slots0],canSlot=next!=null&&save.cardSlots<CARDS.length;
+  let h=`<p class="note">Equipment adds new abilities to the spire. Buy it with <b class="chip">chips</b>, which bosses drop, equip it into a slot and level it up to 5 stars. Swap any time, even mid-run.</p>
+  <div class="lhead"><span>Chips <b class="chip">${fmt(save.chips)}</b></span>${canSlot?`<button class="chip" data-cslot ${save.chips>=next?'':'disabled'}>+1 slot · ${fmt(next)}</button>`:''}</div>
+  <div class="gh">Equipped ${used} / ${save.cardSlots}</div><div class="eqslots">`;
+  for(let i=0;i<save.cardSlots;i++){const c=CK[save.cardEq[i]];
+    h+=c?`<button class="eqslot on" data-ceq="${c.k}" title="Unequip ${c.n}" style="--c:var(--${c.col})">${eqIcon(c)}<b>${c.n}</b><span class="stars">${stars(cardLv(c.k))}</span></button>`
+        :`<div class="eqslot empty"><span>Empty slot</span></div>`}
+  h+=`</div><div class="gh">Armory</div><div class="armory">`;
+  for(const c of CARDS){const l=cardLv(c.k),eq=save.cardEq.includes(c.k),mx=l>=5,cost=l?CARD.up[l-1]:CARD.buy;
     const v=!l?c.f(c.v[0]):mx?c.f(c.v[4]):`${c.f(c.v[l-1])} → ${c.f(c.v[l])}`;
-    return`<div class="row lrow${eq?' eq':''}"><div><b>${c.n}</b> <span class="stars">${l?stars(l):''}</span><span class="v">${v}</span></div><div class="lbtns">
+    h+=`<div class="item${eq?' eq':''}${l?'':' locked'}" style="--c:var(--${c.col})"><div class="itop">${eqIcon(c)}<div><b>${c.n}</b><span class="stars">${l?stars(l):'not owned'}</span></div></div>
+      <p>${v}</p><div class="ibtns">
       ${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-cbuy="${c.k}" ${save.chips>=cost?'':'disabled'}>${l?'<span class="q">★</span>':'Buy '}${fmt(cost)}</button>`}
-      ${l?`<button data-ceq="${c.k}" class="${eq?'on':''}" ${!eq&&used>=save.cardSlots?'disabled':''}>${eq?'Equipped':'Equip'}</button>`:''}</div></div>`};
-  const eq=CARDS.filter(c=>save.cardEq.includes(c.k)),rest=CARDS.filter(c=>!save.cardEq.includes(c.k));
-  return h+(eq.length?`<div class="gh">Equipped</div>${eq.map(row).join('')}`:'')+`<div class="gh">${eq.length?'Other cards':'All cards'}</div>${rest.map(row).join('')}`;
+      ${l?`<button data-ceq="${c.k}" class="${eq?'on':''}" ${!eq&&used>=save.cardSlots?'disabled':''}>${eq?'Equipped':'Equip'}</button>`:''}</div></div>`}
+  return h+`</div><p class="note">More equipment is on the way.</p>`;
 }
 function modsHtml(){
   let h=`<p class="note">Modules are gear for the spire, bought and levelled with <b class="alloy">alloy</b>, which elites drop. One per slot. Every ${MOD.per} levels a module ranks up (${RARITY.join(' → ')}), making its special effect stronger.</p>
@@ -41,9 +47,9 @@ function modsHtml(){
 }
 // affordability changes as chips/alloy drop mid-run; rebuild the tab when it does
 let loSig='';
-function refreshLoadout(){if(ui.tab!=='Cards'&&ui.tab!=='Modules')return;const P=$('panel');
-  const sig=ui.tab+'|'+[CARD.buy,...CARD.up,...CARD.slotCost].filter(c=>save.chips>=c).length+'|'+MODS.map(m=>{const l=modLv(m.k);return save.alloy>=(l?modCost(l):MOD.buy)?1:0}).join('');
-  if(sig===loSig)return;loSig=sig;const y=P.scrollTop;P.innerHTML=ui.tab==='Cards'?cardsHtml():modsHtml();P.scrollTop=y}
+function refreshLoadout(){if(ui.tab!=='Equipment'&&ui.tab!=='Modules')return;const P=$('panel');
+  const sig=ui.tab+'|'+save.cardEq.join()+'|'+[CARD.buy,...CARD.up,...CARD.slotCost].filter(c=>save.chips>=c).length+'|'+MODS.map(m=>{const l=modLv(m.k);return save.alloy>=(l?modCost(l):MOD.buy)?1:0}).join('');
+  if(sig===loSig)return;loSig=sig;const y=P.scrollTop;P.innerHTML=ui.tab==='Equipment'?cardsHtml():modsHtml();P.scrollTop=y}
 function loadoutChanged(){persist();if(run&&!run.over)recalc();loSig='';refreshLoadout()}
 $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const d=b.dataset;
   if(d.cbuy){const k=d.cbuy,l=cardLv(k),c=l?CARD.up[l-1]:CARD.buy;if(l>=5||save.chips<c)return;save.chips-=c;save.stats.chipsSpent=(save.stats.chipsSpent||0)+c;save.cards[k]=l+1;
@@ -54,3 +60,5 @@ $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
     if(!l&&!modLv(save.modEq[m.s]||''))save.modEq[m.s]=m.k;loadoutChanged()}
   else if(d.meq){const m=MK[d.meq];save.modEq[m.s]=save.modEq[m.s]===m.k?null:m.k;loadoutChanged()}
 });
+
+if(save.refund){toast(`Removed equipment refunded: ${fmt(save.refund)} chips`);delete save.refund;persist()}
