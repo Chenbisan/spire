@@ -30,8 +30,8 @@ function draw(){
   const target=Math.max(CFG.arenaR,rg*(v0+(v1-v0)*vk)),now=performance.now();
   viewR=viewR?viewR+(target-viewR)*Math.min(1,(now-viewT)/300):target;viewT=now;
   const VR=viewR,sc=Math.min(W,H)/(2*VR),ext=Math.max(W,H)/sc/2;VIEW.hx=W/2/sc;VIEW.hy=H/2/sc;ctx.setTransform(sc,0,0,sc,W/2,H/2);
-  // distance rings every 100 m (every 200 m once the view is huge), labelled along the crosshair
-  ctx.strokeStyle=C.grid;ctx.lineWidth=1.5/sc*Math.min(W,H)/640;const step=VR>1100?200:100;
+  // distance rings every 100 m (wider apart when zoomed far out or on small screens), labelled along the crosshair
+  ctx.strokeStyle=C.grid;ctx.lineWidth=1.5/sc*Math.min(W,H)/640;const dpr=W/(stage.clientWidth||W),step=[100,200,500,1000,2000,5000].find(st=>st*sc/dpr>=48)||10000; // keep ≥48 screen px between rings
   ctx.beginPath();for(let r=step;r<=ext;r+=step){ctx.moveTo(r,0);ctx.arc(0,0,r,0,6.283)}ctx.stroke();
   ctx.beginPath();ctx.moveTo(-ext,0);ctx.lineTo(ext,0);ctx.moveTo(0,-ext);ctx.lineTo(0,ext);ctx.stroke();
   ctx.fillStyle=C.mute;ctx.globalAlpha=.7;ctx.font=`500 ${11/sc}px 'Chakra Petch',sans-serif`;ctx.textAlign='left';

@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.15.9 — 2026-11-20
+- Distance rings space out (100, 200 or 500 m) when the view is small or far out, so their labels never overlap, e.g. on phones.
+
 ## 1.15.8 — 2026-11-20
 - **More room to see enemies coming:** the arena zooms out further as your range grows. The space around your range ring goes from 15% at the start to 50% by 510 m of range, so you can watch enemies walk in from the top and bottom too.
 
