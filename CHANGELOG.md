@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.8.0 — 2026-11-20
+- **📊 Lifetime stats:** the 🕘 button now has a Lifetime stats tab next to Battle history: time played, waves cleared, coins (from runs and offline), recent and best coins per hour, cash, shards, damage dealt and taken, thorns damage, enemies, elites and bosses destroyed, shots and crits, shield blocks, upgrades and research bought, coins and shards spent, plus a best-wave / runs / coins table for each tier. Runs, kills and best waves include your past play; everything else counts from today.
+
 ## 1.7.0 — 2026-11-20
 - **🕘 Battle history:** a new clock button at the top right (and a button on the end-of-run screen) lists your last 30 runs: tier, wave, date, coins, coins per hour, shards, kills and run time. Runs that set a new best wave are tagged, the best coins-per-hour run gets a ★, and runs you ended yourself say so. Runs played before this update aren't in the list.
 

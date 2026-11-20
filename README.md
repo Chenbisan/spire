@@ -28,7 +28,7 @@ python -m http.server 8000
 - **Coins:** earned from kills, permanent, spent in the Workshop (tower stats).
 - **Shards:** only drop from enemies on tier 2 and up (1.5× more per tier above that), permanent, spent in the Lab (meta upgrades).
 - **Tiers:** reaching wave 25 unlocks the next tier, which has tougher enemies and more coins.
-- **Battle history:** the clock button (top right) lists your last 30 runs: tier, wave, coins, coins per hour, shards, kills and run time, with best waves and runs you ended early marked.
+- **Records:** the clock button (top right) has a Lifetime stats sheet (earnings, combat, upgrades, per-tier bests) and a Battle history that lists your last 30 runs: tier, wave, coins, coins per hour, shards, kills and run time, with best waves and runs you ended early marked.
 - **Auto-restart:** a run that ends restarts after a short countdown, which you can change or turn off in Settings.
 - **Offline earnings:** your best coins-per-game-hour (from runs of at least 2 game-minutes) is paid out while you're away. The Lab raises the offline speed and cap.
 

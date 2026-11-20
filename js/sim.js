@@ -35,28 +35,28 @@ function spawn(t,x,y){
 }
 function nextWave(){
   const R=run;R.wave++;R.waveT=R.spawnT=R.spawned=0;
-  R.cash+=CFG.waveCash(R.wave)*R.s.waveCash;
+  const wc=CFG.waveCash(R.wave)*R.s.waveCash;R.cash+=wc;save.stats.cash+=wc;save.stats.waves++;
   if(R.wave%CFG.bossEvery===0)spawn('boss');
   if((save.best[R.tier]||0)<R.wave)save.best[R.tier]=R.wave;
   if(R.wave>=CFG.tierUnlockWave&&R.tier===save.tierMax){save.tierMax++;persist();toast(`Tier ${save.tierMax} unlocked`)}
 }
 function kill(e){
   const R=run;e.dead=true;R.kills++;save.kills++;
-  const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave);R.cash+=c;R.cashEarned+=c;
-  const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;
-  if(R.tm.shard){const sh=e.d.coin*CFG.shardRate*R.tm.shard;save.shards+=sh;R.shards+=sh}
+  const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave),st=save.stats;R.cash+=c;R.cashEarned+=c;st.cash+=c;if(e.d.r===2)st.elite++;else if(e.d.r===3)st.boss++;
+  const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
+  if(R.tm.shard){const sh=e.d.coin*CFG.shardRate*R.tm.shard;save.shards+=sh;R.shards+=sh;st.shards+=sh}
   if(e.d.split)for(let i=0;i<e.d.split;i++)spawn('fast',e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
   for(let i=0;i<4&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
 }
-function damage(e,v,crit){
-  const blocked=e.shield>0;
-  if(blocked)e.shield--;else e.hp-=v;
+function damage(e,v,crit,thorn){
+  const blocked=e.shield>0,st=save.stats;
+  if(blocked){e.shield--;st.blocked++}else{const a=Math.min(v,Math.max(0,e.hp));e.hp-=v;st.dmg+=a;if(thorn)st.thorn+=a}
   if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums)dnums.push({x:e.x,y:e.y-e.d.sz,py:e.y-e.d.sz,v,c:crit,b:blocked,l:.6});
   if(e.hp<=0&&!e.dead)kill(e);
 }
 function hitTower(v,att){
-  const R=run;R.hp-=v*(1-R.s.defense);
-  if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false);
+  const R=run,t=v*(1-R.s.defense);R.hp-=t;save.stats.taken+=t;
+  if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);
   if(R.hp<=0)gameOver();
 }
 function nearest(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
@@ -66,13 +66,14 @@ function gameOver(quit){
   if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
   const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;
   if(prevBest<R.wave)save.best[R.tier]=R.wave;
+  {const T=save.stats.tiers[R.tier]||(save.stats.tiers[R.tier]={runs:0,coins:0,cph:0});T.runs++;T.coins+=R.coins;if(R.time>=CFG.offlineMinRun)T.cph=Math.max(T.cph,R.cph)}
   save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,c:R.coins,s:R.shards,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
   save.hist.length=Math.min(save.hist.length,CFG.histMax);
   persist();ovTier=R.tier;startAuto();showOv('over');buildPanel();
 }
 // ================= simulation (fixed step) =================
 function update(dt){
-  const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;R.waveT+=dt;R.spawnT+=dt;
+  const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;save.stats.time+=dt;R.waveT+=dt;R.spawnT+=dt;
   const cnt=CFG.spawnCount(R.wave),iv=CFG.waveLen*.9/cnt;
   while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
   if(R.waveT>=CFG.waveLen)nextWave();
@@ -93,7 +94,7 @@ function update(dt){
   separate();
   const fi=1/s.aspd;R.fireT+=dt;
   if(!tgt)R.fireT=Math.min(R.fireT,fi);
-  else while(R.fireT>=fi){R.fireT-=fi;const b=bPool.pop()||{},c=Math.random()<s.crit;b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1);b.l=2;bullets.push(b)}
+  else while(R.fireT>=fi){R.fireT-=fi;const b=bPool.pop()||{},c=Math.random()<s.crit;save.stats.shots++;if(c)save.stats.crits++;b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1);b.l=2;bullets.push(b)}
   const m=CFG.bulletSpd*dt;
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;
@@ -132,6 +133,6 @@ function autoBuy(){
   if(!run||run.over||paused||!labLv('auto'))return;let any=false;
   for(let i=0;i<100;i++){let best=null,bc=Infinity;
     for(const s of ST){if(s.ws||!save.set.ab[s.g])continue;const r=run.lv[s.k]||0;if(capped(s,r,save.ws[s.k]||0))continue;const c=s.c[0]*s.c[1]**r;if(c<bc){bc=c;best=s}}
-    if(!best||bc>run.cash)break;run.cash-=bc;run.lv[best.k]=(run.lv[best.k]||0)+1;any=true}
+    if(!best||bc>run.cash)break;run.cash-=bc;run.lv[best.k]=(run.lv[best.k]||0)+1;save.stats.ups++;any=true}
   if(any)recalc();
 }
