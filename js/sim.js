@@ -106,6 +106,9 @@ function gameOver(quit){
   showOv('over');buildPanel();
 }
 // ================= simulation (fixed step) =================
+let rankKey='',rankMap=null;
+function targetRank(){const st=save.set;if(st.target!=='priority')return null;const k=st.prio.join();
+  if(k!==rankKey){rankKey=k;rankMap={};TYPES.forEach(t=>rankMap[t]=TYPES.length);st.prio.forEach((t,i)=>rankMap[t]=i)}return rankMap}
 function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:0;save.stats.shots++;if(c){save.stats.crits++;if(s.superCrit>0&&Math.random()<s.superCrit){c=2;save.stats.supers++}}
   tgt.shotAt=performance.now(); // render-only: targeting beam
   b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
@@ -117,7 +120,8 @@ function update(dt){
   if(R.waveT>=R.waveLen)nextWave();
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
   if(R.barMax>0)R.bar=Math.min(R.barMax,R.bar+R.barMax*s.barrierRegen*dt);
-  let tgt=null,td=Infinity;
+  // targeting: Closest, or by your type priority (then closest within a type)
+  const pr=targetRank();let tgt=null,td=Infinity,tp=Infinity;
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e);continue}
@@ -129,7 +133,7 @@ function update(dt){
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg,e);if(R.over)return}}
     if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=1){e.ht=0;e.hf=.4;const r2=d.healR**2;
       for(const o of enemies)if(!o.dead&&o!==e&&(o.x-e.x)**2+(o.y-e.y)**2<=r2)o.hp=Math.min(o.mhp,o.hp+o.mhp*d.heal)}}
-    if(!e.dead&&dist<=s.range+d.sz&&dist<td){td=dist;tgt=e}
+    if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}
   }
   separate();
   const fi=1/s.aspd;R.fireT+=dt;
@@ -137,7 +141,7 @@ function update(dt){
   else while(R.fireT>=fi){R.fireT-=fi;fire(tgt);
     const mc=s.multiChance+R.fx.multi;
     if(mc>0&&Math.random()<mc){const extra=[];for(const e of enemies)if(!e.dead&&e!==tgt&&e.dist<=s.range+e.d.sz)extra.push(e);
-      extra.sort((a,b)=>a.dist-b.dist);const n=Math.min(extra.length,Math.floor(s.multiTargets));for(let k=0;k<n;k++)fire(extra[k]);if(n)save.stats.multi++}}
+      extra.sort(pr?(a,b)=>pr[a.t]-pr[b.t]||a.dist-b.dist:(a,b)=>a.dist-b.dist);const n=Math.min(extra.length,Math.floor(s.multiTargets));for(let k=0;k<n;k++)fire(extra[k]);if(n)save.stats.multi++}}
   const m=CFG.bulletSpd*dt;
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;

@@ -30,6 +30,7 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .chips b,.echip b,.hpt{font-variant-numeric:tabular-nums}
 .chips b{display:inline-block;min-width:4.6ch}#hTier{min-width:1.6ch}#hWave{min-width:3.4ch}.echip b{display:inline-block;min-width:4.8ch}.hpt{min-width:20ch;text-align:right}
 .row2{flex:1 1 100%;display:flex;align-items:center;gap:8px 16px}.row2 .hp{max-width:none}
+.prio{display:grid;gap:4px;margin:0 0 10px}.prow{display:grid;grid-template-columns:28px 1fr 40px 40px;gap:6px;align-items:center;padding:2px 4px;border:1px solid var(--line);border-radius:8px}.prow svg{width:24px;height:24px}.prow button{min-height:32px;padding:0}
 .eqslots{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:6px}
 .eqslot{display:grid;justify-items:center;align-content:center;gap:3px;min-height:104px;padding:8px 6px;border-radius:12px;text-align:center;font-size:13px;line-height:1.2}
 .eqslot.on{color:var(--ink);border:2px solid var(--c);background:color-mix(in srgb,var(--c) 12%,var(--arena));box-shadow:0 0 14px color-mix(in srgb,var(--c) 35%,transparent)}

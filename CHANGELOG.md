@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.17.0 — 2026-11-20
+- **🎯 Target priority:** under Settings → Targeting, keep **Closest** (the default) or switch to **Priority** and rank the enemy types with ▲ / ▼. The spire shoots the highest-ranked type in range first, then the closest of that type; multishot follows the same order. The starting order is Healer, Boss, Splitter, Shielded, Ranged, Tank, Fast, Basic.
+- **Shorter targeting lines:** in clean mode the line is now a short stub off each enemy being shot at, pointing back at the spire, instead of a line all the way from the spire.
+- **Hits are easier to see:** an enemy that's hit lights up solid in its own colour with a bright outline, then fades back.
+
 ## 1.16.2 — 2026-11-20
 - **Ending a run yourself no longer auto-restarts it.** You stay on the end screen until you pick a tier and start again. Auto-restart still kicks in when the spire falls.
 

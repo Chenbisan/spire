@@ -128,6 +128,9 @@ function settingsHtml(){return`<div class="set">
   <label><input type="checkbox" id="optPf" ${save.set.perf?'checked':''}> Performance overlay</label>
   <label><input type="checkbox" id="optAuto" ${save.set.auto?'checked':''}> Auto-restart after a run ends, after
     <select id="optDelay" style="font:inherit;min-height:36px;border-radius:8px;background:var(--arena);color:var(--ink);border:1px solid var(--line)">${[3,5,10,15].map(n=>`<option ${save.set.autoDelay===n?'selected':''}>${n}</option>`).join('')}</select> s</label>
+  <div class="gh">Targeting</div>
+  <div class="mults" style="margin-bottom:6px"><button data-act="tgt" data-v="closest" class="${save.set.target!=='priority'?'on':''}">Closest</button><button data-act="tgt" data-v="priority" class="${save.set.target==='priority'?'on':''}">Priority</button></div>
+  ${save.set.target==='priority'?`<p class="note">The spire shoots the highest type on this list that's in range, then the closest of that type. Multishot follows the same order.</p><div class="prio">${save.set.prio.map((t,i)=>`<div class="prow">${mobIcon(ET[t])}<span>${i+1}. ${ET[t].n}</span><button data-act="pup" data-t="${t}" ${i?'':'disabled'} aria-label="Move ${ET[t].n} up">▲</button><button data-act="pdn" data-t="${t}" ${i<save.set.prio.length-1?'':'disabled'} aria-label="Move ${ET[t].n} down">▼</button></div>`).join('')}</div>`:'<p class="note">The spire shoots the closest enemy in range.</p>'}
   <div class="gh">Save</div><p class="note">Progress saves in this browser automatically. Copy a backup code to be safe, or paste one to restore.</p>
   <textarea id="saveTxt" placeholder="Backup code appears here, or paste one to import"></textarea>
   <div class="btns"><button data-act="export">Copy backup code</button><button data-act="import">Import code</button></div>
@@ -137,6 +140,9 @@ function settingsHtml(){return`<div class="set">
 let resetArm=0;
 function settingsClick(b){
   const a=b.dataset.act,tx=$('saveTxt');
+  if(a==='tgt'||a==='pup'||a==='pdn'){const P=save.set.prio;
+    if(a==='tgt')save.set.target=b.dataset.v;else{const i=P.indexOf(b.dataset.t),j=a==='pup'?i-1:i+1;if(j>=0&&j<P.length)[P[i],P[j]]=[P[j],P[i]]}
+    persist();const y=mBody.scrollTop;mBody.innerHTML=settingsHtml();mBody.scrollTop=y;return}
   if(a==='export'){const code=btoa(unescape(encodeURIComponent(JSON.stringify(save))));tx.value=code;tx.select();
     navigator.clipboard?.writeText(code).then(()=>toast('Backup code copied'),()=>toast('Select the code and copy it'))||toast('Select the code and copy it')}
   else if(a==='import'){try{const s=JSON.parse(decodeURIComponent(escape(atob(tx.value.trim()))));if(s.v!==1)throw 0;save=fromSaved(s);persist();recalc();toast('Save imported');buildPanel();if(!run)showOv('start');openModal('settings')}catch(e){toast('That code did not work')}}
@@ -245,7 +251,8 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
     const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';
     return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join('')}
   <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; ranged enemies stop at ${ET.ranged.stop} m. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so they have to walk in; the arena zooms with your range. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
-  <h3>Shot effects</h3><p>At high game speeds, individual shots are too fast to follow, so from ${CFG.cleanFxAt}× up the arena switches to clean effects: a faint steady line from the spire to each enemy it's shooting at, a brief flash on every hit, and only crit damage numbers. Change this under Settings → Shot effects.</p>
+  <h3>Targeting</h3><p>By default the spire shoots the closest enemy in range. Under Settings → Targeting you can switch to Priority and rank the enemy types; the spire then shoots the highest-ranked type in range first (closest first within a type).</p>
+  <h3>Shot effects</h3><p>At high game speeds, individual shots are too fast to follow, so from ${CFG.cleanFxAt}× up the arena switches to clean effects: a short steady line off each enemy it's shooting at, pointing back at the spire, enemies lighting up when hit, and only crit damage numbers. Change this under Settings → Shot effects.</p>
   <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}
 function buildSpeeds(){$('speeds').innerHTML=speeds().map(s=>`<button data-sp="${s}" class="${save.set.speed===s?'on':''}">${s}×</button>`).join('')}
 $('speeds').addEventListener('click',e=>{const b=e.target.closest('button');if(b){save.set.speed=+b.dataset.sp;persist();buildSpeeds()}});

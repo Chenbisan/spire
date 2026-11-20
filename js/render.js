@@ -56,8 +56,10 @@ function draw(){
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
     const clean=cleanFx();
     if(clean){ // one faint, steady line per enemy being shot at
-      const now=performance.now();ctx.strokeStyle=C.acc;ctx.globalAlpha=.3;ctx.lineWidth=1.5;ctx.beginPath(); // held for beamHold real ms after each shot
-      for(const e of enemies)if(!e.dead&&now-(e.shotAt||0)<CFG.beamHold){ctx.moveTo(0,0);ctx.lineTo(IX(e),IY(e))}ctx.stroke();ctx.globalAlpha=1;
+      // a short stub off each enemy being shot at, pointing back at the spire; held for beamHold real ms after each shot
+      const now=performance.now(),bl=viewR*CFG.beamLen;ctx.strokeStyle=C.acc;ctx.globalAlpha=.6;ctx.lineWidth=2;ctx.lineCap='round';ctx.beginPath();
+      for(const e of enemies)if(!e.dead&&now-(e.shotAt||0)<CFG.beamHold){const x=IX(e),y=IY(e),d=Math.hypot(x,y)||1,s0=e.d.sz*1.2,s1=Math.min(d-CFG.towerR,s0+bl);
+        if(s1>s0){ctx.moveTo(x-x/d*s0,y-y/d*s0);ctx.lineTo(x-x/d*s1,y-y/d*s1)}}ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
       ctx.fillStyle=C.e4;ctx.beginPath();for(const b of ebs){const x=IX(b),y=IY(b);ctx.rect(x-2.5,y-2.5,5,5);b.rx=x;b.ry=y}ctx.fill();
     }else{shots(bullets,C.acc,2);shots(ebs,C.e4,2.5)}
     ctx.lineCap='round';
@@ -66,7 +68,8 @@ function draw(){
       ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1);ctx.stroke()}
     ctx.globalAlpha=1;ctx.lineCap='butt';
     // hit flash: the outline brightens briefly (real time, so it reads the same at any speed)
-    {const now=performance.now();ctx.strokeStyle=C.ink;ctx.lineWidth=2.5;for(const e of enemies){const t=now-(e.hitAt||0);if(e.dead||t>CFG.hitFlash)continue;ctx.globalAlpha=.85*(1-t/CFG.hitFlash);ctx.beginPath();shape(e);ctx.stroke()}ctx.globalAlpha=1}
+    {const now=performance.now();ctx.strokeStyle=C.ink;ctx.lineWidth=2.5;for(const e of enemies){const t=now-(e.hitAt||0);if(e.dead||t>CFG.hitFlash)continue;const k=1-t/CFG.hitFlash;
+      ctx.beginPath();shape(e);ctx.fillStyle=C[e.d.c];ctx.globalAlpha=.85*k;ctx.fill();ctx.globalAlpha=k;ctx.stroke()}ctx.globalAlpha=1} // hit: lights up solid in its colour
     ctx.fillStyle=C.mute;ctx.beginPath();for(const p of parts){const z=3*p.l/.5;ctx.rect(IX(p)-z/2,IY(p)-z/2,z,z)}ctx.fill();
     // tower
     ctx.fillStyle=C.acc;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();
