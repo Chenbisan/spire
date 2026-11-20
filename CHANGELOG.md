@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.10.1 — 2026-11-20
+- The **Wave bonus** upgrade is now called **Cash interest**: the cash you get at the start of every wave. Your upgrade levels carry over.
+
 ## 1.10.0 — 2026-11-20
 - **Much bigger offline earnings:** time away now counts as if the game were running at your fastest unlocked speed (8× to start, up to 24× with Overdrive), instead of 1×. Lab Offline speed multiplies that further. The Workshop shows your rate per real hour.
 

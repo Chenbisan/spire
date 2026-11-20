@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.10.0';
+const APP_VERSION='1.10.1';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -31,7 +31,7 @@ const ST=[
  {k:'defense',g:'Defense',n:'Defense',base:0,ra:.01,wa:.005,max:.75,c:[10,1.16],w:[25,1.25],p:1},
  {k:'thorns',g:'Defense',n:'Thorns (of attacker max HP)',base:0,ra:.02,wa:.01,max:.5,c:[12,1.17],w:[30,1.25],p:1},
  {k:'cashBonus',g:'Utility',n:'Cash per kill',base:1,ra:.05,wa:.04,c:[10,1.15],w:[20,1.2],x:1},
- {k:'waveCash',g:'Utility',n:'Wave bonus',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
+ {k:'waveCash',g:'Utility',n:'Cash interest',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
  {k:'coinBonus',g:'Utility',n:'Coins per kill',base:1,ra:.03,wa:.05,c:[15,1.17],w:[25,1.2],x:1},
  {k:'startCash',g:'Utility',n:'Starting cash',base:0,wa:25,ws:1,w:[20,1.2]},
 ];
@@ -103,6 +103,6 @@ const MODS=[
  {k:'luckc',s:'core',n:'Lucky Core',st:'crit',per:.003,sp:[.1,.25,.5,1],sf:v=>`+×${v} crit damage`,fx:(F,v)=>F.add.critMult+=v},
  {k:'stasis',s:'core',n:'Stasis Core',st:'range',per:1,sp:[.1,.2,.3,.4],sf:v=>`hits slow the target by ${PC(v)} for 1 s`,fx:(F,v)=>F.slowHit=Math.max(F.slowHit,v)},
  {k:'mint',s:'gen',n:'Mint',st:'coinBonus',per:.02,mul:1,sp:[.1,.2,.35,.5],sf:v=>`+${PC(v)} shards, chips and alloy`,fx:(F,v)=>F.drop+=v},
- {k:'vault',s:'gen',n:'Vault',st:'cashBonus',per:.03,mul:1,sp:[.01,.02,.03,.05],sf:v=>`each wave, earn ${PC(v)} of your cash as interest (up to 5× the wave bonus)`,fx:(F,v)=>F.interest+=v},
+ {k:'vault',s:'gen',n:'Vault',st:'cashBonus',per:.03,mul:1,sp:[.01,.02,.03,.05],sf:v=>`each wave, also earn ${PC(v)} of the cash you're holding (up to 5× your cash interest payout)`,fx:(F,v)=>F.interest+=v},
 ];
 const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.map(m=>[m.k,m]));
