@@ -1,10 +1,11 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.15.7';
+const APP_VERSION='1.15.8';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
-  step:1/60, waveLen:20, arenaR:320, spawnR:335, spawnRatio:1.35, viewRatio:1.12, fadeIn:.5, offscreen:25,  // offscreen: how far past the screen edge enemies spawn (m)
+  step:1/60, waveLen:20, arenaR:320, spawnR:335, spawnRatio:1.35, viewRatio:[1.15,1.5,510], fadeIn:.5,  // viewRatio: the view fits range × this, growing from [0] at the base range to [1] at [2] m so there's room to see enemies walk in
+  offscreen:25,  // offscreen: how far past the screen edge enemies spawn (m)
    // spawn ring 35% beyond your range; the view fits range ×1.12 so enemies walk in from off-screen; new enemies fade in (game s)
   towerR:14, bulletSpd:420, ebSpd:120,
   tierUnlockWave:25,                       // reach this wave to unlock the next tier

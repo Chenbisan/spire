@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.15.8 — 2026-11-20
+- **More room to see enemies coming:** the arena zooms out further as your range grows. The space around your range ring goes from 15% at the start to 50% by 510 m of range, so you can watch enemies walk in from the top and bottom too.
+
 ## 1.15.7 — 2026-11-20
 - **Enemies spawn off-screen:** each enemy starts just past the edge of your screen in its direction (or 35% beyond your range, whichever is farther), so on wide screens the ones coming from the sides start a little farther out instead of appearing in view. They still fade in.
 
