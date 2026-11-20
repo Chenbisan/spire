@@ -30,7 +30,7 @@ function hud(){
   else{TX('hpTxt','–')}
   const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
   if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame\n${enemies.length} enemies  ·  ${bullets.length} shots  ·  ${ebs.length} enemy shots`;
-  refreshPanel();if(typeof updRunNote==='function')updRunNote();
+  refreshPanel();refreshUltBar();if(typeof updRunNote==='function')updRunNote();
 }
 let ovTier=save.tierMax;
 const shardsOn=()=>save.tierMax>=2||save.shards>0;
@@ -61,7 +61,7 @@ $('ovCard').addEventListener('click',e=>{
   else if(t.id==='toWs'){ui.tab=save.set.tab='Workshop';buildPanel()}
   else if(t.id==='toHist'){hTab='runs';openModal('history')}
 });
-const TABS=['Upgrades','Workshop','Lab','Equipment','Modules'];   // Ultimates go here later
+const TABS=['Upgrades','Workshop','Lab','Equipment','Ultimates','Modules'];
 const ui={tab:TABS.includes(save.set.tab)?save.set.tab:'Upgrades',mult:[1,10,'Max'].includes(save.set.mult)?save.set.mult:1};let rows=[];
 const GROUPS=['Attack','Defense','Utility'];
 function buildTabs(){$('tabs').innerHTML=TABS.map(t=>`<button data-tab="${t}" class="${t===ui.tab?'on':''}">${t}</button>`).join('')}
@@ -79,7 +79,7 @@ function plan(s,ws){
 function buildPanel(){
   buildTabs();const P=$('panel');
   labRows=[];
-  if(ui.tab==='Equipment'||ui.tab==='Modules'){rows=[];loSig='';P.innerHTML='';return refreshLoadout()}
+  if(ui.tab==='Equipment'||ui.tab==='Ultimates'||ui.tab==='Modules'){rows=[];loSig='';P.innerHTML='';return refreshLoadout()}
   if(ui.tab==='Lab'){rows=[];
     P.innerHTML=`<p class="note">Research is paid in <b class="shard">shards</b>, earned at the end of every run on tier 2 and up: the more enemies you kill, the more you get, and higher tiers multiply it. It applies instantly and lasts forever. No timers.</p>`+(shardsOn()?'':`<p class="note"><b>Locked:</b> reach wave ${CFG.tierUnlockWave} on tier 1 to unlock tier 2 and start finding shards.</p>`)+LAB.map(l=>`<div class="row"><div><b>${l.n}</b><span class="v"></span><span class="note" style="display:block;margin:2px 0 0">${l.d}</span></div><button class="buy shard" data-lab="${l.k}"></button></div>`).join('');
     labRows=[...P.querySelectorAll('[data-lab]')].map(b=>({l:LK[b.dataset.lab],b,v:b.parentNode.querySelector('.v')}));
@@ -170,7 +170,7 @@ function statsHtml(){const S=save.stats,H=save.hist.slice(0,10),recent=H.length?
   <div class="gh">Earnings</div>
   ${L('Coins earned (runs)',fmt(S.coins),'coin')}${L('Coins earned offline',fmt(S.offCoins),'coin')}${L(`Recent coins per hour (last ${H.length===1?'run':(H.length||10)+' runs'})`,fmt(recent),'coin')}${L('Best coins per hour (offline rate)',fmt(save.bestCph),'coin')}${L('Cash earned',fmt(S.cash),'cash')}${L('Shards earned',fmt(S.shards),'shard')}${L('Shards earned offline',fmt(S.offShards),'shard')}${L('Best shards per hour',fmt(save.bestSph),'shard')}${L('Chips earned',fmt(S.chips),'chip')}${L('Alloy earned',fmt(S.alloy),'alloy')}
   <div class="gh">Combat</div>
-  ${L('Damage dealt',fmt(S.dmg))}${L('Thorns damage',fmt(S.thorn))}${L('Damage taken',fmt(S.taken))}${L('Enemies destroyed',fmt(save.kills))}${L('Elites destroyed',fmt(S.elite))}${L('Bosses destroyed',fmt(S.boss))}${L('Shots fired',fmt(S.shots))}${L('Multishot volleys',fmt(S.multi))}${L('Shot bounces',fmt(S.bounces))}${L('Damage absorbed by barrier',fmt(S.absorbed))}${L('Super crits',fmt(S.supers))}${L('Knockbacks',fmt(S.kbs))}${L('Deaths defied',fmt(S.defies))}${L('Second Winds',fmt(S.winds||0))}${L('Health from lifesteal',fmt(S.stolen))}${L('Critical hits',fmt(S.crits)+(S.shots?` (${pct(S.crits/S.shots)})`:''))}${L('Hits blocked by shields',fmt(S.blocked))}
+  ${L('Damage dealt',fmt(S.dmg))}${L('Thorns damage',fmt(S.thorn))}${L('Damage taken',fmt(S.taken))}${L('Enemies destroyed',fmt(save.kills))}${L('Elites destroyed',fmt(S.elite))}${L('Bosses destroyed',fmt(S.boss))}${L('Shots fired',fmt(S.shots))}${L('Multishot volleys',fmt(S.multi))}${L('Shot bounces',fmt(S.bounces))}${L('Damage absorbed by barrier',fmt(S.absorbed))}${L('Super crits',fmt(S.supers))}${L('Knockbacks',fmt(S.kbs))}${L('Deaths defied',fmt(S.defies))}${L('Second Winds',fmt(S.winds||0))}${L('Ultimates fired',fmt(S.ultUses))}${L('Health from lifesteal',fmt(S.stolen))}${L('Critical hits',fmt(S.crits)+(S.shots?` (${pct(S.crits/S.shots)})`:''))}${L('Hits blocked by shields',fmt(S.blocked))}
   <div class="gh">Upgrades</div>
   ${L('In-run upgrades bought',fmt(S.ups))}${L('Free upgrades',fmt(S.freeUps))}${L('Workshop upgrades',fmt(S.wsUps))}${L('Workshop coins spent',fmt(S.wsCoins),'coin')}${L('Research completed',fmt(S.lab))}${L('Lab shards spent',fmt(S.labShards),'shard')}${L('Equipment owned',CARDS.filter(c=>cardLv(c.k)).length+' / '+CARDS.length)}${L('Chips spent',fmt(S.chipsSpent||0),'chip')}${L('Modules owned',MODS.filter(m=>modLv(m.k)).length+' / '+MODS.length)}${L('Alloy spent',fmt(S.alloySpent||0),'alloy')}
   <div class="gh">By tier</div>
@@ -252,6 +252,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
     const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';
     return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join('')}
   <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; ranged enemies stop at ${ET.ranged.stop} m. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so they have to walk in; the arena zooms with your range. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
+  <h3>Ultimate weapons</h3><p>Bought and upgraded with chips in the Ultimates tab. Every one you own is active: ${ULTS.map(u=>`<b>${u.n}</b> (${u.d.charAt(0).toLowerCase()+u.d.slice(1,-1)})`).join('; ')}. Each fires on its own cooldown when there's an enemy in range, or set one to Manual and fire it with its button under the arena.</p>
   <h3>Targeting</h3><p>By default the spire shoots the closest enemy in range. Under Settings → Targeting you can switch to Priority and rank the enemy types; the spire then shoots the highest-ranked type in range first (closest first within a type).</p>
   <h3>Shot effects</h3><p>At high game speeds, individual shots are too fast to follow, so from ${CFG.cleanFxAt}× up the arena switches to clean effects: a short steady line off each enemy it's shooting at, pointing back at the spire, enemies lighting up when hit, and only crit damage numbers. Change this under Settings → Shot effects.</p>
   <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}

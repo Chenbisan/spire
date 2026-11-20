@@ -31,6 +31,9 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .chips b{display:inline-block;min-width:4.6ch}#hTier{min-width:1.6ch}#hWave{min-width:3.4ch}.echip b{display:inline-block;min-width:4.8ch}.hpt{min-width:20ch;text-align:right}
 .row2{flex:1 1 100%;display:flex;align-items:center;gap:8px 16px}.row2 .hp{max-width:none}
 .prio{display:grid;gap:4px;margin:0 0 10px}.prow{display:grid;grid-template-columns:28px 1fr 40px 40px;gap:6px;align-items:center;padding:2px 4px;border:1px solid var(--line);border-radius:8px}.prow svg{width:24px;height:24px}.prow button{min-height:32px;padding:0}
+.utr{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:6px;align-items:center;padding:5px 0;border-top:1px solid var(--line)}.utr .v{display:block;font:500 12px 'Chakra Petch',sans-serif;color:var(--mute)}.utr button{min-height:32px}
+.armory.ults{grid-template-columns:1fr}.ults .item{gap:4px}
+.ultbar{display:flex;gap:4px}.ultb{display:flex;align-items:center;gap:4px;padding:0 8px;border-color:var(--c)}.ultb svg{width:20px;height:20px}.ultb span{font:500 12px 'Chakra Petch',sans-serif;min-width:3.2ch}.ultb.ready{background:color-mix(in srgb,var(--c) 22%,var(--panel));box-shadow:0 0 10px color-mix(in srgb,var(--c) 45%,transparent)}
 .eqslots{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:6px}
 .eqslot{display:grid;justify-items:center;align-content:center;gap:3px;min-height:104px;padding:8px 6px;border-radius:12px;text-align:center;font-size:13px;line-height:1.2}
 .eqslot.on{color:var(--ink);border:2px solid var(--c);background:color-mix(in srgb,var(--c) 12%,var(--arena));box-shadow:0 0 14px color-mix(in srgb,var(--c) 35%,transparent)}
@@ -86,8 +89,8 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .ctrl .sp{display:flex;gap:4px}.ctrl .sp button{min-width:44px;padding:0 8px}
 .ctrl .grow{flex:1}
 .side{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
-.tabs{display:flex;gap:4px;padding:10px;border-bottom:1px solid var(--line)}
-.tabs button{flex:1 1 auto;padding:0 4px;font-size:14px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:10px;border-bottom:1px solid var(--line)}
+.tabs button{padding:0 4px;font-size:14px;min-height:36px}
 .body{padding:10px;overflow-y:auto;flex:1}
 .mults{display:flex;gap:4px;margin-bottom:8px}.mults button{flex:1}
 .note{color:var(--mute);font-size:13px;margin:4px 2px 10px}

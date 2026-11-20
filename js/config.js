@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.18.0';
+const APP_VERSION='1.19.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -123,3 +123,23 @@ const MODS=[
  {k:'vault',s:'gen',n:'Vault',st:'cashBonus',per:.03,mul:1,sp:[.01,.02,.03,.05],sf:v=>`each wave, also earn ${PC(v)} of the cash you're holding (up to 5× your cash interest payout)`,fx:(F,v)=>F.interest+=v},
 ];
 const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.map(m=>[m.k,m]));
+// ================= Ultimate weapons =================
+// Bought and upgraded with chips (shared with Equipment). Every owned ultimate is active; each fires on its cooldown,
+// automatically or (per ultimate) when you tap its button. t: upgrade tracks, value = base + per × level (clamped to min/max).
+const ULT={unlock:50, cost:l=>Math.ceil(10*1.35**l), max:10, chainJump:80, pull:70};
+const S1=v=>(+v.toFixed(1))+' s';
+const ULTS=[
+ {k:'chain',n:'Chain Lightning',col:'barrier',d:'A bolt strikes an enemy in range and arcs on to nearby enemies.',
+  icon:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  t:[{k:'dmg',n:'Damage',base:5,per:2,f:v=>`×${v} spire damage`},{k:'jumps',n:'Jumps',base:3,per:1,f:v=>`${v} enemies`},{k:'cd',n:'Cooldown',base:12,per:-.8,min:4,f:S1}]},
+ {k:'frost',n:'Frost Field',col:'alloy',d:'While active, every enemy inside your range is slowed.',
+  icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
+  t:[{k:'slow',n:'Slow',base:.2,per:.04,max:.6,f:v=>PC(v)},{k:'dur',n:'Duration',base:5,per:1,f:S1},{k:'cd',n:'Cooldown',base:20,per:-1.2,min:8,f:S1}]},
+ {k:'shock',n:'Shockwave',col:'gold',d:'A blast shoves every enemy in range outward (heavier ones move less) and stuns them.',
+  icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
+  t:[{k:'force',n:'Force',base:40,per:8,f:v=>v+' m'},{k:'stun',n:'Stun',base:1,per:.25,f:S1},{k:'cd',n:'Cooldown',base:18,per:-1,min:8,f:S1}]},
+ {k:'grav',n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it.',
+  icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',
+  t:[{k:'radius',n:'Radius',base:50,per:6,f:v=>v+' m'},{k:'dur',n:'Duration',base:3,per:.4,f:S1},{k:'cd',n:'Cooldown',base:22,per:-1.2,min:9,f:S1}]},
+];
+const UK=Object.fromEntries(ULTS.map(u=>[u.k,u]));

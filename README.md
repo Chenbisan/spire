@@ -33,6 +33,7 @@ python -m http.server 8000
 - Both are bought directly (no random draws) and can be swapped mid-run.
 - **Tiers:** reaching wave 25 unlocks the next tier, which has tougher enemies and more coins.
 - **Records:** the clock button (top right) has a Lifetime stats sheet (earnings, combat, upgrades, per-tier bests) and a Battle history that lists your last 30 runs: tier, wave, coins, coins per hour, shards, kills and run time, with best waves and runs you ended early marked.
+- **Ultimate weapons** (Ultimates tab, paid in chips): Chain Lightning, Frost Field, Shockwave and Gravity Well. All owned ones are active, each auto-fires on its cooldown or can be set to Manual (fire button under the arena).
 - **Targeting:** Settings → Targeting picks Closest (default) or a custom priority order of enemy types.
 - **Auto-restart:** a run that ends restarts after a short countdown, which you can change or turn off in Settings.
 - **Offline earnings:** your best coins-per-game-hour (from runs of at least 2 game-minutes) is paid out while you're away, as if the game ran at your fastest unlocked speed (8×, up to 24× with Overdrive). The Lab's Offline speed multiplies it and Offline duration sets the cap. Shards are paid offline the same way, from your best shards per game-hour.
@@ -81,6 +82,7 @@ All balance numbers are in `js/config.js`:
 | `js/sim.js` | Run state, stats, fixed-step `update()`, auto-buyer |
 | `js/render.js` | Canvas drawing |
 | `js/loadout.js` | Equipment and Modules: combined effects, the two tabs, buying and equipping |
+| `js/ults.js` | Ultimate weapons: behaviour, effects, the Ultimates tab and manual fire buttons |
 | `js/update.js` | "New version available" banner and refresh |
 | `js/ui.js` | HUD, overlays, upgrade panel, Settings and Help windows, controls, auto-restart |
 | `js/main.js` | Main loop and boot (loaded last) |
@@ -115,6 +117,5 @@ The save format has its own number (`v` in the save, `spire-save-v1` key), which
 
 ## Ideas / next up
 
-- Ultimate weapons (chain lightning, slow field / Frost Field): new tab
 - More equipment (each adding a new mechanic)
 - More Lab research

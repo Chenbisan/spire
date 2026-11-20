@@ -36,7 +36,7 @@ function newRun(tier){
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
   enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;
   run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
-  recalc();run.hp=run.s.health;run.bar=run.barMax;run.cash=run.s.startCash;
+  recalc();run.hp=run.s.health;run.bar=run.barMax;ultInit();run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
@@ -49,7 +49,7 @@ function spawn(t,x,y){
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
-  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;
+  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;
   enemies.push(e);
 }
 function nextWave(){
@@ -129,8 +129,9 @@ function update(dt){
     const e=enemies[i];
     if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e);continue}
     e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
-    let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;
-    if(dist>stop){const m=Math.min(sp*dt,dist-stop);e.x-=e.x/dist*m;e.y-=e.y/dist*m}
+    let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;if(R.frostSlow&&dist<=s.range)sp*=1-R.frostSlow;
+    if(e.stunT>0)e.stunT-=dt; // stunned: no moving, no attacking
+    else if(dist>stop){const m=Math.min(sp*dt,dist-stop);e.x-=e.x/dist*m;e.y-=e.y/dist*m}
     else{e.atk+=dt;
       if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg;ebs.push(b)}}
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg,e);if(R.over)return}}
@@ -139,6 +140,7 @@ function update(dt){
     if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}
   }
   separate();
+  ultTick(dt,tgt);if(R.over)return;
   const fi=1/s.aspd;R.fireT+=dt;
   if(!tgt)R.fireT=Math.min(R.fireT,fi);
   else while(R.fireT>=fi){R.fireT-=fi;fire(tgt);

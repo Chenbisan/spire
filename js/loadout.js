@@ -47,9 +47,9 @@ function modsHtml(){
 }
 // affordability changes as chips/alloy drop mid-run; rebuild the tab when it does
 let loSig='';
-function refreshLoadout(){if(ui.tab!=='Equipment'&&ui.tab!=='Modules')return;const P=$('panel');
-  const sig=ui.tab+'|'+save.cardEq.join()+'|'+[CARD.buy,...CARD.up,...CARD.slotCost].filter(c=>save.chips>=c).length+'|'+MODS.map(m=>{const l=modLv(m.k);return save.alloy>=(l?modCost(l):MOD.buy)?1:0}).join('');
-  if(sig===loSig)return;loSig=sig;const y=P.scrollTop;P.innerHTML=ui.tab==='Equipment'?cardsHtml():modsHtml();P.scrollTop=y}
+function refreshLoadout(){if(ui.tab!=='Equipment'&&ui.tab!=='Ultimates'&&ui.tab!=='Modules')return;const P=$('panel');
+  const sig=ui.tab+'|'+save.cardEq.join()+'|'+(ui.tab==='Ultimates'?JSON.stringify(save.ults)+JSON.stringify(save.set.ultMan)+Math.floor(save.chips):'')+'|'+[CARD.buy,...CARD.up,...CARD.slotCost].filter(c=>save.chips>=c).length+'|'+MODS.map(m=>{const l=modLv(m.k);return save.alloy>=(l?modCost(l):MOD.buy)?1:0}).join('');
+  if(sig===loSig)return;loSig=sig;const y=P.scrollTop;P.innerHTML=ui.tab==='Equipment'?cardsHtml():ui.tab==='Ultimates'?ultsHtml():modsHtml();P.scrollTop=y}
 function loadoutChanged(){persist();if(run&&!run.over)recalc();loSig='';refreshLoadout()}
 $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const d=b.dataset;
   if(d.cbuy){const k=d.cbuy,l=cardLv(k),c=l?CARD.up[l-1]:CARD.buy;if(l>=5||save.chips<c)return;save.chips-=c;save.stats.chipsSpent=(save.stats.chipsSpent||0)+c;save.cards[k]=l+1;

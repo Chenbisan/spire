@@ -1,5 +1,13 @@
 # What's new in Spire
 
+## 1.19.0 — 2026-11-20
+- **⚡ Ultimate weapons,** in a new Ultimates tab, unlocked and upgraded with chips (shared with Equipment):
+  - **Chain Lightning:** a bolt strikes an enemy in range and arcs on to nearby enemies. Upgrade damage, jumps and cooldown.
+  - **Frost Field:** for a few seconds, every enemy inside your range is slowed. Upgrade slow, duration and cooldown.
+  - **Shockwave:** shoves every enemy in range outward (heavier ones move less) and stuns them. Upgrade force, stun and cooldown.
+  - **Gravity Well:** opens on the biggest cluster of enemies in range and pulls everything nearby into it. Upgrade radius, duration and cooldown.
+- Every ultimate you own is active. Each fires automatically on its cooldown, or switch one to **Manual** and fire it with its button under the arena.
+
 ## 1.18.0 — 2026-11-20
 - **Second Wind reworked:** once per run, a killing blow is cancelled and the spire becomes **invincible** for 60 s of game time (75 / 90 / 105 / 120 s at 2–5 stars). Nothing can damage it meanwhile; regen and thorns keep working. A pulsing shield and countdown show on the spire and next to your health. Death defy is still tried first, so it doesn't waste your Second Wind.
 

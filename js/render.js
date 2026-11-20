@@ -77,6 +77,7 @@ function draw(){
     if(R.barMax>0){const f=Math.max(0,R.bar/R.barMax);ctx.strokeStyle=C.barrier;ctx.lineWidth=3;
       ctx.globalAlpha=.2;ctx.beginPath();ctx.arc(0,0,tr+7,0,6.283);ctx.stroke();
       ctx.globalAlpha=.35+.65*f;ctx.beginPath();ctx.arc(0,0,tr+7,-Math.PI/2,-Math.PI/2+6.283*f);ctx.stroke();ctx.globalAlpha=1}
+    drawUlts(sc,W);
     // Second Wind: pulsing shield and countdown while invincible
     if(R.invT>0){const dpr=W/(stage.clientWidth||W),pz=.5+.5*Math.sin(performance.now()/160);ctx.strokeStyle=C.ink;ctx.lineWidth=3*dpr/sc;
       ctx.globalAlpha=.35+.35*pz;ctx.beginPath();ctx.arc(0,0,tr+12*dpr/sc,0,6.283);ctx.stroke();ctx.globalAlpha=.9;ctx.fillStyle=C.ink;
