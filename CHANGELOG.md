@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.15.0 — 2026-11-20
+- **Shards are earned offline too,** at your best shards per game-hour (from tier 2+ runs of at least 2 game-minutes), with the same speed and Lab bonuses as offline coins. The welcome-back screen, Workshop, start screen and Lifetime stats show the shard rate.
+
 ## 1.14.0 — 2026-11-20
 - **New coin drops:** Basic 2, Fast / Ranged / Tank 3, elites 5, bosses 10 (before the wave, tier and coin-bonus multipliers).
 - **The tier coin multiplier is front and centre:** it grows ×2.2 per tier (×4.84 on tier 3, ×10.6 on tier 4…) and now shows on the tier buttons, the start screen and the enemy panel, so it's clear higher tiers are worth farming.
