@@ -1,5 +1,23 @@
 # What's new in Spire
 
+## 1.21.0 — 2026-11-20
+- **🔴 New ultimate, Laser:** charges up, then fires a beam toward your target that burns every enemy along it. Upgrade damage, width, duration and charge time.
+- **Every ultimate now has 4 upgrades** and three statuses, each with a bonus: **Silver** for maxing the 2 starred upgrades (for Frost Field, Gravity Well and Laser that's duration and cooldown, which makes them always on), **Gold** for any 3, **Platinum** for all 4.
+  - **Chain Lightning now triggers off your shots:** each hit has a chance to spark a bolt, and every enemy it strikes has the same chance to split it into several weaker bolts that jump to nearby enemies, branching like real lightning. Upgrades: proc chance, bounce targets (branches per split), bounce multiplier (damage kept per bounce) and damage. Silver, bolts can crit · Gold, strikes twice · Platinum, bolts slow what they hit.
+  - Frost Field (+ Radius): Silver, always on and +20% damage taken inside · Gold, +20% slow · Platinum, enemy shots entering the field are destroyed.
+  - Shockwave (+ Radius): Silver, stunned enemies take +25% damage · Gold, the blast deals 20× spire damage · Platinum, an aftershock repeats it 1 s later.
+  - Gravity Well (+ Pull): Silver, always on and +20% damage taken inside · Gold, 2× spire damage per second inside · Platinum, enemies inside can't move or attack.
+  - Laser: Silver, always firing and ignores shields · Gold, +50% damage · Platinum, a second beam fires the opposite way.
+- Fixed: Frost Field and Gravity Well were drawn in the wrong colours.
+
+## 1.20.0 — 2026-11-20
+- **Ultimates grow into permanent weapons:** upgrades now go further but get exponentially pricier (×1.6 chips per level), so maxing them means pushing higher tiers for chips. Frost Field and Gravity Well start at 10 s active every 300 s and can be upgraded to 60 s every 60 s.
+- **Silver and Gold status:** Silver makes Frost Field and Gravity Well **always on** (the well hops to the biggest cluster every 5 s), and comes from the fastest cooldown for Chain Lightning and Shockwave. Gold means every upgrade is maxed. Each status adds a bonus:
+  - Chain Lightning: Silver, bolts can crit and super crit · Gold, strikes twice.
+  - Frost Field: Silver, enemies in the field take +20% damage · Gold, slow +20% (up to 80%).
+  - Shockwave: Silver, stunned enemies take +25% damage · Gold, the blast deals 20× spire damage.
+  - Gravity Well: Silver, enemies in the well take +20% damage · Gold, the well deals 2× spire damage per second inside.
+
 ## 1.19.0 — 2026-11-20
 - **⚡ Ultimate weapons,** in a new Ultimates tab, unlocked and upgraded with chips (shared with Equipment):
   - **Chain Lightning:** a bolt strikes an enemy in range and arcs on to nearby enemies. Upgrade damage, jumps and cooldown.

@@ -2,7 +2,7 @@
 // ================= render =================
 const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
 let C={},A=1;const IX=o=>o.px+(o.x-o.px)*A,IY=o=>o.py+(o.y-o.py)*A;
-function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','barrier']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}}
+function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','barrier','alloy','shard']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}}
 readColors();
 new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
