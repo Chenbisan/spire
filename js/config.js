@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.17.2';
+const APP_VERSION='1.18.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -103,7 +103,7 @@ const DROPS={chips:(w,t)=>2*(1+w/20)*1.4**(t-1), alloy:(w,t)=>(1+w/50)*1.4**(t-1
 const CARD={buy:10, up:[10,20,40,80], slots0:2, slotCost:[40,120,300]}; // up[i]: star i+1 → i+2; slotCost: 3rd, 4th, 5th slot
 const CARDS=[
  {k:'wind',n:'Second Wind',col:'acc',icon:'<path d="M12 20s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.4C19 15.6 12 20 12 20z"/><path d="M8 12.5h2.2l1.2-2.5 1.6 4.5 1.2-2h1.8"/>',
-  v:[.2,.3,.4,.5,.6],f:v=>`once per run, survive a killing blow with ${PC(v)} health`,fx:(F,v)=>F.revive=Math.max(F.revive,v)},
+  v:[60,75,90,105,120],f:v=>`once per run, a killing blow is cancelled and the spire is invincible for ${v} s`,fx:(F,v)=>F.revive=Math.max(F.revive,v)}, // v: invincible game seconds
  {k:'rush',n:'Wave Rush',col:'gold',icon:'<path d="M3 6l7 6-7 6z"/><path d="M12 6l7 6-7 6z"/><path d="M21 5v14"/>',
   v:[.05,.1,.15,.2,.25],f:v=>`waves are ${PC(v)} shorter`,fx:(F,v)=>F.rush=Math.max(F.rush,v)},
 ];

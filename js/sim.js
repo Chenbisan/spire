@@ -79,11 +79,13 @@ function damage(e,v,crit,thorn){
   return a;
 }
 function hitTower(v,att){
-  const R=run;let t=v*(1-R.s.defense);
+  const R=run;
+  if(R.invT>0){if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);return} // Second Wind: invincible
+  let t=v*(1-R.s.defense);
   if(R.bar>0){const a=Math.min(R.bar,t);R.bar-=a;t-=a;save.stats.absorbed+=a}
   R.hp-=t;save.stats.taken+=t;
   if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.taken-=t;save.stats.defies++;R.defies=(R.defies||0)+1;R.defyAt=performance.now()} // render-only: gold burst + DEFIED
-  if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=R.s.health*R.fx.revive;toast('Second Wind!')}
+  if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=Math.max(1,R.hp+t);save.stats.taken-=t;R.invT=R.fx.revive;save.stats.winds=(save.stats.winds||0)+1;toast(`Second Wind! Invincible for ${R.fx.revive} s`)}
   if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);
   if(R.hp<=0)gameOver();
 }
@@ -119,6 +121,7 @@ function update(dt){
   while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
   if(R.waveT>=R.waveLen)nextWave();
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
+  if(R.invT>0)R.invT=Math.max(0,R.invT-dt);
   if(R.barMax>0)R.bar=Math.min(R.barMax,R.bar+R.barMax*s.barrierRegen*dt);
   // targeting: Closest, or by your type priority (then closest within a type)
   const pr=targetRank();let tgt=null,td=Infinity,tp=Infinity;

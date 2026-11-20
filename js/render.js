@@ -77,6 +77,10 @@ function draw(){
     if(R.barMax>0){const f=Math.max(0,R.bar/R.barMax);ctx.strokeStyle=C.barrier;ctx.lineWidth=3;
       ctx.globalAlpha=.2;ctx.beginPath();ctx.arc(0,0,tr+7,0,6.283);ctx.stroke();
       ctx.globalAlpha=.35+.65*f;ctx.beginPath();ctx.arc(0,0,tr+7,-Math.PI/2,-Math.PI/2+6.283*f);ctx.stroke();ctx.globalAlpha=1}
+    // Second Wind: pulsing shield and countdown while invincible
+    if(R.invT>0){const dpr=W/(stage.clientWidth||W),pz=.5+.5*Math.sin(performance.now()/160);ctx.strokeStyle=C.ink;ctx.lineWidth=3*dpr/sc;
+      ctx.globalAlpha=.35+.35*pz;ctx.beginPath();ctx.arc(0,0,tr+12*dpr/sc,0,6.283);ctx.stroke();ctx.globalAlpha=.9;ctx.fillStyle=C.ink;
+      ctx.font=`600 ${12*dpr/sc}px 'Chakra Petch',sans-serif`;ctx.textAlign='center';ctx.fillText(`INVINCIBLE ${Math.ceil(R.invT)}s`,0,tr+30*dpr/sc);ctx.globalAlpha=1}
     // death defied: gold shockwave, gold spire, big DEFIED (real time, any speed)
     {const k=(performance.now()-(R.defyAt||-1e9))/CFG.defyFx;if(k<1){const dpr=W/(stage.clientWidth||W);ctx.strokeStyle=C.gold;ctx.fillStyle=C.gold;
       ctx.globalAlpha=(1-k)*.9;ctx.lineWidth=4*dpr/sc;ctx.beginPath();ctx.arc(0,0,tr+8+k*viewR*.35,0,6.283);ctx.stroke();

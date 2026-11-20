@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.18.0 — 2026-11-20
+- **Second Wind reworked:** once per run, a killing blow is cancelled and the spire becomes **invincible** for 60 s of game time (75 / 90 / 105 / 120 s at 2–5 stars). Nothing can damage it meanwhile; regen and thorns keep working. A pulsing shield and countdown show on the spire and next to your health. Death defy is still tried first, so it doesn't waste your Second Wind.
+
 ## 1.17.2 — 2026-11-20
 - **Death defied is hard to miss:** a gold shockwave bursts from the spire, the spire flashes gold, a big DEFIED rises above it and the health bar flashes gold. It shows at any game speed, even with damage numbers off.
 
