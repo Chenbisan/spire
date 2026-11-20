@@ -9,6 +9,7 @@ function frame(now){
     if(n>=max)acc=Math.min(acc,CFG.step);simMs=simMs*.9+(performance.now()-t0)*.1;
   }
   A=(run&&!run.over&&!paused)?Math.min(1,acc/CFG.step):1;
+  for(let i=tracers.length-1;i>=0;i--){const t=tracers[i];t.l-=dt;if(t.l<=0){tracers[i]=tracers[tracers.length-1];tracers.pop()}}
   draw();bars();frames++;fpsT+=dt;hudT+=dt;
   if(fpsT>=.5){fps=Math.round(frames/fpsT);frames=0;fpsT=0}
   if(hudT>=.1){hudT=0;autoBuy();hud()}

@@ -39,8 +39,9 @@ $('ovCard').addEventListener('click',e=>{
   else if(t.id==='stopAuto'){stopAuto();showOv('over')}
   else if(t.id==='toWs'){ui.tab='Workshop';buildPanel()}
 });
-const ui={tab:'Attack',mult:1};let rows=[];
-const TABS=['Attack','Defense','Utility','Workshop','Lab'];
+const ui={tab:'Upgrades',mult:1};let rows=[];
+const TABS=['Upgrades','Workshop','Lab'];   // Ultimates and Modules go here later
+const GROUPS=['Attack','Defense','Utility'];
 function buildTabs(){$('tabs').innerHTML=TABS.map(t=>`<button data-tab="${t}" class="${t===ui.tab?'on':''}">${t}</button>`).join('')}
 $('tabs').addEventListener('click',e=>{const t=e.target.closest('button');if(t){ui.tab=t.dataset.tab;buildPanel()}});
 function plan(s,ws){
@@ -64,8 +65,8 @@ function buildPanel(){
   let h=`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`;
   if(ws){h+='<p class="note">Permanent upgrades, paid in coins. They apply to every run, including the one in progress. Values shown are your starting values.</p>'+`<p class="note">Offline rate: <b class="coin">${fmt(save.bestCph*labVal('offSpd'))} coins/hour</b> (best run ${fmt(save.bestCph)}/h × lab ${labVal('offSpd').toFixed(2)}, up to ${labVal('offCap')}h). Runs under ${CFG.offlineMinRun/60} minutes of game time don't count. Rate is per game-hour, so game speed doesn't change it.</p>`;
     for(const g of['Attack','Defense','Utility'])h+=`<div class="gh">${g}</div>`+ST.filter(s=>s.g===g).map(rowHtml).join('')}
-  else{if(labLv('auto'))h+=`<label class="ab"><input type="checkbox" data-ab="${ui.tab}" ${save.set.ab[ui.tab]?'checked':''}> Auto-buy ${ui.tab.toLowerCase()} upgrades</label>`;
-    if(!run||run.over)h+='<p class="note">Start a run to buy in-run upgrades.</p>';h+=ST.filter(s=>s.g===ui.tab&&!s.ws).map(rowHtml).join('')}
+  else{h+=!run||run.over?'<p class="note">Start a run to buy in-run upgrades.</p>':'<p class="note">Paid in cash, which resets every run.</p>';
+    for(const g of GROUPS)h+=`<div class="gh ghx"><span>${g}</span>${labLv('auto')?`<label class="ab"><input type="checkbox" data-ab="${g}" ${save.set.ab[g]?'checked':''}> Auto-buy</label>`:''}</div>`+ST.filter(s=>s.g===g&&!s.ws).map(rowHtml).join('')}
   P.innerHTML=h;
   rows=[...P.querySelectorAll('.row')].map(r=>({s:SK[r.dataset.k],v:r.querySelector('.v'),b:r.querySelector('.buy')}));
   refreshPanel();
@@ -89,7 +90,7 @@ $('panel').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.mult){ui.mult=b.dataset.mult==='Max'?'Max':+b.dataset.mult;return buildPanel()}
   if(b.dataset.lab){const l=LK[b.dataset.lab],c=labCost(l);if(labLv(l.k)>=l.max||save.shards<c)return;save.shards-=c;save.lab[l.k]=labLv(l.k)+1;persist();
-    if(l.k==='speed')buildSpeeds();if(l.k==='auto')toast('Auto-buy toggles added to the upgrade tabs');refreshPanel();return}
+    if(l.k==='speed')buildSpeeds();if(l.k==='auto')toast('Auto-buy toggles added to the Upgrades tab');refreshPanel();return}
   if(b.dataset.k){const s=SK[b.dataset.k],ws=ui.tab==='Workshop',p=plan(s,ws);if(!p.ok)return;
     if(ws){save.coins-=p.cost;save.ws[s.k]=(save.ws[s.k]||0)+p.n;persist()}else{run.cash-=p.cost;run.lv[s.k]=(run.lv[s.k]||0)+p.n}
     recalc();refreshPanel();return}
@@ -143,7 +144,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li><b class="coin">Coins</b> come from kills and are kept forever. Spend them in the Workshop on permanent tower upgrades.</li>
   <li><b class="shard">Shards</b> only drop from enemies on tier 2 and up, and more on higher tiers. Spend them in the Lab.</li></ul>
   <h3>Upgrades</h3><ul>
-  <li><b>Attack</b>: damage, attack speed, crits and range. <b>Defense</b>: health, regen, damage reduction and thorns (hits back for part of the attacker's max health). <b>Utility</b>: more cash and coins.</li>
+  <li>The <b>Upgrades</b> tab has three sections. <b>Attack</b>: damage, attack speed, crits and range. <b>Defense</b>: health, regen, damage reduction and thorns (hits back for part of the attacker's max health). <b>Utility</b>: more cash and coins.</li>
   <li><b>Workshop</b> levels are your starting values in every run. In-run levels stack on top.</li>
   <li><b>Lab</b> research raises offline earnings, unlocks faster game speeds, discounts the Workshop and adds auto-buyers.</li>
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>

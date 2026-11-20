@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.3.0 — 2026-11-20
+- **Smoother shots at high speed:** shots now leave a short streak behind them instead of jumping, and a shot that lands within a single frame (common at 12× and up) shows a quick fading tracer, so you can always see your spire firing.
+- **One Upgrades tab:** Attack, Defense and Utility are now sections of a single Upgrades tab, laid out like the Workshop. The side panel has three tabs: Upgrades, Workshop and Lab.
+- Auto-buy toggles sit next to each section's heading.
+
 ## 1.2.0 — 2026-11-20
 - **Enemy ranks:** enemies are now Normal, Elite or Boss, and the ? help groups them that way.
 - **3 new Elite enemies,** a few per wave from wave 15:

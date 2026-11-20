@@ -63,7 +63,8 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .row .v{font:500 13px 'Chakra Petch',sans-serif;color:var(--mute);white-space:nowrap}
 .buy{font-family:'Chakra Petch',sans-serif;white-space:nowrap;text-align:right}
 .buy .q{color:var(--mute);font-size:12px;margin-right:6px}
-.ab{display:flex;gap:10px;align-items:center;min-height:40px;margin:0 2px 4px;font-weight:600}.ab input{width:20px;height:20px;accent-color:var(--acc)}
+.ab{display:flex;gap:8px;align-items:center;min-height:36px;margin:0;font:400 13px Inter,sans-serif;color:var(--ink);cursor:pointer}
+.ghx{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px}.ab input{width:20px;height:20px;accent-color:var(--acc)}
 .set label{display:flex;gap:10px;align-items:center;min-height:40px}
 .set input[type=checkbox]{width:20px;height:20px;accent-color:var(--acc)}
 textarea{width:100%;min-height:80px;font:12px/1.4 monospace;background:var(--arena);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}

@@ -1,4 +1,4 @@
-// Spire — canvas rendering. Reads simulation state, never changes it.
+// Spire — canvas rendering. Reads simulation state; only writes render-only fields (shot rx/ry = last drawn position).
 // ================= render =================
 const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
 let C={},A=1;const IX=o=>o.px+(o.x-o.px)*A,IY=o=>o.py+(o.y-o.py)*A;
@@ -13,6 +13,14 @@ function shape(e){
   ctx.moveTo(x+P[0][0]*c-P[0][1]*n,y+P[0][0]*n+P[0][1]*c);
   for(let i=1;i<P.length;i++)ctx.lineTo(x+P[i][0]*c-P[i][1]*n,y+P[i][0]*n+P[i][1]*c);
   ctx.closePath();
+}
+function shots(list,col,h){
+  if(!list.length)return;
+  ctx.strokeStyle=col;ctx.globalAlpha=.45;ctx.lineWidth=h;ctx.lineCap='round';ctx.beginPath();
+  for(const b of list){const x=IX(b),y=IY(b);let x0=b.rx,y0=b.ry;const dx=x-x0,dy=y-y0,L=Math.hypot(dx,dy);
+    if(L>CFG.streakMax){x0=x-dx/L*CFG.streakMax;y0=y-dy/L*CFG.streakMax}if(L>.5){ctx.moveTo(x0,y0);ctx.lineTo(x,y)}}
+  ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
+  ctx.fillStyle=col;ctx.beginPath();for(const b of list){const x=IX(b),y=IY(b);ctx.rect(x-h,y-h,h*2,h*2);b.rx=x;b.ry=y}ctx.fill();
 }
 function draw(){
   const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
@@ -34,8 +42,13 @@ function draw(){
       if(any){const col=C[ET[t].c];ctx.fillStyle=col;ctx.globalAlpha=.3;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.stroke()}}
     ctx.fillStyle=C.hot;
     for(const e of enemies)if(e.d.bar&&!e.dead&&e.hp<e.mhp){const s=e.d.sz;ctx.fillRect(IX(e)-s,IY(e)-s-6,2*s*Math.max(0,e.hp/e.mhp),3)}
-    ctx.fillStyle=C.acc;ctx.beginPath();for(const b of bullets)ctx.rect(IX(b)-2,IY(b)-2,4,4);ctx.fill();
-    ctx.fillStyle=C.e4;ctx.beginPath();for(const b of ebs)ctx.rect(IX(b)-2.5,IY(b)-2.5,5,5);ctx.fill();
+    // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
+    shots(bullets,C.acc,2);shots(ebs,C.e4,2.5);
+    ctx.lineCap='round';
+    for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
+      let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}
+      ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1);ctx.stroke()}
+    ctx.globalAlpha=1;ctx.lineCap='butt';
     ctx.fillStyle=C.mute;ctx.beginPath();for(const p of parts){const z=3*p.l/.5;ctx.rect(IX(p)-z/2,IY(p)-z/2,z,z)}ctx.fill();
     // tower
     ctx.fillStyle=C.acc;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();

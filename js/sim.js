@@ -9,10 +9,13 @@ function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(con
 // ================= state =================
 let run=null,paused=false,GEN=0;
 const enemies=[],ePool=[],bullets=[],bPool=[],ebs=[],ebPool=[],dnums=[],parts=[];
+// tracers: visual-only streaks for shots that landed, so hits stay visible at high game speed (faded in real time)
+const tracers=[];
+function trace(x0,y0,x1,y1,k){if(tracers.length<CFG.maxTracers)tracers.push({x0,y0,x1,y1,k,l:CFG.tracerLife})}
 function newRun(tier){
   stopAuto();
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
-  enemies.length=bullets.length=ebs.length=dnums.length=parts.length=0;
+  enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;
   run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
   recalc();run.hp=run.s.health;run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
@@ -74,7 +77,7 @@ function update(dt){
     e.px=e.x;e.py=e.y;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
     if(dist>stop){const m=Math.min(d.spd*dt,dist-stop);e.x-=e.x/dist*m;e.y-=e.y/dist*m}
     else{e.atk+=dt;
-      if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=e.x;b.y=b.py=e.y;b.dmg=e.dmg;ebs.push(b)}}
+      if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg;ebs.push(b)}}
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg,e);if(R.over)return}}
     if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=1){e.ht=0;e.hf=.4;const r2=d.healR**2;
       for(const o of enemies)if(!o.dead&&o!==e&&(o.x-e.x)**2+(o.y-e.y)**2<=r2)o.hp=Math.min(o.mhp,o.hp+o.mhp*d.heal)}}
@@ -83,18 +86,18 @@ function update(dt){
   separate();
   const fi=1/s.aspd;R.fireT+=dt;
   if(!tgt)R.fireT=Math.min(R.fireT,fi);
-  else while(R.fireT>=fi){R.fireT-=fi;const b=bPool.pop()||{},c=Math.random()<s.crit;b.x=b.y=b.px=b.py=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1);b.l=2;bullets.push(b)}
+  else while(R.fireT>=fi){R.fireT-=fi;const b=bPool.pop()||{},c=Math.random()<s.crit;b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1);b.l=2;bullets.push(b)}
   const m=CFG.bulletSpd*dt;
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
-      if(dd<=m+e.d.sz){damage(e,b.dmg,b.c);drop=true}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
+      if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c?2:0);damage(e,b.dmg,b.c);drop=true}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
   }
   const em=CFG.ebSpd*dt;
   for(let i=ebs.length-1;i>=0;i--){const b=ebs[i],d=Math.hypot(b.x,b.y);b.px=b.x;b.py=b.y;
-    if(d<=tr+em){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);hitTower(b.dmg,null);if(R.over)return}
+    if(d<=tr+em){trace(b.rx,b.ry,b.x/d*tr,b.y/d*tr,1);ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);hitTower(b.dmg,null);if(R.over)return}
     else{b.x-=b.x/d*em;b.y-=b.y/d*em}}
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.px=p.x;p.py=p.y;p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;if(p.l<=0){parts[i]=parts[parts.length-1];parts.pop()}}
   for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}

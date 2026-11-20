@@ -23,7 +23,7 @@ python -m http.server 8000
   - *Normal:* Basic (grey square), Fast (yellow triangle), Ranged (purple diamond, stops outside base range and shoots), Tank (orange pentagon).
   - *Elite* (from wave 15): Shielded (blue octagon, shield blocks the first 3 hits), Healer (green cross, heals nearby enemies), Splitter (magenta star, splits into 3 Fast).
   - *Boss:* red hexagon, every 10th wave.
-- **Cash:** earned from kills and wave bonuses, spent on in-run upgrades (Attack / Defense / Utility). It resets every run.
+- **Cash:** earned from kills and wave bonuses, spent in the Upgrades tab (Attack / Defense / Utility sections). It resets every run.
 - **Coins:** earned from kills, permanent, spent in the Workshop (tower stats).
 - **Shards:** only drop from enemies on tier 2 and up (1.5× more per tier above that), permanent, spent in the Lab (meta upgrades).
 - **Tiers:** reaching wave 25 unlocks the next tier, which has tougher enemies and more coins.
@@ -40,7 +40,7 @@ Paid in shards.
 | Offline duration | 24 h → 72 h cap |
 | Overdrive | Unlocks 12×, 16×, 24× game speed |
 | Workshop discount | Up to −30% Workshop costs |
-| Auto-buyer | Per-tab auto-buy toggles (cheapest upgrade first) |
+| Auto-buyer | Auto-buy toggles per Upgrades section (cheapest upgrade first) |
 
 ### Controls
 
@@ -79,6 +79,7 @@ These are classic `<script>` files, not ES modules, so the game keeps working fr
 ## Tech notes
 
 - Plain HTML, CSS and JS using Canvas 2D, with no build step.
+- Shots are drawn as streaks from their last drawn position, and shots that land within one frame leave a short fading tracer, so they stay visible at 24× speed.
 - Fixed-timestep simulation (60 Hz) with render interpolation, so motion is smooth at any refresh rate and game speed adds simulation steps instead of skipping frames.
 - Object pooling for enemies and projectiles, and batched drawing per enemy type.
 - Saves to `localStorage` (`spire-save-v1`). Settings → Copy backup code exports a save, and Import restores it. Saves are tied to the site the game runs on, so use a backup code when moving between hosts.
@@ -101,6 +102,6 @@ The save format has its own number (`v` in the save, `spire-save-v1` key), which
 
 ## Ideas / next up
 
-- Ultimate abilities (chain lightning, slow field)
-- Cards/modules bought directly (no gacha)
+- Ultimate weapons (chain lightning, slow field): new tab next to Lab
+- Modules bought directly (no gacha): new tab
 - More Lab research
