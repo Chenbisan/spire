@@ -3,8 +3,8 @@
 const KEY='spire-save-v1';
 // lifetime counters for the Stats sheet; old saves get zeros and 'since' = the day they first load this version
 const freshStats=()=>({since:Date.now(),time:0,coins:0,offCoins:0,cash:0,shards:0,dmg:0,thorn:0,taken:0,shots:0,crits:0,blocked:0,
-  elite:0,boss:0,waves:0,ups:0,wsUps:0,wsCoins:0,lab:0,labShards:0,tiers:{}});
-const fresh=()=>({v:1,bestCph:0,lastSeen:0,coins:0,shards:0,hist:[],stats:freshStats(),ws:{},lab:{},tierMax:1,best:{},runs:0,kills:0,set:{dmgNums:true,perf:false,speed:1,auto:true,autoDelay:5,ab:{}}});
+  elite:0,boss:0,chips:0,alloy:0,waves:0,ups:0,wsUps:0,wsCoins:0,lab:0,labShards:0,tiers:{}});
+const fresh=()=>({v:1,bestCph:0,lastSeen:0,coins:0,shards:0,chips:0,alloy:0,cards:{},cardEq:[],cardSlots:3,mods:{},modEq:{},hist:[],stats:freshStats(),ws:{},lab:{},tierMax:1,best:{},runs:0,kills:0,set:{dmgNums:true,perf:false,speed:1,auto:true,autoDelay:5,ab:{}}});
 let save=fresh();
 const fromSaved=s=>Object.assign(fresh(),s,{set:Object.assign(fresh().set,s.set),stats:Object.assign(freshStats(),s.stats)});
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)save=fromSaved(s)}catch(e){}

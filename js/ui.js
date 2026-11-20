@@ -7,7 +7,7 @@ function startAuto(){stopAuto();if(!save.set.auto)return;autoLeft=save.set.autoD
 const hpBar=$('hpBar'),waveBar=$('waveBar');let lastHp=-1,lastWv=-1;
 function bars(){
   const hp=run?Math.max(0,Math.min(1,run.hp/run.s.health)):0;
-  const wv=run&&!run.over?Math.min(1,(run.waveT+(paused?0:A*CFG.step))/CFG.waveLen):0;
+  const wv=run&&!run.over?Math.min(1,(run.waveT+(paused?0:A*CFG.step))/run.waveLen):0;
   if(Math.abs(hp-lastHp)>1e-4){lastHp=hp;hpBar.style.transform=`scaleX(${hp})`}
   if(Math.abs(wv-lastWv)>1e-4){lastWv=wv;waveBar.style.transform=`scaleX(${wv})`}
 }
@@ -16,11 +16,12 @@ const TX=(id,t)=>{const e=$(id);t=String(t);if(e.textContent!==t)e.textContent=t
 function hud(){
   TX('hTier',run?run.tier:'–');TX('hWave',run?run.wave:'–');
   TX('hCash',run?fmt(run.cash):'0');TX('hCoins',fmt(save.coins));TX('hShards',fmt(save.shards));$('shardChip').hidden=!shardsOn();
+  TX('hChips',fmt(save.chips));$('chipChip').hidden=!(save.chips>0||save.stats.chips>0);TX('hAlloy',fmt(save.alloy));$('alloyChip').hidden=!(save.alloy>0||save.stats.alloy>0);
   {const w=run?run.wave:1,t=run?run.tier:ovTier,e=enemyStats('basic',w,t);
    TX('eHp',fmt(e.hp));TX('eAtk',fmt(e.atk));TX('eSpd',fmt(e.spd));TX('eWt',fmt(e.weight));
    if(modalKind==='enemies'){
      if(w!==eTabW||t!==eTabT)mBody.innerHTML=enemyHtml();
-     else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',Math.ceil(CFG.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
+     else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',Math.ceil(run.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
      else if(eTab==='spire'){const {live,v}=spireStats();if(JSON.stringify(v)+(live?Math.round(run.hp):'')!==eSig)mBody.innerHTML=enemyHtml()}}}
   if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`)}
   else{TX('hpTxt','–')}
@@ -36,21 +37,21 @@ function showOv(kind){
   ovTier=Math.min(ovTier,save.tierMax);
   if(kind==='start')c.innerHTML=`<h2>Hold the center</h2><p>Your spire fires automatically. Spend cash on upgrades during a run; coins carry over to the workshop. Reach wave ${CFG.tierUnlockWave} to unlock the next tier.</p>${tierPicker()}<button class="go" id="goBtn">Start run</button>`;
   else{const R=run,m=Math.floor(R.time/60),s=Math.floor(R.time%60);
-    c.innerHTML=`<h2>Fell on wave ${R.wave}</h2><p>Tier ${R.tier} · best ${save.best[R.tier]||0}</p><div class="grid2"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':''}</div><div><span>Offline rate</span>${fmt(save.bestCph)}/h${R.time<CFG.offlineMinRun?' (run too short to count)':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div><div><span>Cash earned</span>${fmt(R.cashEarned)}</div><div><span>Run time</span>${m}m ${s}s (game time)</div></div><button id="toHist" style="width:100%;margin-bottom:8px">Battle history</button><button id="toWs" style="width:100%;margin-bottom:8px">Open workshop (${fmt(save.coins)} coins)</button>${tierPicker()}<button class="go" id="goBtn">${autoTimer?`Run again · auto in <span id="autoTxt">${autoLeft}</span>s`:'Run again'}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
+    c.innerHTML=`<h2>Fell on wave ${R.wave}</h2><p>Tier ${R.tier} · best ${save.best[R.tier]||0}</p><div class="grid2"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':''}</div><div><span>Offline rate</span>${fmt(save.bestCph)}/h${R.time<CFG.offlineMinRun?' (run too short to count)':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div><div><span>Cash earned</span>${fmt(R.cashEarned)}</div><div><span>Run time</span>${m}m ${s}s (game time)</div></div><button id="toHist" style="width:100%;margin-bottom:8px">Battle history</button><button id="toWs" style="width:100%;margin-bottom:8px">Open workshop (${fmt(save.coins)} coins)</button>${tierPicker()}<button class="go" id="goBtn">${autoTimer?`Run again · auto in <span id="autoTxt">${autoLeft}</span>s`:'Run again'}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
 }
 $('ovCard').addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   if(t.dataset.tier){ovTier=+t.dataset.tier;showOv(run&&run.over?'over':'start')}
   else if(t.id==='goBtn'){stopAuto();newRun(ovTier)}
   else if(t.id==='stopAuto'){stopAuto();showOv('over')}
-  else if(t.id==='toWs'){ui.tab='Workshop';buildPanel()}
+  else if(t.id==='toWs'){ui.tab=save.set.tab='Workshop';buildPanel()}
   else if(t.id==='toHist'){hTab='runs';openModal('history')}
 });
-const ui={tab:'Upgrades',mult:1};let rows=[];
-const TABS=['Upgrades','Workshop','Lab'];   // Ultimates and Modules go here later
+const TABS=['Upgrades','Workshop','Lab','Cards','Modules'];   // Ultimates go here later
+const ui={tab:TABS.includes(save.set.tab)?save.set.tab:'Upgrades',mult:[1,10,'Max'].includes(save.set.mult)?save.set.mult:1};let rows=[];
 const GROUPS=['Attack','Defense','Utility'];
 function buildTabs(){$('tabs').innerHTML=TABS.map(t=>`<button data-tab="${t}" class="${t===ui.tab?'on':''}">${t}</button>`).join('')}
-$('tabs').addEventListener('click',e=>{const t=e.target.closest('button');if(t){ui.tab=t.dataset.tab;buildPanel()}});
+$('tabs').addEventListener('click',e=>{const t=e.target.closest('button');if(t){ui.tab=save.set.tab=t.dataset.tab;persist();buildPanel()}});
 function plan(s,ws){
   const r=run?run.lv[s.k]||0:0,w=save.ws[s.k]||0,[c0r,g]=ws?s.w:s.c,lv=ws?w:r,c0=ws?c0r*(1-labVal('disc')):c0r;
   const bank=ws?save.coins:(run&&!run.over?run.cash:0),lim=ui.mult==='Max'?1000:ui.mult;
@@ -64,13 +65,14 @@ function plan(s,ws){
 function buildPanel(){
   buildTabs();const P=$('panel');
   labRows=[];
+  if(ui.tab==='Cards'||ui.tab==='Modules'){rows=[];loSig='';P.innerHTML='';return refreshLoadout()}
   if(ui.tab==='Lab'){rows=[];
     P.innerHTML=`<p class="note">Research is paid in <b class="shard">shards</b>, which only drop from enemies on tier 2 and up. It applies instantly and lasts forever. No timers.</p>`+(shardsOn()?'':`<p class="note"><b>Locked:</b> reach wave ${CFG.tierUnlockWave} on tier 1 to unlock tier 2 and start finding shards.</p>`)+LAB.map(l=>`<div class="row"><div><b>${l.n}</b><span class="v"></span><span class="note" style="display:block;margin:2px 0 0">${l.d}</span></div><button class="buy shard" data-lab="${l.k}"></button></div>`).join('');
     labRows=[...P.querySelectorAll('[data-lab]')].map(b=>({l:LK[b.dataset.lab],b,v:b.parentNode.querySelector('.v')}));
     return refreshPanel()}
   const ws=ui.tab==='Workshop';
   let h=`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`;
-  if(ws){h+='<p class="note">Permanent upgrades, paid in coins. They apply to every run, including the one in progress. Values shown are your starting values.</p>'+`<p class="note">Offline rate: <b class="coin">${fmt(save.bestCph*labVal('offSpd'))} coins/hour</b> (best run ${fmt(save.bestCph)}/h × lab ${labVal('offSpd').toFixed(2)}, up to ${labVal('offCap')}h). Runs under ${CFG.offlineMinRun/60} minutes of game time don't count. Rate is per game-hour, so game speed doesn't change it.</p>`;
+  if(ws){h+='<p class="note">Permanent upgrades, paid in coins. They apply to every run, including the one in progress. Values shown are your starting values.</p>'+`<p class="note">Offline rate: <b class="coin">${fmt(save.bestCph*labVal('offSpd'))} coins/hour</b></p>`;
     for(const g of['Attack','Defense','Utility'])h+=`<div class="gh">${g}</div>`+ST.filter(s=>s.g===g).map(rowHtml).join('')}
   else{h+=!run||run.over?'<p class="note">Start a run to buy in-run upgrades.</p>':'<p class="note">Paid in cash, which resets every run.</p>';
     for(const g of GROUPS)h+=`<div class="gh ghx"><span>${g}</span>${labLv('auto')?`<label class="ab"><input type="checkbox" data-ab="${g}" ${save.set.ab[g]?'checked':''}> Auto-buy</label>`:''}</div>`+ST.filter(s=>s.g===g&&!s.ws).map(rowHtml).join('')}
@@ -82,6 +84,7 @@ let labRows=[];
 const labCost=l=>l.c[0]*l.c[1]**labLv(l.k);
 const rowHtml=s=>`<div class="row" data-k="${s.k}"><div><b>${s.n}</b><span class="v"></span></div><button class="buy" data-k="${s.k}"></button></div>`;
 function refreshPanel(){
+  refreshLoadout();
   for(const r of labRows){const l=r.l,lv=labLv(l.k),mx=lv>=l.max,c=labCost(l);
     const vt=mx?l.f(l.val(lv))+' (max)':`${l.f(l.val(lv))} → ${l.f(l.val(lv+1))}`;if(r.v.textContent!==vt)r.v.textContent=vt;
     const ok=!mx&&save.shards>=c;if(r.b.disabled===ok)r.b.disabled=!ok;const t=mx?'Max':fmt(c);if(r.b.textContent!==t)r.b.textContent=t}
@@ -95,7 +98,7 @@ function refreshPanel(){
 }
 $('panel').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.mult){ui.mult=b.dataset.mult==='Max'?'Max':+b.dataset.mult;return buildPanel()}
+  if(b.dataset.mult){ui.mult=save.set.mult=b.dataset.mult==='Max'?'Max':+b.dataset.mult;persist();return buildPanel()}
   if(b.dataset.lab){const l=LK[b.dataset.lab],c=labCost(l);if(labLv(l.k)>=l.max||save.shards<c)return;save.shards-=c;save.lab[l.k]=labLv(l.k)+1;save.stats.lab++;save.stats.labShards+=c;persist();
     if(l.k==='speed')buildSpeeds();if(l.k==='auto')toast('Auto-buy toggles added to the Upgrades tab');refreshPanel();return}
   if(b.dataset.k){const s=SK[b.dataset.k],ws=ui.tab==='Workshop',p=plan(s,ws);if(!p.ok)return;
@@ -140,11 +143,11 @@ function statsHtml(){const S=save.stats,H=save.hist.slice(0,10),recent=H.length?
   <div class="gh">Progress</div>
   ${L('Runs played',fmt(save.runs))}${L('Waves cleared',fmt(S.waves))}${L('Time played',dur(S.time))}${L('Highest tier unlocked',save.tierMax)}
   <div class="gh">Earnings</div>
-  ${L('Coins earned (runs)',fmt(S.coins),'coin')}${L('Coins earned offline',fmt(S.offCoins),'coin')}${L(`Recent coins per hour (last ${H.length===1?'run':(H.length||10)+' runs'})`,fmt(recent),'coin')}${L('Best coins per hour (offline rate)',fmt(save.bestCph),'coin')}${L('Cash earned',fmt(S.cash),'cash')}${L('Shards earned',fmt(S.shards),'shard')}
+  ${L('Coins earned (runs)',fmt(S.coins),'coin')}${L('Coins earned offline',fmt(S.offCoins),'coin')}${L(`Recent coins per hour (last ${H.length===1?'run':(H.length||10)+' runs'})`,fmt(recent),'coin')}${L('Best coins per hour (offline rate)',fmt(save.bestCph),'coin')}${L('Cash earned',fmt(S.cash),'cash')}${L('Shards earned',fmt(S.shards),'shard')}${L('Chips earned',fmt(S.chips),'chip')}${L('Alloy earned',fmt(S.alloy),'alloy')}
   <div class="gh">Combat</div>
   ${L('Damage dealt',fmt(S.dmg))}${L('Thorns damage',fmt(S.thorn))}${L('Damage taken',fmt(S.taken))}${L('Enemies destroyed',fmt(save.kills))}${L('Elites destroyed',fmt(S.elite))}${L('Bosses destroyed',fmt(S.boss))}${L('Shots fired',fmt(S.shots))}${L('Critical hits',fmt(S.crits)+(S.shots?` (${pct(S.crits/S.shots)})`:''))}${L('Hits blocked by shields',fmt(S.blocked))}
   <div class="gh">Upgrades</div>
-  ${L('In-run upgrades bought',fmt(S.ups))}${L('Workshop upgrades',fmt(S.wsUps))}${L('Workshop coins spent',fmt(S.wsCoins),'coin')}${L('Research completed',fmt(S.lab))}${L('Lab shards spent',fmt(S.labShards),'shard')}
+  ${L('In-run upgrades bought',fmt(S.ups))}${L('Workshop upgrades',fmt(S.wsUps))}${L('Workshop coins spent',fmt(S.wsCoins),'coin')}${L('Research completed',fmt(S.lab))}${L('Lab shards spent',fmt(S.labShards),'shard')}${L('Cards owned',CARDS.filter(c=>cardLv(c.k)).length+' / '+CARDS.length)}${L('Chips spent',fmt(S.chipsSpent||0),'chip')}${L('Modules owned',MODS.filter(m=>modLv(m.k)).length+' / '+MODS.length)}${L('Alloy spent',fmt(S.alloySpent||0),'alloy')}
   <div class="gh">By tier</div>
   <table class="etab"><thead><tr><th>Tier</th><th>Best wave</th><th>Runs</th><th>Coins</th><th>Best/h</th></tr></thead><tbody>${tiers.map(t=>{const T=S.tiers[t]||{runs:0,coins:0,cph:0};
     return`<tr><td>Tier ${t}</td><td>${save.best[t]||0}</td><td>${fmt(T.runs)}</td><td>${fmt(T.coins)}</td><td>${fmt(T.cph)}</td></tr>`}).join('')||'<tr><td colspan="5">No runs yet</td></tr>'}</tbody></table>
@@ -161,7 +164,7 @@ function historyHtml(){const H=save.hist,tabs=`<div class="mults"><button data-h
   const top=Math.max(...H.map(h=>h.cph));
   return tabs+`<p class="note">Your last ${CFG.histMax} runs, newest first. Run time and coins per hour are in game time.</p><div class="hist">${H.map(h=>{const d=new Date(h.at);
     return`<div class="hrow"><div class="htop"><b>Tier ${h.t}</b><b>Wave ${h.w}</b>${h.best?'<span class="tag">best wave</span>':''}${h.quit?'<span class="tag mute">ended early</span>':''}<span class="hdate">${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
-    <div class="hst"><span>Coins <b class="coin">${fmt(h.c)}</b></span><span>Coins/hour <b class="coin">${fmt(h.cph)}</b>${h.cph===top&&H.length>1?' ★':''}</span>${h.t>=2?`<span>Shards <b class="shard">${fmt(h.s)}</b></span>`:''}<span>Kills <b>${fmt(h.k)}</b></span><span>Time <b>${dur(h.time)}</b></span></div></div>`}).join('')}</div>`}
+    <div class="hst"><span>Coins <b class="coin">${fmt(h.c)}</b></span><span>Coins/hour <b class="coin">${fmt(h.cph)}</b>${h.cph===top&&H.length>1?' ★':''}</span>${h.t>=2?`<span>Shards <b class="shard">${fmt(h.s)}</b></span>`:''}${h.ch?`<span>Chips <b class="chip">${fmt(h.ch)}</b></span>`:''}${h.al?`<span>Alloy <b class="alloy">${fmt(h.al)}</b></span>`:''}<span>Kills <b>${fmt(h.k)}</b></span><span>Time <b>${dur(h.time)}</b></span></div></div>`}).join('')}</div>`}
 $('eBtn').addEventListener('click',()=>modalKind==='enemies'?closeModal():openModal('enemies'));
 let eTabW=0,eTabT=0,eTab='wave',eSig='';
 const pct=v=>(v*100).toFixed(v<.1&&v>0?1:0)+'%';
@@ -177,7 +180,7 @@ function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=l
   const cnt=CFG.spawnCount(w)+(boss?1:0);
   return tabs+`<table class="etab"><thead><tr><th>Enemy</th><th title="Chance per spawn">%</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed">» SPD</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
   <div class="grid2 winfo">
-    <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(CFG.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${CFG.waveLen} s</small></div>
+    <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s</small></div>
     <div><span>Spawned this wave</span><b id="wiSpawned">${live?run.spawned:0}</b> <small>of ${cnt}</small></div>
     <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b></div>
     <div><span>Next boss</span><b>${boss?'this wave':'wave '+nextBoss}</b></div>
@@ -205,14 +208,20 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <h3>Currencies</h3><ul>
   <li><b class="cash">Cash</b> comes from kills and wave bonuses. Spend it on Attack, Defense and Utility upgrades. It resets every run.</li>
   <li><b class="coin">Coins</b> come from kills and are kept forever. Spend them in the Workshop on permanent tower upgrades.</li>
-  <li><b class="shard">Shards</b> only drop from enemies on tier 2 and up, and more on higher tiers. Spend them in the Lab.</li></ul>
+  <li><b class="shard">Shards</b> only drop from enemies on tier 2 and up, and more on higher tiers. Spend them in the Lab.</li>
+  <li><b class="chip">Chips</b> drop from bosses. Spend them on Cards.</li>
+  <li><b class="alloy">Alloy</b> drops from elites. Spend it on Modules.</li></ul>
+  <h3>Cards and Modules</h3><ul>
+  <li><b>Cards</b> are perks: more damage, slower enemies, a second life and more. Buy one, equip it in a slot (${CARD.slots0} to start, more can be bought) and level it up to 5 stars.</li>
+  <li><b>Modules</b> are gear for the spire's ${MOD_SLOTS.length} slots (${MOD_SLOTS.map(s=>s.n).join(', ')}). Each adds a stat per level and has a special effect that gets stronger every ${MOD.per} levels as it ranks up: ${RARITY.join(', ')}.</li>
+  <li>Both are bought directly, with no random draws, and you can swap them any time, even mid-run.</li></ul>
   <h3>Upgrades</h3><ul>
   <li>The <b>Upgrades</b> tab has three sections. <b>Attack</b>: damage, attack speed, crits and range. <b>Defense</b>: health, regen, damage reduction and thorns (hits back for part of the attacker's max health). <b>Utility</b>: more cash and coins.</li>
   <li><b>Workshop</b> levels are your starting values in every run. In-run levels stack on top.</li>
   <li><b>Lab</b> research raises offline earnings, unlocks faster game speeds, discounts the Workshop and adds auto-buyers.</li>
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>
   <h3>Offline earnings</h3>
-  <p>Your best coins per game-hour, from a run of at least ${CFG.offlineMinRun/60} game-minutes, keeps paying while you're away, up to the Lab's time cap.</p>
+  <p>Your best coins per game-hour, from a run of at least ${CFG.offlineMinRun/60} game-minutes, keeps paying while you're away. The Lab's Offline speed research multiplies it, and Offline duration sets how many hours count (${labVal('offCap')} h now). Shorter runs don't count, and because the rate is per game-hour, the game speed you play at doesn't change it. The Workshop tab shows your current rate.</p>
   <h3>Enemies</h3><p>Enemies come in three ranks. Normal enemies make up most of every wave. Elites start turning up from wave ${Math.min(...TYPES.filter(t=>ET[t].r===2).map(t=>ET[t].from))}, a few per wave, and pay out much more. A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart (heavier enemies win), so every enemy stays visible. Tap the Enemy stats in the top bar to see every type's numbers for the current wave.</p>
   ${[1,2,3].map(rk=>`<div class="gh">${RANKS[rk]}</div><div class="mobs">${TYPES.filter(t=>ET[t].r===rk).map(t=>{const d=ET[t];
     const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';

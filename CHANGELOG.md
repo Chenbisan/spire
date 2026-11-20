@@ -1,5 +1,12 @@
 # What's new in Spire
 
+## 1.9.0 — 2026-11-20
+- **🃏 Cards:** 11 perks bought with **chips**, which bosses drop: Sharpshooter, Rapid Fire, Eagle Eye, Lucky Shot, Fortify, Mending, Frost Field (slows enemies in range), Second Wind (survive one killing blow per run), Wave Rush (shorter waves), Bounty and Prospector. Equip 3 at a time (buy up to 6 slots) and level each to 5 stars.
+- **⚙️ Modules:** gear for 4 slots (Cannon, Armor, Core, Generator), 2 to choose from in each, bought and levelled with **alloy**, which elites drop. Each level adds a stat; every 10 levels the module ranks up from Common to Rare, Epic and Legendary, strengthening its special effect (bonus damage to elites and bosses, extra shots, defense, thorns, crit damage, slowing hits, more drops, or interest on your cash).
+- Both are bought directly, with no random draws, and can be swapped any time, even mid-run. New Cards and Modules tabs sit next to the Lab.
+- **The side panel remembers** which tab you were on and your ×1 / ×10 / Max choice after a refresh.
+- The Workshop's offline-rate note is now just the rate; the details moved to the ? help.
+
 ## 1.8.0 — 2026-11-20
 - **📊 Lifetime stats:** the 🕘 button now has a Lifetime stats tab next to Battle history: time played, waves cleared, coins (from runs and offline), recent and best coins per hour, cash, shards, damage dealt and taken, thorns damage, enemies, elites and bosses destroyed, shots and crits, shield blocks, upgrades and research bought, coins and shards spent, plus a best-wave / runs / coins table for each tier. Runs, kills and best waves include your past play; everything else counts from today.
 

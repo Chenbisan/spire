@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.8.0';
+const APP_VERSION='1.9.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -71,3 +71,38 @@ const ET={
  boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:250,dmg:12,spd:9,weight:10,sz:22,cash:60,coin:40,sh:'hexagon',rot:'spin',c:'e5',bar:1}
 };
 const TYPES=Object.keys(ET);
+// ================= Cards and Modules =================
+const PC=v=>{const p=+(v*100).toFixed(1);return(p<10?p:Math.round(p))+'%'};
+// drops: chips from bosses (Cards), alloy from elites (Modules); both grow with wave and tier
+const DROPS={chips:(w,t)=>2*(1+w/20)*1.4**(t-1), alloy:(w,t)=>(1+w/50)*1.4**(t-1)};
+// Cards: passive perks bought with chips, equipped into slots, levelled up to 5 stars. v = value per star.
+const CARD={buy:10, up:[10,20,40,80], slots0:3, slotCost:[40,120,300]}; // up[i]: star i+1 → i+2; slotCost: 4th, 5th, 6th slot
+const CARDS=[
+ {k:'sharp',n:'Sharpshooter',v:[.1,.2,.3,.45,.6],f:v=>`+${PC(v)} damage`,fx:(F,v)=>F.mul.damage*=1+v},
+ {k:'rapid',n:'Rapid Fire',v:[.05,.1,.15,.2,.3],f:v=>`+${PC(v)} attack speed`,fx:(F,v)=>F.mul.aspd*=1+v},
+ {k:'eagle',n:'Eagle Eye',v:[5,10,15,22,30],f:v=>`+${v} range`,fx:(F,v)=>F.add.range+=v},
+ {k:'lucky',n:'Lucky Shot',v:[.02,.04,.06,.08,.1],f:v=>`+${PC(v)} crit chance`,fx:(F,v)=>F.add.crit+=v},
+ {k:'fort',n:'Fortify',v:[.1,.2,.3,.45,.6],f:v=>`+${PC(v)} max health`,fx:(F,v)=>F.mul.health*=1+v},
+ {k:'mend',n:'Mending',v:[.2,.4,.6,.8,1],f:v=>`+${PC(v)} regen`,fx:(F,v)=>F.mul.regen*=1+v},
+ {k:'frost',n:'Frost Field',v:[.05,.1,.15,.2,.25],f:v=>`enemies in range move ${PC(v)} slower`,fx:(F,v)=>F.slowAura=Math.max(F.slowAura,v)},
+ {k:'wind',n:'Second Wind',v:[.2,.3,.4,.5,.6],f:v=>`once per run, survive a killing blow with ${PC(v)} health`,fx:(F,v)=>F.revive=Math.max(F.revive,v)},
+ {k:'rush',n:'Wave Rush',v:[.05,.1,.15,.2,.25],f:v=>`waves are ${PC(v)} shorter`,fx:(F,v)=>F.rush=Math.max(F.rush,v)},
+ {k:'bounty',n:'Bounty',v:[.1,.2,.3,.4,.5],f:v=>`+${PC(v)} cash`,fx:(F,v)=>F.mul.cashBonus*=1+v},
+ {k:'prosp',n:'Prospector',v:[.05,.1,.15,.2,.25],f:v=>`+${PC(v)} coins`,fx:(F,v)=>F.mul.coinBonus*=1+v},
+];
+// Modules: one per slot, bought and levelled with alloy. Every 10 levels the rarity goes up (an ascension, costing CFG×ascend),
+// which raises the module's special effect. main: stat bonus per level (mul = +per×lvl %, add = flat).
+const RARITY=['Common','Rare','Epic','Legendary'];
+const MOD={buy:30, cost:l=>Math.ceil(8*1.15**l), ascend:4, per:10, max:40};
+const MOD_SLOTS=[{k:'cannon',n:'Cannon'},{k:'armor',n:'Armor'},{k:'core',n:'Core'},{k:'gen',n:'Generator'}];
+const MODS=[
+ {k:'rail',s:'cannon',n:'Rail Cannon',st:'damage',per:.03,mul:1,sp:[.1,.25,.5,1],sf:v=>`+${PC(v)} damage to elites and bosses`,fx:(F,v)=>F.eliteDmg+=v},
+ {k:'scatter',s:'cannon',n:'Scatter Cannon',st:'aspd',per:.015,mul:1,sp:[.05,.1,.2,.3],sf:v=>`${PC(v)} chance to fire a second shot at another enemy`,fx:(F,v)=>F.multi+=v},
+ {k:'bulwark',s:'armor',n:'Bulwark',st:'health',per:.04,mul:1,sp:[.02,.04,.07,.1],sf:v=>`+${PC(v)} defense`,fx:(F,v)=>F.add.defense+=v},
+ {k:'spiked',s:'armor',n:'Spiked Plate',st:'regen',per:.04,mul:1,sp:[.03,.06,.1,.15],sf:v=>`+${PC(v)} thorns`,fx:(F,v)=>F.add.thorns+=v},
+ {k:'luckc',s:'core',n:'Lucky Core',st:'crit',per:.003,sp:[.1,.25,.5,1],sf:v=>`+×${v} crit damage`,fx:(F,v)=>F.add.critMult+=v},
+ {k:'stasis',s:'core',n:'Stasis Core',st:'range',per:1,sp:[.1,.2,.3,.4],sf:v=>`hits slow the target by ${PC(v)} for 1 s`,fx:(F,v)=>F.slowHit=Math.max(F.slowHit,v)},
+ {k:'mint',s:'gen',n:'Mint',st:'coinBonus',per:.02,mul:1,sp:[.1,.2,.35,.5],sf:v=>`+${PC(v)} shards, chips and alloy`,fx:(F,v)=>F.drop+=v},
+ {k:'vault',s:'gen',n:'Vault',st:'cashBonus',per:.03,mul:1,sp:[.01,.02,.03,.05],sf:v=>`each wave, earn ${PC(v)} of your cash as interest (up to 5× the wave bonus)`,fx:(F,v)=>F.interest+=v},
+];
+const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.map(m=>[m.k,m]));

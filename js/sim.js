@@ -5,7 +5,12 @@ const speeds=()=>[1,2,3,5,8,12,16,24].filter(s=>s<=labVal('speed'));
 // ================= stats =================
 function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;return s.max!=null?Math.min(v,s.max):v}
 const capped=(s,r,w)=>s.max!=null&&valAt(s,r,w)>=s.max-1e-9;
-function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(const s of ST)run.s[s.k]=valAt(s,run.lv[s.k]||0,save.ws[s.k]||0);if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
+function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(const s of ST)run.s[s.k]=valAt(s,run.lv[s.k]||0,save.ws[s.k]||0);
+  // cards and modules on top (stat caps still apply)
+  const F=loadoutFx();for(const k in F.mul)run.s[k]*=F.mul[k];for(const k in F.add)run.s[k]+=F.add[k];
+  for(const s of ST)if(s.max!=null)run.s[s.k]=Math.min(run.s[s.k],s.max);
+  run.fx=F;run.waveLen=CFG.waveLen*(1-F.rush);
+  if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
 // ================= state =================
 let run=null,paused=false,GEN=0;
 const enemies=[],ePool=[],bullets=[],bPool=[],ebs=[],ebPool=[],dnums=[],parts=[];
@@ -16,7 +21,7 @@ function newRun(tier){
   stopAuto();
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
   enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;
-  run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
+  run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
   recalc();run.hp=run.s.health;run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
@@ -30,12 +35,13 @@ function spawn(t,x,y){
   if(x==null){x=Math.cos(a)*CFG.spawnR;y=Math.sin(a)*CFG.spawnR}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
-  e.shield=d.shield||0;e.ht=0;e.hf=0;
+  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;
   enemies.push(e);
 }
 function nextWave(){
   const R=run;R.wave++;R.waveT=R.spawnT=R.spawned=0;
-  const wc=CFG.waveCash(R.wave)*R.s.waveCash;R.cash+=wc;save.stats.cash+=wc;save.stats.waves++;
+  const wc=CFG.waveCash(R.wave)*R.s.waveCash;R.cash+=wc;
+  if(R.fx.interest){const it=Math.min(R.cash*R.fx.interest,wc*5);R.cash+=it;save.stats.cash+=it}save.stats.cash+=wc;save.stats.waves++;
   if(R.wave%CFG.bossEvery===0)spawn('boss');
   if((save.best[R.tier]||0)<R.wave)save.best[R.tier]=R.wave;
   if(R.wave>=CFG.tierUnlockWave&&R.tier===save.tierMax){save.tierMax++;persist();toast(`Tier ${save.tierMax} unlocked`)}
@@ -44,7 +50,10 @@ function kill(e){
   const R=run;e.dead=true;R.kills++;save.kills++;
   const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave),st=save.stats;R.cash+=c;R.cashEarned+=c;st.cash+=c;if(e.d.r===2)st.elite++;else if(e.d.r===3)st.boss++;
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
-  if(R.tm.shard){const sh=e.d.coin*CFG.shardRate*R.tm.shard;save.shards+=sh;R.shards+=sh;st.shards+=sh}
+  const db=1+R.fx.drop;
+  if(R.tm.shard){const sh=e.d.coin*CFG.shardRate*R.tm.shard*db;save.shards+=sh;R.shards+=sh;st.shards+=sh}
+  if(e.d.r===3){const v=DROPS.chips(R.wave,R.tier)*db;save.chips+=v;R.chips+=v;st.chips+=v}
+  else if(e.d.r===2){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
   if(e.d.split)for(let i=0;i<e.d.split;i++)spawn('fast',e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
   for(let i=0;i<4&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
 }
@@ -56,6 +65,7 @@ function damage(e,v,crit,thorn){
 }
 function hitTower(v,att){
   const R=run,t=v*(1-R.s.defense);R.hp-=t;save.stats.taken+=t;
+  if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=R.s.health*R.fx.revive;toast('Second Wind!')}
   if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);
   if(R.hp<=0)gameOver();
 }
@@ -67,23 +77,26 @@ function gameOver(quit){
   const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;
   if(prevBest<R.wave)save.best[R.tier]=R.wave;
   {const T=save.stats.tiers[R.tier]||(save.stats.tiers[R.tier]={runs:0,coins:0,cph:0});T.runs++;T.coins+=R.coins;if(R.time>=CFG.offlineMinRun)T.cph=Math.max(T.cph,R.cph)}
-  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,c:R.coins,s:R.shards,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
+  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
   save.hist.length=Math.min(save.hist.length,CFG.histMax);
   persist();ovTier=R.tier;startAuto();showOv('over');buildPanel();
 }
 // ================= simulation (fixed step) =================
+function fire(tgt){const s=run.s,b=bPool.pop()||{},c=Math.random()<s.crit;save.stats.shots++;if(c)save.stats.crits++;
+  b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1);b.l=2;bullets.push(b)}
 function update(dt){
   const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;save.stats.time+=dt;R.waveT+=dt;R.spawnT+=dt;
-  const cnt=CFG.spawnCount(R.wave),iv=CFG.waveLen*.9/cnt;
+  const cnt=CFG.spawnCount(R.wave),iv=R.waveLen*.9/cnt;
   while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
-  if(R.waveT>=CFG.waveLen)nextWave();
+  if(R.waveT>=R.waveLen)nextWave();
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
   let tgt=null,td=Infinity;
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e);continue}
     e.px=e.x;e.py=e.y;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
-    if(dist>stop){const m=Math.min(d.spd*dt,dist-stop);e.x-=e.x/dist*m;e.y-=e.y/dist*m}
+    let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;
+    if(dist>stop){const m=Math.min(sp*dt,dist-stop);e.x-=e.x/dist*m;e.y-=e.y/dist*m}
     else{e.atk+=dt;
       if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg;ebs.push(b)}}
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg,e);if(R.over)return}}
@@ -94,13 +107,14 @@ function update(dt){
   separate();
   const fi=1/s.aspd;R.fireT+=dt;
   if(!tgt)R.fireT=Math.min(R.fireT,fi);
-  else while(R.fireT>=fi){R.fireT-=fi;const b=bPool.pop()||{},c=Math.random()<s.crit;save.stats.shots++;if(c)save.stats.crits++;b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1);b.l=2;bullets.push(b)}
+  else while(R.fireT>=fi){R.fireT-=fi;fire(tgt);
+    if(R.fx.multi&&Math.random()<R.fx.multi){let o=null,od=Infinity;for(const e of enemies)if(!e.dead&&e!==tgt&&e.dist<=s.range+e.d.sz&&e.dist<od){od=e.dist;o=e}if(o)fire(o)}}
   const m=CFG.bulletSpd*dt;
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
-      if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c?2:0);damage(e,b.dmg,b.c);drop=true}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
+      if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}damage(e,e.d.r>=2?b.dmg*(1+R.fx.eliteDmg):b.dmg,b.c);drop=true}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
   }
   const em=CFG.ebSpd*dt;

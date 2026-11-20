@@ -8,7 +8,7 @@
 --ink:light-dark(#14181b,#e7ede8);--mute:light-dark(#5e6569,#8a979d);--acc:light-dark(#0b8f80,#34d1bf);
 --gold:light-dark(#9a6b00,#ffcc4d);--hot:light-dark(#d8432a,#ff6b4a);
 --arena:light-dark(#f6f4ec,#080d10);--grid:light-dark(#e3e0d5,#131c21);
---shard:light-dark(#6f4fd0,#b49aff);
+--shard:light-dark(#6f4fd0,#b49aff);--chip:light-dark(#c2185b,#ff7aa8);--alloy:light-dark(#2f6f8f,#8ecbe8);
 --e1:light-dark(#3a4146,#dfe6e1);--e2:light-dark(#b07a00,#ffcc4d);--e3:light-dark(#c95f12,#ff9a4a);--e4:light-dark(#6f4fd0,#b49aff);--e5:light-dark(#c81e1e,#ff4747);
 --e6:light-dark(#1f63d1,#5aa2ff);--e7:light-dark(#17884a,#4fd67a);--e8:light-dark(#a8259f,#f067e6)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
@@ -25,7 +25,11 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .brand{font:700 26px/1 'Chakra Petch',sans-serif;letter-spacing:.02em}
 .chips{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:'Chakra Petch',sans-serif;font-size:17px}
 .chips span{color:var(--mute);font-size:13px;margin-right:6px}
-.cash{color:var(--acc)}.coin{color:var(--gold)}.shard{color:var(--shard)}
+.cash{color:var(--acc)}.coin{color:var(--gold)}.shard{color:var(--shard)}.chip{color:var(--chip)}.alloy{color:var(--alloy)}
+.lhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin:0 2px 6px;font-size:13px;color:var(--mute)}.lhead b{font:500 15px 'Chakra Petch',sans-serif}.lhead button{margin-left:auto;min-height:34px;font-family:'Chakra Petch',sans-serif}
+.lrow{grid-template-columns:minmax(0,1fr) 112px}.lrow.eq{background:color-mix(in srgb,var(--acc) 8%,transparent)}.lbtns{display:grid;gap:4px}.lbtns button{min-height:34px}
+.stars{color:var(--gold);font-size:13px;letter-spacing:1px}.row.lrow .v{display:block;white-space:normal;line-height:1.35}.row.lrow .stars{display:block}.row.lrow .sp{color:var(--ink);font-family:Inter,sans-serif;white-space:normal;margin-top:2px}.lrow .nx{color:var(--mute)}
+.rar{font:600 11px Inter,sans-serif;border-radius:6px;padding:1px 6px;color:var(--arena)}.r0{background:var(--mute)}.r1{background:light-dark(#1f63d1,#5aa2ff)}.r2{background:light-dark(#7a3fd0,#b98cff)}.r3{background:var(--gold)}
 .icons{margin-left:auto;display:flex;gap:6px}
 .ib{min-width:40px;padding:0;display:grid;place-items:center;font:700 18px 'Chakra Petch',sans-serif;border-radius:10px}
 .hp{flex:1 1 200px;max-width:380px;height:12px;border-radius:6px;background:var(--grid);overflow:hidden;position:relative}
@@ -35,7 +39,7 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .hist{display:grid;gap:8px}.hrow{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--arena)}
 .htop{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font:700 17px 'Chakra Petch',sans-serif}.hdate{margin-left:auto;font:400 12px Inter,sans-serif;color:var(--mute)}
 .tag{font:600 11px Inter,sans-serif;color:var(--arena);background:var(--acc);border-radius:6px;padding:1px 6px;align-self:center}.tag.mute{background:var(--line);color:var(--ink)}
-.hst{display:flex;flex-wrap:wrap;gap:2px 16px;margin-top:4px;font-size:13px;color:var(--mute)}.hst b{font:500 14px 'Chakra Petch',sans-serif;color:var(--ink)}.hst b.coin{color:var(--gold)}.hst b.shard{color:var(--shard)}
+.hst{display:flex;flex-wrap:wrap;gap:2px 16px;margin-top:4px;font-size:13px;color:var(--mute)}.hst b{font:500 14px 'Chakra Petch',sans-serif;color:var(--ink)}.hst b.coin{color:var(--gold)}.hst b.shard{color:var(--shard)}.hst b.chip{color:var(--chip)}.hst b.alloy{color:var(--alloy)}
 .winfo{margin:12px 0 8px}.winfo b{font-weight:500}.winfo small{color:var(--mute);font:12px Inter,sans-serif}
 .etab{width:100%;border-collapse:collapse;font:500 14px 'Chakra Petch',sans-serif}.etab th{font:600 12px Inter,sans-serif;color:var(--mute);text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}.etab th:first-child,.etab td:first-child{text-align:left}.etab td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.etab td:first-child{display:flex;align-items:center;gap:6px}.etab svg{width:24px;height:24px;flex:none}.etab tr.off td{color:var(--mute)}.etab .when{display:block;font:400 12px Inter,sans-serif;color:var(--mute)}.etab td:first-child>span{white-space:normal;line-height:1.2}
 .hpt{font:500 13px 'Chakra Petch',sans-serif;color:var(--mute);white-space:nowrap}
