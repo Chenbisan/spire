@@ -102,7 +102,8 @@ function gameOver(quit){
   {const T=save.stats.tiers[R.tier]||(save.stats.tiers[R.tier]={runs:0,coins:0,cph:0});T.runs++;T.coins+=R.coins;if(R.time>=CFG.offlineMinRun)T.cph=Math.max(T.cph,R.cph)}
   save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
   save.hist.length=Math.min(save.hist.length,CFG.histMax);
-  persist();ovTier=R.tier;startAuto();showOv('over');buildPanel();
+  persist();ovTier=R.tier;if(!quit)startAuto(); // a run you end yourself doesn't auto-restart
+  showOv('over');buildPanel();
 }
 // ================= simulation (fixed step) =================
 function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:0;save.stats.shots++;if(c){save.stats.crits++;if(s.superCrit>0&&Math.random()<s.superCrit){c=2;save.stats.supers++}}
