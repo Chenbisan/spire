@@ -27,7 +27,7 @@ python -m http.server 8000
 - **Spire stats:** Attack has damage, attack speed, crits and super crits, range, damage per distance, multishot (chance + extra targets) and bounce shots (chance + bounces + range). Defense has health, regen, barrier (a refilling shield sized as a share of max health) and barrier regen, defense, thorns, lifesteal, death defy, and knockback (chance + force, divided by the enemy's weight). Utility has cash and coin bonuses, cash interest, starting cash, and free attack / defense / utility upgrade chances.
 - **Cash:** earned from kills and cash interest (paid at the start of every wave), spent in the Upgrades tab (Attack / Defense / Utility sections, as in the Workshop). It resets every run.
 - **Coins:** earned from kills, permanent, spent in the Workshop (tower stats).
-- **Shards:** only drop from enemies on tier 2 and up (1.5× more per tier above that), permanent, spent in the Lab (meta upgrades).
+- **Shards:** paid when a run on tier 2+ ends, based on kills (kills × `shardPerKill` × the tier's shard multiplier, 1.5× more per tier), permanent, spent in the Lab (meta upgrades).
 - **Chips** drop from bosses and buy **Equipment**: items that add a mechanic rather than plain stats (Second Wind, Wave Rush), equipped into slots and levelled to 5 stars. Plain stat boosts come from upgrades instead.
 - **Alloy** drops from elites and buys **Modules**: one per slot (Cannon, Armor, Core, Generator), 2 choices each, levelled to 40. Every 10 levels a module ranks up (Common → Rare → Epic → Legendary), boosting its special effect.
 - Both are bought directly (no random draws) and can be swapped mid-run.
@@ -62,7 +62,7 @@ Paid in shards.
 All balance numbers are in `js/config.js`:
 
 - `ET` uses `freq` for spawn frequency and `weight` for push/knockback resistance.
-- `CFG`: crowd spacing (`sepGap`, `sepPush`), wave length, enemy scaling, spawn counts, tier multipliers, rewards (including `shardRate`), offline rules
+- `CFG`: crowd spacing (`sepGap`, `sepPush`), wave length, enemy scaling, spawn counts, tier multipliers, rewards (including `shardPerKill`), offline rules
 - `ST`: tower stats, per-level gains, cash and coin costs
 - `ET`: enemy types: rank, shape, colour, stats, abilities, and the name and description shown in Help (shapes are in `SHAPES`)
 - `LAB`: Lab research, effects and costs

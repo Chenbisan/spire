@@ -27,7 +27,7 @@ function newRun(tier){
   paused=false;showOv(null);buildPanel();
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
-function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpGrow**(w-1)*tm.hp,atk:d.dmg*CFG.dmgGrow**(w-1)*tm.dmg,spd:d.spd,weight:d.weight}}
+function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpGrow**(w-1)*tm.hp,atk:d.dmg*CFG.dmgGrow**(w-1)*tm.dmg,spd:d.spd,weight:d.weight,coins:d.coin*tm.coin*CFG.killCoin(w)}}
 // chance each type is picked for a regular spawn on wave w (mirrors pickType; Basic takes what's left)
 function spawnChance(w){const o={};let left=1;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;const p=Math.min(left,d.freq);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
 function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;acc+=d.freq;if(r<acc)return t}return'basic'}
@@ -52,7 +52,6 @@ function kill(e){
   const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave),st=save.stats;R.cash+=c;R.cashEarned+=c;st.cash+=c;if(e.d.r===2)st.elite++;else if(e.d.r===3)st.boss++;
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
   const db=1+R.fx.drop;
-  if(R.tm.shard){const sh=e.d.coin*CFG.shardRate*R.tm.shard*db;save.shards+=sh;R.shards+=sh;st.shards+=sh}
   if(e.d.r===3){const v=DROPS.chips(R.wave,R.tier)*db;save.chips+=v;R.chips+=v;st.chips+=v}
   else if(e.d.r===2){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
   if(e.d.split)for(let i=0;i<e.d.split;i++)spawn('fast',e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
@@ -76,8 +75,11 @@ function hitTower(v,att){
 }
 function nearestOther(x,y,ex,r){let best=null,bd=r*r;for(const e of enemies){if(e.dead||e===ex)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
 function nearest(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
+// shards earned by this run so far (paid when it ends)
+const runShards=R=>R.kills*CFG.shardPerKill*R.tm.shard*(1+R.fx.drop);
 function gameOver(quit){
   const R=run;if(R.over)return;R.over=true;R.hp=0;save.runs++;
+  R.shards=runShards(R);save.shards+=R.shards;save.stats.shards+=R.shards;
   R.cph=R.time>0?R.coins/R.time*3600:0;R.newBest=false;
   if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
   const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;

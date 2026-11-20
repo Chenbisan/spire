@@ -1,17 +1,18 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.13.0';
+const APP_VERSION='1.14.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
   step:1/60, waveLen:20, arenaR:320, spawnR:335, towerR:14, bulletSpd:420, ebSpd:120,
   tierUnlockWave:25,                       // reach this wave to unlock the next tier
-  tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:2.2**(t-1),shard:t<2?0:1.5**(t-2)}),
+  tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:2.2**(t-1),  // coin: the tier coin multiplier, exponential so higher tiers pay off
+           shard:t<2?0:1.5**(t-2)}),
   hpGrow:1.068, dmgGrow:1.05,              // per-wave enemy scaling
   spawnCount:w=>Math.floor(8+w*1.3),
   waveCash:w=>4+w*2,
   killCash:w=>1+w*.05, killCoin:w=>1+w*.02,
-  shardRate:.1,              // shards per kill = enemy coin value × this × tier shard mult (tier 2+ only)
+  shardPerKill:.2,           // shards paid when a run ends = kills × this × tier shard multiplier (tier 2+ only)
   offlineMinRun:120,         // a run must last this many game seconds to set the offline rate
   offlineMinAway:60,          // offline cap and speed come from the Lab
   histMax:30,                // battle history keeps this many runs
@@ -78,14 +79,14 @@ const RANKS=['','Normal','Elite','Boss'];
 // r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
 // from/freq: first wave and spawn frequency · weight: resists being pushed (crowds now, knockback later) · bar: health bar · n/d: shown in Help
 const ET={
- basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:1,sh:'square',c:'e1'},
- fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:1,sh:'triangle',rot:'face',c:'e2',from:3,freq:.25},
- ranged:{n:'Ranged',r:1,d:'Stops 125 m out, beyond a new spire\'s range, and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:2,sh:'diamond',c:'e4',from:12,freq:.12,stop:125},
+ basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1'},
+ fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:3,freq:.25},
+ ranged:{n:'Ranged',r:1,d:'Stops 125 m out, beyond a new spire\'s range, and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:12,freq:.12,stop:125},
  tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,freq:.12,bar:1},
  shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,freq:.05,bar:1,shield:3},
  healer:{n:'Healer',r:2,d:'Every second, heals enemies within 70 m by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.05,bar:1,heal:.1,healR:70},
  splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,freq:.05,bar:1,split:3},
- boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:250,dmg:12,spd:9,weight:10,sz:22,cash:60,coin:40,sh:'hexagon',rot:'spin',c:'e5',bar:1}
+ boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:250,dmg:12,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',bar:1}
 };
 const TYPES=Object.keys(ET);
 // ================= Cards and Modules =================

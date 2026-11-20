@@ -72,6 +72,10 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .tiers{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px}
 .tiers button{display:grid;line-height:1.15;padding:6px 12px;text-align:left}
 .tiers small{color:var(--mute);font-size:12px}.tiers .on small{color:inherit}
+.card.big{width:min(600px,100%)}
+.tinfo{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--arena);font-family:'Chakra Petch',sans-serif}.tinfo span{display:block;color:var(--mute);font:12px Inter,sans-serif}.tinfo b{font-weight:500}
+.obtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0 8px}
+@media(max-width:520px){.tinfo{grid-template-columns:1fr 1fr}.obtns{grid-template-columns:1fr}}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:0 0 16px;font-family:'Chakra Petch',sans-serif}
 .grid2 span{color:var(--mute);font-family:Inter,sans-serif;font-size:13px;display:block}
 .go{background:var(--acc);color:var(--arena);border-color:var(--acc);font-weight:600;width:100%;min-height:46px}

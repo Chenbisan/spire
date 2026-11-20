@@ -32,19 +32,30 @@ function hud(){
 }
 let ovTier=save.tierMax;
 const shardsOn=()=>save.tierMax>=2||save.shards>0;
-function tierPicker(){let h='<div class="tiers">';for(let t=1;t<=save.tierMax;t++)h+=`<button data-tier="${t}" class="${t===ovTier?'on':''}">Tier ${t}<small>best wave ${save.best[t]||0}</small></button>`;return h+'</div>'}
+function tierPicker(){let h='<div class="tiers">';for(let t=1;t<=save.tierMax;t++)h+=`<button data-tier="${t}" class="${t===ovTier?'on':''}">Tier ${t}<small>best ${save.best[t]||0} · coins ×${fmt(CFG.tier(t).coin)}</small></button>`;return h+'</div>'}
+function tierInfo(t){const tm=CFG.tier(t),T=save.stats.tiers[t]||{runs:0,cph:0},nxt=t<save.tierMax?'':`<p class="note" style="margin:0">Reach wave ${CFG.tierUnlockWave} here to unlock tier ${t+1} (enemies ×${fmt(CFG.tier(t+1).hp)} health, coins ×${fmt(CFG.tier(t+1).coin)}).</p>`;
+  return`<div class="tinfo"><div><span>Enemy health</span><b>×${fmt(tm.hp)}</b></div><div><span>Enemy attack</span><b>×${fmt(tm.dmg)}</b></div><div><span>Coins</span><b class="coin">×${fmt(tm.coin)}</b></div><div><span>Shards</span><b class="shard">${tm.shard?'×'+fmt(tm.shard):'none'}</b></div>
+  <div><span>Best wave</span><b>${save.best[t]||0}</b></div><div><span>Best coins/hour</span><b class="coin">${fmt(T.cph)}</b></div><div><span>Runs</span><b>${fmt(T.runs)}</b></div><div><span>Offline rate</span><b class="coin">${fmt(offlineRate())}/h</b></div></div>${nxt}`}
 function showOv(kind){
   const ov=$('ov'),c=$('ovCard');if(!kind){ov.hidden=true;return}ov.hidden=false;
   ovTier=Math.min(ovTier,save.tierMax);
-  if(kind==='start')c.innerHTML=`<h2>Hold the center</h2><p>Your spire fires automatically. Spend cash on upgrades during a run; coins carry over to the workshop. Reach wave ${CFG.tierUnlockWave} to unlock the next tier.</p>${tierPicker()}<button class="go" id="goBtn">Start run</button>`;
+  c.className='card'+(kind==='start'?' big':'');
+  if(kind==='start')c.innerHTML=`<h2>Hold the center</h2><p>Your spire fires automatically. Spend cash on upgrades during a run; coins carry over to the Workshop. Higher tiers are tougher but pay far more coins.</p>${tierPicker()}${tierInfo(ovTier)}
+    <div class="obtns"><button id="toWs">Workshop · <span class="coin">${fmt(save.coins)}</span></button><button id="toHist">Records</button><button id="toHelp">How to play</button></div><button class="go" id="goBtn">Start tier ${ovTier}</button>`;
+  else if(kind==='paused'){const R=run,m=Math.floor(R.time/60),s=Math.floor(R.time%60);
+    c.innerHTML=`<h2>Paused</h2><p>Tier ${R.tier} · wave ${R.wave} · ${m}m ${s}s</p><div class="grid2"><div><span>Coins this run</span><b class="coin">${fmt(R.coins)}</b></div><div><span>Kills</span>${fmt(R.kills)}</div>${R.tm.shard?`<div><span>Shards at the end</span><b class="shard">${fmt(runShards(R))}</b></div>`:''}<div><span>Cash</span><b class="cash">${fmt(R.cash)}</b></div><div><span>Health</span>${fmt(Math.max(0,R.hp))} / ${fmt(R.s.health)}</div></div>
+    <button class="go" id="resumeBtn">Resume</button><button id="endBtn" class="danger" style="width:100%;margin-top:8px">End run</button>`}
   else{const R=run,m=Math.floor(R.time/60),s=Math.floor(R.time%60);
-    c.innerHTML=`<h2>Fell on wave ${R.wave}</h2><p>Tier ${R.tier} · best ${save.best[R.tier]||0}</p><div class="grid2"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':''}</div><div><span>Offline rate</span>${fmt(save.bestCph)}/h${R.time<CFG.offlineMinRun?' (run too short to count)':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div><div><span>Cash earned</span>${fmt(R.cashEarned)}</div><div><span>Run time</span>${m}m ${s}s (game time)</div></div><button id="toHist" style="width:100%;margin-bottom:8px">Battle history</button><button id="toWs" style="width:100%;margin-bottom:8px">Open workshop (${fmt(save.coins)} coins)</button>${tierPicker()}<button class="go" id="goBtn">${autoTimer?`Run again · auto in <span id="autoTxt">${autoLeft}</span>s`:'Run again'}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
+    c.innerHTML=`<h2>Fell on wave ${R.wave}</h2><p>Tier ${R.tier} · best ${save.best[R.tier]||0}</p><div class="grid2"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':''}</div><div><span>Offline rate</span>${fmt(save.bestCph)}/h${R.time<CFG.offlineMinRun?' (run too short to count)':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b> <small>${fmt(R.kills)} kills</small></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div><div><span>Cash earned</span>${fmt(R.cashEarned)}</div><div><span>Run time</span>${m}m ${s}s (game time)</div></div><button id="toHist" style="width:100%;margin-bottom:8px">Battle history</button><button id="toWs" style="width:100%;margin-bottom:8px">Open workshop (${fmt(save.coins)} coins)</button>${tierPicker()}<button class="go" id="goBtn">${autoTimer?`Run again · auto in <span id="autoTxt">${autoLeft}</span>s`:'Run again'}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
 }
 $('ovCard').addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   if(t.dataset.tier){ovTier=+t.dataset.tier;showOv(run&&run.over?'over':'start')}
   else if(t.id==='goBtn'){stopAuto();newRun(ovTier)}
   else if(t.id==='stopAuto'){stopAuto();showOv('over')}
+  else if(t.id==='resumeBtn')setPause(false);
+  else if(t.id==='endBtn'){if(t.dataset.arm){setPause(false);gameOver(true)}else{t.dataset.arm=1;t.textContent='Tap again to end the run'}}
+  else if(t.id==='toHelp')openModal('help');
   else if(t.id==='toWs'){ui.tab=save.set.tab='Workshop';buildPanel()}
   else if(t.id==='toHist'){hTab='runs';openModal('history')}
 });
@@ -68,7 +79,7 @@ function buildPanel(){
   labRows=[];
   if(ui.tab==='Equipment'||ui.tab==='Modules'){rows=[];loSig='';P.innerHTML='';return refreshLoadout()}
   if(ui.tab==='Lab'){rows=[];
-    P.innerHTML=`<p class="note">Research is paid in <b class="shard">shards</b>, which only drop from enemies on tier 2 and up. It applies instantly and lasts forever. No timers.</p>`+(shardsOn()?'':`<p class="note"><b>Locked:</b> reach wave ${CFG.tierUnlockWave} on tier 1 to unlock tier 2 and start finding shards.</p>`)+LAB.map(l=>`<div class="row"><div><b>${l.n}</b><span class="v"></span><span class="note" style="display:block;margin:2px 0 0">${l.d}</span></div><button class="buy shard" data-lab="${l.k}"></button></div>`).join('');
+    P.innerHTML=`<p class="note">Research is paid in <b class="shard">shards</b>, earned at the end of every run on tier 2 and up: the more enemies you kill, the more you get, and higher tiers multiply it. It applies instantly and lasts forever. No timers.</p>`+(shardsOn()?'':`<p class="note"><b>Locked:</b> reach wave ${CFG.tierUnlockWave} on tier 1 to unlock tier 2 and start finding shards.</p>`)+LAB.map(l=>`<div class="row"><div><b>${l.n}</b><span class="v"></span><span class="note" style="display:block;margin:2px 0 0">${l.d}</span></div><button class="buy shard" data-lab="${l.k}"></button></div>`).join('');
     labRows=[...P.querySelectorAll('[data-lab]')].map(b=>({l:LK[b.dataset.lab],b,v:b.parentNode.querySelector('.v')}));
     return refreshPanel()}
   const ws=ui.tab==='Workshop';
@@ -177,22 +188,22 @@ function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=l
   $('mTitle').textContent=`Tier ${t} · Wave ${w}`;
   const tabs=`<div class="mults"><button data-etab="wave" class="${eTab==='wave'?'on':''}">Wave info</button><button data-etab="spire" class="${eTab==='spire'?'on':''}">Your spire</button></div>`;
   if(eTab==='spire')return tabs+spireHtml();
-  const ch=spawnChance(w),boss=w%CFG.bossEvery===0,nextBoss=Math.ceil(w/CFG.bossEvery)*CFG.bossEvery,tm=CFG.tier(t);
+  const cb=live?run.s.coinBonus:valAt(SK.coinBonus,0,save.ws.coinBonus||0),ch=spawnChance(w),boss=w%CFG.bossEvery===0,nextBoss=Math.ceil(w/CFG.bossEvery)*CFG.bossEvery,tm=CFG.tier(t);
   const rows=TYPES.map(k=>{const d=ET[k],e=enemyStats(k,w,t),on=d.r===3?boss:w>=(d.from||1);
     const when=d.r===3?(boss?'this wave':`wave ${nextBoss}`):on?'':`from wave ${d.from}`;
     const chance=d.r===3?(boss?'1 boss':'–'):on?pct(ch[k]||0):'–';
-    return`<tr class="${on?'':'off'}"><td>${mobIcon(d)}<span>${d.n}${when?`<span class="when">${when}</span>`:''}</span></td><td>${chance}</td><td>${fmt(e.hp)}</td><td>${fmt(e.atk)}</td><td>${fmt(e.spd)}</td><td>${fmt(e.weight)}</td></tr>`}).join('');
+    return`<tr class="${on?'':'off'}"><td>${mobIcon(d)}<span>${d.n}${when?`<span class="when">${when}</span>`:''}</span></td><td>${chance}</td><td>${fmt(e.hp)}</td><td>${fmt(e.atk)}</td><td>${fmt(e.spd)}</td><td class="coin">${fmt(e.coins*cb)}</td><td>${fmt(e.weight)}</td></tr>`}).join('');
   const cnt=CFG.spawnCount(w)+(boss?1:0);
-  return tabs+`<table class="etab"><thead><tr><th>Enemy</th><th title="Chance per spawn">%</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed, m/s">» m/s</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
+  return tabs+`<table class="etab"><thead><tr><th>Enemy</th><th title="Chance per spawn">%</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed, m/s">» m/s</th><th title="Coins dropped, with your coin bonus">Coins</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
   <div class="grid2 winfo">
     <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s</small></div>
     <div><span>Spawned this wave</span><b id="wiSpawned">${live?run.spawned:0}</b> <small>of ${cnt}</small></div>
     <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b></div>
     <div><span>Next boss</span><b>${boss?'this wave':'wave '+nextBoss}</b></div>
     <div><span>Growth per wave</span><b>♥ +${pct(CFG.hpGrow-1)} · ⚔ +${pct(CFG.dmgGrow-1)}</b></div>
-    <div><span>Tier ${t} multiplier</span><b>♥ ×${fmt(tm.hp)} · ⚔ ×${fmt(tm.dmg)}</b></div>
+    <div><span>Tier ${t} multiplier</span><b>♥ ×${fmt(tm.hp)} · ⚔ ×${fmt(tm.dmg)} · <span class="coin">coins ×${fmt(tm.coin)}</span></b></div>
   </div>
-  <p class="note">% is the chance each regular spawn is that type. Attack is damage per hit before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is metres per second (a new spire's range is ${SK.range.base} m). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside, and knockback moves them less. Greyed-out types can't spawn yet.</p>`}
+  <p class="note">% is the chance each regular spawn is that type. Attack is damage per hit before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is metres per second (a new spire's range is ${SK.range.base} m). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside, and knockback moves them less. Coins is what each enemy drops on this wave, tier multiplier (×${fmt(tm.coin)}) and your coin bonus included. Greyed-out types can't spawn yet.</p>`}
 function spireStats(){const live=run&&!run.over;const v={};for(const s of ST)v[s.k]=live?run.s[s.k]:valAt(s,0,save.ws[s.k]||0);return{live,v}}
 function spireHtml(){const {live,v}=spireStats();eSig=JSON.stringify(v)+(live?Math.round(run.hp):'');
   const dps=v.damage*v.aspd*(1+v.crit*(v.critMult-1));
@@ -213,7 +224,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <h3>Currencies</h3><ul>
   <li><b class="cash">Cash</b> comes from kills and from cash interest, paid at the start of every wave. Spend it on Attack, Defense and Utility upgrades. It resets every run.</li>
   <li><b class="coin">Coins</b> come from kills and are kept forever. Spend them in the Workshop on permanent tower upgrades.</li>
-  <li><b class="shard">Shards</b> only drop from enemies on tier 2 and up, and more on higher tiers. Spend them in the Lab.</li>
+  <li><b class="shard">Shards</b> are paid when a run ends on tier 2 or higher, based on how many enemies you killed (${CFG.shardPerKill} per kill × the tier's shard multiplier, which grows ×1.5 per tier). Spend them in the Lab.</li>
   <li><b class="chip">Chips</b> drop from bosses. Spend them on Equipment.</li>
   <li><b class="alloy">Alloy</b> drops from elites. Spend it on Modules.</li></ul>
   <h3>Equipment and Modules</h3><ul>
@@ -235,7 +246,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}
 function buildSpeeds(){$('speeds').innerHTML=speeds().map(s=>`<button data-sp="${s}" class="${save.set.speed===s?'on':''}">${s}×</button>`).join('')}
 $('speeds').addEventListener('click',e=>{const b=e.target.closest('button');if(b){save.set.speed=+b.dataset.sp;persist();buildSpeeds()}});
-const setPause=v=>{paused=v;$('pause').textContent=v?'Resume':'Pause';$('pause').classList.toggle('on',v)};
+const setPause=v=>{paused=v;$('pause').textContent=v?'Resume':'Pause';$('pause').classList.toggle('on',v);if(run&&!run.over)showOv(v?'paused':null)};
 $('pause').addEventListener('click',()=>setPause(!paused));
 $('perfBtn').addEventListener('click',()=>{save.set.perf=!save.set.perf;persist()});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)return closeModal();if(e.target.matches('input,textarea'))return;

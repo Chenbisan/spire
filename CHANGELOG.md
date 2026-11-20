@@ -1,5 +1,13 @@
 # What's new in Spire
 
+## 1.14.0 — 2026-11-20
+- **New coin drops:** Basic 2, Fast / Ranged / Tank 3, elites 5, bosses 10 (before the wave, tier and coin-bonus multipliers).
+- **The tier coin multiplier is front and centre:** it grows ×2.2 per tier (×4.84 on tier 3, ×10.6 on tier 4…) and now shows on the tier buttons, the start screen and the enemy panel, so it's clear higher tiers are worth farming.
+- **Enemy coins:** the enemy table has a Coins column with what each enemy drops on the current wave, your coin bonus included.
+- **Better start screen:** pick a tier and see its enemy health and attack, coin and shard multipliers, your best wave, best coins per hour, runs and offline rate, with shortcuts to the Workshop, Records and How to play.
+- **Shards now come from kills:** instead of dropping from enemies, shards are paid when a run ends on tier 2 or higher, based on how many enemies you killed. Higher tiers multiply it (×1.5 per tier). The Paused card shows what you'll get so far.
+- **Pause, then end:** pausing now shows a Paused card with your run so far, Resume, and End run (tap twice to confirm).
+
 ## 1.13.0 — 2026-11-20
 - **Cards are now Equipment,** with a new look: your equipped items sit in glowing slots at the top, and the armory below shows each item as a tile with its own icon.
 - **Equipment only adds new abilities now.** Second Wind and Wave Rush stay. The cards that only raised a stat (Sharpshooter, Rapid Fire, Eagle Eye, Lucky Shot, Fortify, Mending, Bounty, Prospector) and Frost Field (saved for a future ultimate weapon) are gone, and **every chip you spent on them is refunded**.
