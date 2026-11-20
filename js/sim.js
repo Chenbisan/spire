@@ -22,6 +22,8 @@ function newRun(tier){
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
 function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpGrow**(w-1)*tm.hp,atk:d.dmg*CFG.dmgGrow**(w-1)*tm.dmg,spd:d.spd,weight:d.weight}}
+// chance each type is picked for a regular spawn on wave w (mirrors pickType; Basic takes what's left)
+function spawnChance(w){const o={};let left=1;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;const p=Math.min(left,d.freq);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
 function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;acc+=d.freq;if(r<acc)return t}return'basic'}
 function spawn(t,x,y){
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};

@@ -31,6 +31,7 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .hp{flex:1 1 200px;max-width:380px;height:12px;border-radius:6px;background:var(--grid);overflow:hidden;position:relative}
 .hp i{position:absolute;inset:0;background:var(--acc);transform-origin:left;will-change:transform}
 .echip{display:flex;align-items:baseline;gap:4px;min-height:32px;padding:2px 10px;font:500 15px 'Chakra Petch',sans-serif;white-space:nowrap}.echip span{color:var(--mute);font:13px Inter,sans-serif;margin-right:4px}.echip i{font-style:normal;color:var(--mute);font-size:12px;margin-left:6px}.echip i:first-of-type{margin-left:0}
+.winfo{margin:12px 0 8px}.winfo b{font-weight:500}.winfo small{color:var(--mute);font:12px Inter,sans-serif}
 .etab{width:100%;border-collapse:collapse;font:500 14px 'Chakra Petch',sans-serif}.etab th{font:600 12px Inter,sans-serif;color:var(--mute);text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}.etab th:first-child,.etab td:first-child{text-align:left}.etab td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.etab td:first-child{display:flex;align-items:center;gap:6px}.etab svg{width:24px;height:24px;flex:none}.etab tr.off td{color:var(--mute)}.etab .when{display:block;font:400 12px Inter,sans-serif;color:var(--mute)}.etab td:first-child>span{white-space:normal;line-height:1.2}
 .hpt{font:500 13px 'Chakra Petch',sans-serif;color:var(--mute);white-space:nowrap}
 .wrap{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 360px}

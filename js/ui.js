@@ -18,7 +18,10 @@ function hud(){
   TX('hCash',run?fmt(run.cash):'0');TX('hCoins',fmt(save.coins));TX('hShards',fmt(save.shards));$('shardChip').hidden=!shardsOn();
   {const w=run?run.wave:1,t=run?run.tier:ovTier,e=enemyStats('basic',w,t);
    TX('eHp',fmt(e.hp));TX('eAtk',fmt(e.atk));TX('eSpd',fmt(e.spd));TX('eWt',fmt(e.weight));
-   if(modalKind==='enemies'&&(w!==eTabW||t!==eTabT))mBody.innerHTML=enemyHtml()}
+   if(modalKind==='enemies'){
+     if(w!==eTabW||t!==eTabT)mBody.innerHTML=enemyHtml();
+     else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',Math.ceil(CFG.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
+     else if(eTab==='spire'){const {live,v}=spireStats();if(JSON.stringify(v)+(live?Math.round(run.hp):'')!==eSig)mBody.innerHTML=enemyHtml()}}}
   if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`)}
   else{TX('hpTxt','–')}
   const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
@@ -132,15 +135,35 @@ $('setBtn').addEventListener('click',()=>modalKind==='settings'?closeModal():ope
 $('helpBtn').addEventListener('click',()=>modalKind==='help'?closeModal():openModal('help'));
 $('mClose').addEventListener('click',closeModal);
 $('eBtn').addEventListener('click',()=>modalKind==='enemies'?closeModal():openModal('enemies'));
-let eTabW=0,eTabT=0;
-function enemyHtml(){const w=eTabW=run?run.wave:1,t=eTabT=run?run.tier:ovTier;
-  const rows=TYPES.map(k=>{const d=ET[k],e=enemyStats(k,w,t),on=d.r===3?w%CFG.bossEvery===0:w>=(d.from||1);
-    const when=d.r===3?(on?'this wave':`wave ${Math.ceil(w/CFG.bossEvery)*CFG.bossEvery}`):on?'':`from wave ${d.from}`;
-    return`<tr class="${on?'':'off'}"><td>${mobIcon(d)}<span>${d.n}${when?`<span class="when">${when}</span>`:''}</span></td><td>${fmt(e.hp)}</td><td>${fmt(e.atk)}</td><td>${fmt(e.spd)}</td><td>${fmt(e.weight)}</td></tr>`}).join('');
-  return`<p class="note">${run&&!run.over?`Tier ${t}, wave ${w}. Updates as waves go by.`:`Tier ${t}, wave 1 (start a run to see live values).`} Greyed-out types can't spawn yet.</p>
-  <table class="etab"><thead><tr><th>Enemy</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed">» SPD</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
-  <p class="note">Attack is damage per hit, before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is distance per second (a new spire's range is ${SK.range.base}). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside in a crowd, and it will resist knockback.</p>`}
-modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();const b=e.target.closest('button');if(b&&b.dataset.act)settingsClick(b)});
+let eTabW=0,eTabT=0,eTab='wave',eSig='';
+const pct=v=>(v*100).toFixed(v<.1&&v>0?1:0)+'%';
+function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=live?run.tier:ovTier;eSig='';
+  $('mTitle').textContent=`Tier ${t} · Wave ${w}`;
+  const tabs=`<div class="mults"><button data-etab="wave" class="${eTab==='wave'?'on':''}">Wave info</button><button data-etab="spire" class="${eTab==='spire'?'on':''}">Your spire</button></div>`;
+  if(eTab==='spire')return tabs+spireHtml();
+  const ch=spawnChance(w),boss=w%CFG.bossEvery===0,nextBoss=Math.ceil(w/CFG.bossEvery)*CFG.bossEvery,tm=CFG.tier(t);
+  const rows=TYPES.map(k=>{const d=ET[k],e=enemyStats(k,w,t),on=d.r===3?boss:w>=(d.from||1);
+    const when=d.r===3?(boss?'this wave':`wave ${nextBoss}`):on?'':`from wave ${d.from}`;
+    const chance=d.r===3?(boss?'1 boss':'–'):on?pct(ch[k]||0):'–';
+    return`<tr class="${on?'':'off'}"><td>${mobIcon(d)}<span>${d.n}${when?`<span class="when">${when}</span>`:''}</span></td><td>${chance}</td><td>${fmt(e.hp)}</td><td>${fmt(e.atk)}</td><td>${fmt(e.spd)}</td><td>${fmt(e.weight)}</td></tr>`}).join('');
+  const cnt=CFG.spawnCount(w)+(boss?1:0);
+  return tabs+`<table class="etab"><thead><tr><th>Enemy</th><th title="Chance per spawn">%</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed">» SPD</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="grid2 winfo">
+    <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(CFG.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${CFG.waveLen} s</small></div>
+    <div><span>Spawned this wave</span><b id="wiSpawned">${live?run.spawned:0}</b> <small>of ${cnt}</small></div>
+    <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b></div>
+    <div><span>Next boss</span><b>${boss?'this wave':'wave '+nextBoss}</b></div>
+    <div><span>Growth per wave</span><b>♥ +${pct(CFG.hpGrow-1)} · ⚔ +${pct(CFG.dmgGrow-1)}</b></div>
+    <div><span>Tier ${t} multiplier</span><b>♥ ×${fmt(tm.hp)} · ⚔ ×${fmt(tm.dmg)}</b></div>
+  </div>
+  <p class="note">% is the chance each regular spawn is that type. Attack is damage per hit before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is distance per second (a new spire's range is ${SK.range.base}). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside, and it will resist knockback. Greyed-out types can't spawn yet.</p>`}
+function spireStats(){const live=run&&!run.over;const v={};for(const s of ST)v[s.k]=live?run.s[s.k]:valAt(s,0,save.ws[s.k]||0);return{live,v}}
+function spireHtml(){const {live,v}=spireStats();eSig=JSON.stringify(v)+(live?Math.round(run.hp):'');
+  const dps=v.damage*v.aspd*(1+v.crit*(v.critMult-1));
+  return`<p class="note">${live?'Current values in this run, Workshop and in-run upgrades included.':'Your starting values (Workshop). Start a run to see in-run upgrades added.'}</p>
+  <div class="grid2 winfo"><div><span>Damage per second</span><b>${fmt(dps)}</b> <small>average, crits included</small></div><div><span>Health</span><b>${live?fmt(Math.max(0,run.hp))+' / ':''}${fmt(v.health)}</b></div></div>
+  ${GROUPS.map(g=>`<div class="gh">${g}</div><div class="grid2 winfo">${ST.filter(s=>s.g===g&&!(s.ws&&live)).map(s=>`<div><span>${s.n}</span><b>${fv(s,v[s.k])}</b></div>`).join('')}</div>`).join('')}`}
+modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();const b=e.target.closest('button');if(!b)return;if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.act)settingsClick(b)});
 modal.addEventListener('change',optChange);
 const mobIcon=d=>{const z=d.sz/22*.75+.4,pts=SHAPES[d.sh].map(p=>p.map(v=>(v*z).toFixed(3)).join(',')).join(' ');
   return`<svg viewBox="-1.5 -1.5 3 3" width="34" height="34" aria-hidden="true">${d.shield?`<circle r="${(z*1.4).toFixed(2)}" fill="none" stroke="var(--e6)" stroke-width=".1"/>`:''}<polygon points="${pts}" fill="var(--${d.c})" fill-opacity=".3" stroke="var(--${d.c})" stroke-width=".12" stroke-linejoin="round"/></svg>`};

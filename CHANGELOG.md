@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.6.0 — 2026-11-20
+- **Better enemy info** (tap the Enemy stats in the top bar):
+  - **Wave info** now shows each enemy's chance to spawn, plus a wave summary: time left, how many enemies have spawned, how many are on the field, the next boss, and how much enemies grow per wave and per tier.
+  - **Your spire** is a new tab with your current stats side by side: damage per second, health and every upgrade value.
+
 ## 1.5.0 — 2026-11-20
 - **Enemy stats in the top bar:** see this wave's enemy ♥ health, ⚔ attack, » speed and ⚖ weight at a glance. Tap it for a table of every enemy type, which updates as the waves go by and shows when locked types arrive.
 - **New stat, weight:** heavier enemies shove lighter ones aside in a crowd (a Tank won't be pushed around by Fast enemies, and nothing moves a Boss). Future knockback will use it too.
