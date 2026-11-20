@@ -27,12 +27,14 @@ function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.frostSlow=0;R.ultSt={
     if(st.act>0){st.act-=dt;
       if(u.k==='frost'){R.frostSlow=Math.min(.8,uv('frost','slow')+(S.frost>=2?.2:0));R.frostR=R.s.range*uv('frost','radius');
         if(S.frost>=3){const r2=R.frostR**2;for(let i=ebs.length-1;i>=0;i--){const b=ebs[i];if(b.x*b.x+b.y*b.y<=r2){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b)}}}}
-      if(u.k==='grav'){const r2=uv('grav','radius')**2,pull=uv('grav','pull'),dps=S.grav>=2?R.s.damage*2*dt:0;
-        for(const e of enemies){if(e.dead)continue;const dx=st.x-e.x,dy=st.y-e.y,d2=dx*dx+dy*dy;if(d2>r2)continue;
+      // damage over time lands in dotHz chunks (same total damage, far fewer hits to process); movement stays per step
+      const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
+      if(u.k==='grav'){const rad=uv('grav','radius'),r2=rad*rad,pull=uv('grav','pull'),dmg=S.grav>=2&&dotT?R.s.damage*2*dotT:0,hold=S.grav>=3;
+        forNear(st.x,st.y,rad,e=>{const dx=st.x-e.x,dy=st.y-e.y,d2=dx*dx+dy*dy;if(d2>r2)return;
           if(d2>=1){const d=Math.sqrt(d2),m=Math.min(d,pull*dt/e.d.weight);e.x+=dx/d*m;e.y+=dy/d*m}
-          if(S.grav>=3)e.stunT=Math.max(e.stunT,dt*2);if(dps)damage(e,dps,0,false,1)}}
-      if(u.k==='laser'){const w=uv('laser','width')/2,dps=R.s.damage*uv('laser','dmg')*(S.laser>=2?1.5:1)*dt,cx=Math.cos(st.ang),cy=Math.sin(st.ang),both=S.laser>=3;
-        for(const e of enemies){if(e.dead)continue;if(!both&&e.x*cx+e.y*cy<=0)continue;if(Math.abs(e.x*cy-e.y*cx)<=w+e.d.sz)damage(e,dps,0,false,S.laser>=1?3:1)}}}
+          if(hold)e.stunT=Math.max(e.stunT,dt*2);if(dmg)damage(e,dmg,0,false,1)})}
+      if(u.k==='laser'&&dotT){const w=uv('laser','width')/2,dmg=R.s.damage*uv('laser','dmg')*(S.laser>=2?1.5:1)*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang),both=S.laser>=3,fl=S.laser>=1?3:1;
+        for(const e of enemies){if(e.dead)continue;if(!both&&e.x*cx+e.y*cy<=0)continue;if(Math.abs(e.x*cy-e.y*cx)<=w+e.d.sz)damage(e,dmg,0,false,fl)}}}
     else if(st.cd>0)st.cd-=dt;
     if(st.cd<=0&&st.act<=0&&!ultManual(u.k)&&tgt)fireUlt(u.k,tgt)}}
 function shockBlast(after){const R=run,S=R.ultSt||{},f=uv('shock','force'),sn=uv('shock','stun'),lim=spawnMax(),rad=R.s.range*uv('shock','radius'),bd=S.shock>=2?R.s.damage*20:0;
@@ -41,23 +43,30 @@ function shockBlast(after){const R=run,S=R.ultSt||{},f=uv('shock','force'),sn=uv
   ultFx.push({k:'shock',at:performance.now(),r:rad,after})}
 // Chain Lightning: sparked by a bullet hit on e. Each enemy struck has the proc chance to split into `jumps` new bolts to
 // nearby unhit enemies (within ULT.chainJump m), each doing `mult` × the previous bolt's damage. Capped for performance.
+let chainStamp=0;const chainQ=[],chainV=[],chainD=[],chainNear=[],chainNd=[];
 function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),n=uv('chain','jumps'),mul=uv('chain','mult'),jr=ULT.chainJump**2,hits=S.chain>=2?2:1;
-  const hit=new Set([e0]),segs=[],q=[[e0,R.s.damage*uv('chain','dmg'),0]];save.stats.ultUses++;
+  const stamp=++chainStamp,fx=ultFx.length<80,segs=fx?[]:null;let hitN=1;e0.cz=stamp;save.stats.ultUses++;
+  chainQ.length=chainV.length=chainD.length=0;chainQ.push(e0);chainV.push(R.s.damage*uv('chain','dmg'));chainD.push(0);
   const strike=(e,v0)=>{for(let h=0;h<hits;h++){let c=0,v=v0;if(S.chain>=1&&Math.random()<R.s.crit){c=1;v*=R.s.critMult;if(Math.random()<R.s.superCrit){c=2;v*=R.s.superMult}}damage(e,v,c)}
     if(S.chain>=3){e.slowT=2;e.slowF=Math.max(e.slowF||0,.5)}};
-  for(let qi=0;qi<q.length;qi++){const [e,v,dp]=q[qi];strike(e,v);
-    if(dp>=ULT.chainDepth||hit.size>=ULT.chainMax||Math.random()>=ch)continue;
-    const near=[];forNear(e.x,e.y,ULT.chainJump,o=>{if(hit.has(o))return;const d=(o.x-e.x)**2+(o.y-e.y)**2;if(d<=jr)near.push([d,o])});
-    near.sort((a,b)=>a[0]-b[0]);for(const [,o] of near.slice(0,n)){if(hit.size>=ULT.chainMax)break;hit.add(o);segs.push([e.x,e.y,o.x,o.y,Math.random()-.5,Math.random()-.5,dp]);q.push([o,v*mul,dp+1])}}
-  if(ultFx.length<80)ultFx.push({k:'chain',x:e0.x,y:e0.y,segs,at:performance.now()})}
+  for(let qi=0;qi<chainQ.length;qi++){const e=chainQ[qi],v=chainV[qi],dp=chainD[qi];strike(e,v);
+    if(dp>=ULT.chainDepth||hitN>=ULT.chainMax||Math.random()>=ch)continue;
+    // the n nearest unhit enemies within the jump range, kept in a short sorted list
+    chainNear.length=chainNd.length=0;
+    forNear(e.x,e.y,ULT.chainJump,o=>{if(o.cz===stamp)return;const d=(o.x-e.x)**2+(o.y-e.y)**2;if(d>jr)return;
+      if(chainNear.length===n&&d>=chainNd[n-1])return;let i=chainNear.length===n?n-1:chainNear.length;
+      while(i>0&&chainNd[i-1]>d){chainNear[i]=chainNear[i-1];chainNd[i]=chainNd[i-1];i--}chainNear[i]=o;chainNd[i]=d});
+    for(const o of chainNear){if(hitN>=ULT.chainMax)break;o.cz=stamp;hitN++;if(segs)segs.push([e.x,e.y,o.x,o.y,Math.random()-.5,Math.random()-.5,dp]);chainQ.push(o);chainV.push(v*mul);chainD.push(dp+1)}}
+  if(fx)ultFx.push({k:'chain',x:e0.x,y:e0.y,segs,at:performance.now()})}
 function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[k].passive||st.cd>0||st.act>0||R.over)return false;
   const near=inRange();if(!near.length)return false;tgt=tgt&&!tgt.dead?tgt:near.sort((a,b)=>a.dist-b.dist)[0];
   st.cd=uv(k,'cd');save.stats.ultUses++;const S=R.ultSt||{},now=performance.now();
   if(k==='frost'){st.act=uv('frost','dur')}
   else if(k==='shock'){shockBlast(false);if(S.shock>=3)st.after=ULT.aftershock}
   else if(k==='laser'){st.ang=Math.atan2(tgt.y,tgt.x);st.act=uv('laser','dur')}
-  else if(k==='grav'){const r2=uv('grav','radius')**2;let best=near[0],bc=-1;
-    for(const a of near){let c=0;for(const b of near)if((a.x-b.x)**2+(a.y-b.y)**2<=r2)c++;if(c>bc){bc=c;best=a}}
+  else if(k==='grav'){const rad=uv('grav','radius'),r2=rad*rad,m=Math.min(near.length,ULT.gravSample);let best=near[0],bc=-1;
+    // up to gravSample candidates (all of them in small crowds), each counting its neighbours through the grid
+    for(let i=0;i<m;i++){const a=m<near.length?near[Math.floor(Math.random()*near.length)]:near[i];let c=0;forNear(a.x,a.y,rad,b=>{if((a.x-b.x)**2+(a.y-b.y)**2<=r2)c++});if(c>bc){bc=c;best=a}}
     st.x=best.x;st.y=best.y;st.act=uv('grav','dur')}
   return true}
 // ---- drawing (called from draw()) ----
@@ -78,7 +87,7 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     else if(f.k==='shock'){ctx.strokeStyle=C.gold;ctx.lineWidth=(f.after?2.5:4)*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(0,0,CFG.towerR+k*f.r,0,6.283);ctx.stroke()}}
   ctx.globalAlpha=1;
   // stunned enemies get a gold dashed ring
-  ctx.strokeStyle=C.gold;ctx.lineWidth=1.5*dpr/sc;if(enemies.length<=CFG.lodCount)ctx.setLineDash([3*dpr/sc,3*dpr/sc]);ctx.beginPath();
+  ctx.strokeStyle=C.gold;ctx.lineWidth=1.5*dpr/sc;ctx.setLineDash([3*dpr/sc,3*dpr/sc]);ctx.beginPath();
   for(const e of enemies)if(!e.dead&&e.stunT>0){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();ctx.setLineDash([]);
 }
 // ---- Ultimates tab ----

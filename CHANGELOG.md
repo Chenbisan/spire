@@ -1,5 +1,12 @@
 # What's new in Spire
 
+## 1.21.2 — 2026-11-20
+- **Faster with big crowds and maxed ultimates:** about twice as fast with every ultimate maxed, and about 1.6× faster with 3,000 enemies, so high game speeds hold up far longer.
+  - Laser and Gravity Well damage now lands 10 times a second instead of every frame (same total damage).
+  - Chain Lightning, multishot, healers and shots that lose their target only look at nearby enemies.
+- **Tidier crowds:** enemies blocked by the crowd in front of them wait their turn instead of piling on top of each other, so big crowds overlap about a third as much.
+- **Crowd detail mode removed:** big crowds are now drawn at full detail (outlines, health bars, healer pulses, dashed stun rings), since the cheaper drawing barely saved any time.
+
 ## 1.21.1 — 2026-11-20
 - **Much faster with huge crowds:** with 2,000+ enemies on screen the simulation runs several times faster (crowd spacing uses a finer grid, and Chain Lightning and bounce shots only look at nearby enemies).
 - **No more frame-rate collapse:** the simulation gets a fixed time budget per frame. If a crowd is too big to keep up, the game runs a little slower than your chosen speed instead of freezing; the FPS overlay says when that happens.

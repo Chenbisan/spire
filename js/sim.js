@@ -49,7 +49,7 @@ function spawn(t,x,y){
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
-  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;
+  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.blk=0;
   enemies.push(e);
 }
 function nextWave(){
@@ -95,7 +95,9 @@ function forNear(x,y,r,fn){if(!sepBuilt){for(const e of enemies)if(!e.dead)fn(e)
   const c0x=sepCell(x-r),c1x=sepCell(x+r),c0y=sepCell(y-r),c1y=sepCell(y+r);
   for(let gy=c0y;gy<=c1y;gy++)for(let gx=c0x;gx<=c1x;gx++)for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){const e=enemies[j];if(e&&!e.dead)fn(e)}}
 function nearestOther(x,y,ex,r){let best=null,bd=r*r;forNear(x,y,r,e=>{if(e===ex)return;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}});return best}
-function nearest(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
+// nearest enemy: looks in the grid around (x,y) first (exact if anything is that close), else scans everything
+function nearest(x,y){if(sepBuilt){const n=nearestOther(x,y,null,CFG.nearR);if(n)return n}
+  let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
 // shards earned by this run so far (paid when it ends)
 const runShards=R=>R.kills*CFG.shardPerKill*R.tm.shard*(1+R.fx.drop);
 function gameOver(quit){
@@ -120,7 +122,18 @@ function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:
   tgt.shotAt=performance.now(); // render-only: targeting beam
   b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
   b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
-function update(dt){
+// multishot's extra targets: the best k in range after the main target (same order as targeting). Picked once per step
+// with a small insertion list instead of sorting every enemy on every shot.
+let multiStep=-1;const multiList=[],healers=[];
+function multiPicks(tgt,pr,k){
+  if(multiStep===GEN_STEP)return multiList;multiStep=GEN_STEP;multiList.length=0;if(k<=0)return multiList;
+  const rg=run.s.range,key=e=>(pr?pr[e.t]*1e6:0)+e.dist;
+  for(const e of enemies){if(e.dead||e===tgt||e.dist>rg+e.d.sz)continue;const v=key(e);
+    if(multiList.length===k&&v>=key(multiList[k-1]))continue;
+    let i=multiList.length===k?k-1:multiList.length;while(i>0&&key(multiList[i-1])>v){multiList[i]=multiList[i-1];i--}multiList[i]=e}
+  return multiList}
+let GEN_STEP=0;
+function update(dt){GEN_STEP++;
   const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;save.stats.time+=dt;R.waveT+=dt;R.spawnT+=dt;
   const cnt=CFG.spawnCount(R.wave),iv=R.waveLen*.9/cnt;
   while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
@@ -136,22 +149,22 @@ function update(dt){
     e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
     let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;if(R.frostSlow&&dist<=R.frostR)sp*=1-R.frostSlow;
     if(e.stunT>0)e.stunT-=dt; // stunned: no moving, no attacking
-    else if(dist>stop){const m=Math.min(sp*dt,dist-stop);e.x-=e.x/dist*m;e.y-=e.y/dist*m}
+    else if(dist>stop){const m=Math.min(sp*dt,dist-stop)*(1-e.blk);e.x-=e.x/dist*m;e.y-=e.y/dist*m} // blk: held back by the crowd ahead
     else{e.atk+=dt;
       if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg;ebs.push(b)}}
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg,e);if(R.over)return}}
-    if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=1){e.ht=0;e.hf=.4;const r2=d.healR**2;
-      for(const o of enemies)if(!o.dead&&o!==e&&(o.x-e.x)**2+(o.y-e.y)**2<=r2)o.hp=Math.min(o.mhp,o.hp+o.mhp*d.heal)}}
+    if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=1){e.ht=0;e.hf=.4;healers.push(e)}} // healed below, once the grid is built
     if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}
   }
   separate();
+  for(const h of healers){const r2=h.d.healR**2,f=h.d.heal;forNear(h.x,h.y,h.d.healR,o=>{if(o!==h&&(o.x-h.x)**2+(o.y-h.y)**2<=r2)o.hp=Math.min(o.mhp,o.hp+o.mhp*f)})}
+  healers.length=0;
   ultTick(dt,tgt);if(R.over)return;
   const fi=1/s.aspd;R.fireT+=dt;
   if(!tgt)R.fireT=Math.min(R.fireT,fi);
   else while(R.fireT>=fi){R.fireT-=fi;fire(tgt);
     const mc=s.multiChance+R.fx.multi;
-    if(mc>0&&Math.random()<mc){const extra=[];for(const e of enemies)if(!e.dead&&e!==tgt&&e.dist<=s.range+e.d.sz)extra.push(e);
-      extra.sort(pr?(a,b)=>pr[a.t]-pr[b.t]||a.dist-b.dist:(a,b)=>a.dist-b.dist);const n=Math.min(extra.length,Math.floor(s.multiTargets));for(let k=0;k<n;k++)fire(extra[k]);if(n)save.stats.multi++}}
+    if(mc>0&&Math.random()<mc){const extra=multiPicks(tgt,pr,Math.floor(s.multiTargets));for(const e of extra)if(!e.dead)fire(e);if(extra.length)save.stats.multi++}}
   const m=CFG.bulletSpd*dt;
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;
@@ -173,6 +186,7 @@ function update(dt){
 // grid cell (m): about one enemy wide, so crowded cells stay small
 const SEPC=24;let sepBuilt=false,SEPN=16,SEPO=SEPC*SEPN/2,sepHead=new Int32Array(SEPN*SEPN),sepNext=new Int32Array(256);
 const sepCell=v=>Math.max(0,Math.min(SEPN-1,Math.floor((v+SEPO)/SEPC)));
+const SEPDX=[0,1,-1,0,1],SEPDY=[0,0,1,1,1];
 let sepFlip=0,SX=new Float32Array(256),SY=new Float32Array(256),SS=new Float32Array(256),SW=new Float32Array(256);
 function separate(){
   sepBuilt=false;const n=enemies.length;if(n<2)return;
@@ -185,16 +199,20 @@ function separate(){
   // with a huge crowd, push every other step (it still settles, just over two steps)
   if(n>CFG.sepEveryOther&&(sepFlip^=1))return;
   const k=CFG.sepPush,g=CFG.sepGap,cap=CFG.sepChecks;
+  // each pair is visited once: the rest of i's own cell (list entries after i), then 4 of the 8 neighbouring cells
   for(let i=0;i<n;i++){const sa=SS[i];if(sa<0)continue;const cx=sepCell(SX[i]),cy=sepCell(SY[i]),wa0=SW[i];let chk=0;
-    const y0=Math.max(0,cy-1),y1=Math.min(SEPN-1,cy+1),x0=Math.max(0,cx-1),x1=Math.min(SEPN-1,cx+1);
-    cells:for(let gy=y0;gy<=y1;gy++)for(let gx=x0;gx<=x1;gx++)
-      for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){if(j<=i)continue;if(++chk>cap)break cells;
+    for(let c=0;c<5;c++){let j;
+      if(c===0)j=sepNext[i];else{const gx=cx+SEPDX[c],gy=cy+SEPDY[c];if(gx<0||gx>=SEPN||gy>=SEPN)continue;j=sepHead[gy*SEPN+gx]}
+      for(;j!==-1;j=sepNext[j]){if(++chk>cap)break;
         const min=(sa+SS[j])*g;let dx=SX[j]-SX[i],dy=SY[j]-SY[i];const d2=dx*dx+dy*dy;if(d2>=min*min)continue;
         let d=Math.sqrt(d2);if(d<1e-3){const r=Math.random()*6.283;dx=Math.cos(r);dy=Math.sin(r);d=1}else{dx/=d;dy/=d}
         const p=(min-d)*k,wb0=SW[j],wa=wb0/(wa0+wb0),wb=1-wa; // heavier enemies get shoved less
-        SX[i]-=dx*p*wa;SY[i]-=dy*p*wa;SX[j]+=dx*p*wb;SY[j]+=dy*p*wb}}
+        SX[i]-=dx*p*wa;SY[i]-=dy*p*wa;SX[j]+=dx*p*wb;SY[j]+=dy*p*wb}}}
   const tr=CFG.towerR;
-  for(let i=0;i<n;i++){if(SS[i]<0)continue;const e=enemies[i];let x=SX[i],y=SY[i];const m=tr+SS[i],d=Math.hypot(x,y);if(d<m&&d>0){x*=m/d;y*=m/d}e.x=x;e.y=y} // never inside the spire
+    // an enemy shoved back outward by the crowd is blocked: it presses forward less next step, so packed crowds stop
+  // overlapping (which is also what makes them expensive)
+  for(let i=0;i<n;i++){if(SS[i]<0)continue;const e=enemies[i];let x=SX[i],y=SY[i];const m=tr+SS[i],d=Math.hypot(x,y);if(d<m&&d>0){x*=m/d;y*=m/d}
+    const back=d>0?((x-e.x)*x+(y-e.y)*y)/d:0,step=e.d.spd*CFG.step;e.blk=back>0?Math.min(CFG.sepHold,back/step):e.blk*.5;e.x=x;e.y=y} // never inside the spire
 }
 // ---- in-run purchase: each level rolls its section's free-upgrade chance and costs nothing on a hit ----
 function buyRun(s,n){const r=run.lv[s.k]||0,ch=run.s['free'+s.g]||0;let paid=0,free=0;

@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.21.1';
+const APP_VERSION='1.21.2';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -23,7 +23,7 @@ const CFG={
   defyFx:900,  // death defied effect length (real ms)
   cleanFxAt:8, hitFlash:180, beamHold:150, beamLen:.07,  // beamLen: stub length as a share of the view radius   // Auto shot effects switch to clean at this game speed; hit flash length (real ms)
   tracerLife:.12, maxTracers:300, streakMax:90,   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
-  sepGap:.9, sepPush:.5, sepChecks:400, sepEveryOther:800, simBudget:20, lodCount:500, boltsDrawn:20, // lodCount: above this many enemies, cheaper drawing // sepChecks: safety cap on neighbours checked per enemy per step; simBudget: max ms of simulation per frame
+  sepGap:.9, sepPush:.8, sepHold:.9, sepChecks:400, sepEveryOther:800, simBudget:20, nearR:60, dotHz:10, boltsDrawn:20, // nearR: a retargeting shot looks this far through the grid first; dotHz: damage-over-time ultimates (Laser, Gravity Well) apply damage this many times per game second // sepChecks: safety cap on neighbours checked per enemy per step; simBudget: max ms of simulation per frame
           // enemies keep (sum of sizes × sepGap) apart; sepPush = how hard they shove per step
 };
 // stat: base, ra = per in-run level, wa/wm = per workshop level, c/w = [cost, growth]
@@ -130,7 +130,7 @@ const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.ma
 // Each level costs ULT.cost(level) chips (×1.6 per level), so maxing needs chips from higher tiers.
 // Status: Silver = both silverT tracks maxed (for timed ones that's duration + cooldown, which makes them permanent),
 // Gold = any 3 tracks maxed (including the Silver pair), Platinum = all 4. Each adds the bonus in sb / gb / pb.
-const ULT={chainJump:70, chainDepth:8, chainMax:40, unlock:50, cost:l=>Math.ceil(10*1.6**l), gravMove:5, laserAim:3, aftershock:1};
+const ULT={chainJump:70, chainDepth:8, chainMax:40, unlock:50, cost:l=>Math.ceil(10*1.6**l), gravMove:5, laserAim:3, aftershock:1, gravSample:64};
 const S1=v=>(+v.toFixed(1))+' s';
 const ULTS=[
  {k:'chain',n:'Chain Lightning',col:'barrier',d:'Your shots have a chance to spark a bolt that splits from enemy to enemy like lightning, weaker with every bounce.',passive:1,
