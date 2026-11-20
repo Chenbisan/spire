@@ -9,6 +9,13 @@ const statMax=s=>s.maxOfRange?curRange()*s.maxOfRange:s.max;
 function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;const m=statMax(s);return m!=null?Math.min(v,m):v}
 // enemies always spawn beyond your range
 const spawnRadius=()=>run&&run.s?Math.max(CFG.spawnR,run.s.range*CFG.spawnRatio):CFG.spawnR;
+// the renderer publishes how far the screen reaches (m); spawns start just past the screen edge in their direction,
+// never closer than spawnRadius() and never farther than 2× it
+const VIEW={hx:0,hy:0};
+function spawnDist(a){const base=spawnRadius();if(!VIEW.hx)return base;
+  const c=Math.abs(Math.cos(a)),s=Math.abs(Math.sin(a)),edge=Math.min(c>1e-6?VIEW.hx/c:Infinity,s>1e-6?VIEW.hy/s:Infinity);
+  return Math.min(base*2,Math.max(base,edge+CFG.offscreen))}
+const spawnMax=()=>spawnRadius()*2;
 const capped=(s,r,w)=>{const m=statMax(s);return m!=null&&valAt(s,r,w)>=m-1e-9};
 function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(const s of ST)run.s[s.k]=valAt(s,run.lv[s.k]||0,save.ws[s.k]||0);
   // cards and modules on top (stat caps still apply)
@@ -39,7 +46,7 @@ function spawnChance(w){const o={};let left=1;for(const t of TYPES){const d=ET[t
 function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;acc+=d.freq;if(r<acc)return t}return'basic'}
 function spawn(t,x,y){
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
-  const x0given=x!=null;if(!x0given){const sr=spawnRadius();x=Math.cos(a)*sr;y=Math.sin(a)*sr}
+  const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
   e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;
@@ -134,7 +141,7 @@ function update(dt){
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
       if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=2?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
-        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,spawnRadius()-d);if(k>0){e.x+=e.x/d*k;e.y+=e.y/d*k;e.px=e.x;e.py=e.y;save.stats.kbs++}}
+        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,spawnMax()-d);if(k>0){e.x+=e.x/d*k;e.y+=e.y/d*k;e.px=e.x;e.py=e.y;save.stats.kbs++}}
         if(b.bn>0){const n=nearestOther(e.x,e.y,e,s.bounceRange);if(n){b.bn--;b.rx=b.x=b.px=e.x;b.ry=b.y=b.py=e.y;b.e=n;b.g=n.gen;b.l=2;drop=false;save.stats.bounces++}}}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
   }
@@ -151,7 +158,7 @@ const sepCell=v=>Math.max(0,Math.min(SEPN-1,Math.floor((v+SEPO)/SEPC)));
 function separate(){
   const n=enemies.length;if(n<2)return;
   if(sepNext.length<n)sepNext=new Int32Array(n*2);
-  const N=Math.ceil(2*(spawnRadius()+60)/SEPC);if(N!==SEPN){SEPN=N;SEPO=SEPC*N/2;sepHead=new Int32Array(N*N)} // grid grows with the arena
+  const N=Math.ceil(2*(spawnMax()+60)/SEPC);if(N!==SEPN){SEPN=N;SEPO=SEPC*N/2;sepHead=new Int32Array(N*N)} // grid grows with the arena
   sepHead.fill(-1);
   for(let i=0;i<n;i++){const e=enemies[i];if(e.dead)continue;const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i}
   const tr=CFG.towerR,k=CFG.sepPush;

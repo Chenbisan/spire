@@ -28,7 +28,7 @@ function draw(){
   // the view zooms smoothly to fit the spawn ring, which follows your range
   const target=Math.max(CFG.arenaR,run&&run.s?run.s.range*CFG.viewRatio:0),now=performance.now();
   viewR=viewR?viewR+(target-viewR)*Math.min(1,(now-viewT)/300):target;viewT=now;
-  const VR=viewR,sc=Math.min(W,H)/(2*VR),ext=Math.max(W,H)/sc/2;ctx.setTransform(sc,0,0,sc,W/2,H/2);
+  const VR=viewR,sc=Math.min(W,H)/(2*VR),ext=Math.max(W,H)/sc/2;VIEW.hx=W/2/sc;VIEW.hy=H/2/sc;ctx.setTransform(sc,0,0,sc,W/2,H/2);
   // distance rings every 100 m (every 200 m once the view is huge), labelled along the crosshair
   ctx.strokeStyle=C.grid;ctx.lineWidth=1.5/sc*Math.min(W,H)/640;const step=VR>1100?200:100;
   ctx.beginPath();for(let r=step;r<=ext;r+=step){ctx.moveTo(r,0);ctx.arc(0,0,r,0,6.283)}ctx.stroke();

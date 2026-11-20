@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.15.7 — 2026-11-20
+- **Enemies spawn off-screen:** each enemy starts just past the edge of your screen in its direction (or 35% beyond your range, whichever is farther), so on wide screens the ones coming from the sides start a little farther out instead of appearing in view. They still fade in.
+
 ## 1.15.6 — 2026-11-20
 - **Enemies spawn much farther out:** 35% beyond your range (was 15%), so they have real travel time before they reach it.
 - **They walk in from off-screen:** the view now fits your range ring rather than the spawn ring, so enemies enter from beyond the edge, and any that spawn in view fade in instead of popping up.
