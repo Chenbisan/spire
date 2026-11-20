@@ -71,6 +71,22 @@ These are classic `<script>` files, not ES modules, so the game keeps working fr
 - Object pooling for enemies and projectiles, and batched drawing per enemy type.
 - Saves to `localStorage` (`spire-save-v1`). Settings → Copy backup code exports a save, and Import restores it. Saves are tied to the site the game runs on, so use a backup code when moving between hosts.
 
+## Versioning
+
+Spire uses [Semantic Versioning](https://semver.org). The current version is `VERSION` in `js/config.js`, and it's shown at the bottom of the Settings tab.
+
+- **Major:** old saves can't be loaded as-is (save format change without a migration), or the game is substantially reworked.
+- **Minor:** new features or content, such as an ability, a Lab research or an enemy type.
+- **Patch:** bug fixes, balance tweaks, and refactors players won't notice.
+
+To release:
+
+1. Bump `VERSION` in `js/config.js`.
+2. Move the items under **Unreleased** in `CHANGELOG.md` to a new version heading with today's date.
+3. Commit, then tag the commit `vX.Y.Z`.
+
+The save format has its own number (`v` in the save, `spire-save-v1` key), which only changes when the save layout changes.
+
 ## Ideas / next up
 
 - Ultimate abilities (chain lightning, slow field)
