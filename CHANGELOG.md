@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.10.0 — 2026-11-20
+- **Much bigger offline earnings:** time away now counts as if the game were running at your fastest unlocked speed (8× to start, up to 24× with Overdrive), instead of 1×. Lab Offline speed multiplies that further. The Workshop shows your rate per real hour.
+
 ## 1.9.0 — 2026-11-20
 - **🃏 Cards:** 11 perks bought with **chips**, which bosses drop: Sharpshooter, Rapid Fire, Eagle Eye, Lucky Shot, Fortify, Mending, Frost Field (slows enemies in range), Second Wind (survive one killing blow per run), Wave Rush (shorter waves), Bounty and Prospector. Equip 3 at a time (buy up to 6 slots) and level each to 5 stars.
 - **⚙️ Modules:** gear for 4 slots (Cannon, Armor, Core, Generator), 2 to choose from in each, bought and levelled with **alloy**, which elites drop. Each level adds a stat; every 10 levels the module ranks up from Common to Rare, Epic and Legendary, strengthening its special effect (bonus damage to elites and bosses, extra shots, defense, thorns, crit damage, slowing hits, more drops, or interest on your cash).

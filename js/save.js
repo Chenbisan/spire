@@ -12,14 +12,16 @@ function persist(){save.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.st
 
 // ---- offline earnings ----
 function awayText(s){const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h}h ${m}m`:`${m}m`}
+// offline coins/real hour: best coins per game-hour, as if the game ran at your fastest unlocked speed, × Lab Offline speed
+const offlineRate=()=>save.bestCph*Math.max(...speeds())*labVal('offSpd');
 function offline(){
   const now=Date.now(),last=save.lastSeen;persist();
   if(!last||!save.bestCph)return;
   const away=(now-last)/1000;if(away<CFG.offlineMinAway)return;
-  const cap=labVal('offCap'),counted=Math.min(away,cap*3600),earned=save.bestCph*labVal('offSpd')*counted/3600;
+  const cap=labVal('offCap'),counted=Math.min(away,cap*3600),earned=offlineRate()*counted/3600;
   save.coins+=earned;save.stats.offCoins+=earned;persist();
   $('wbTxt').textContent=`You were away for ${awayText(away)}`+(away>counted?` (capped at ${cap}h)`:'')+'.';
-  $('wbCoins').textContent=fmt(earned);$('wbRate').textContent=fmt(save.bestCph*labVal('offSpd'))+'/h';
+  $('wbCoins').textContent=fmt(earned);$('wbRate').textContent=fmt(offlineRate())+'/h';
   $('wb').hidden=false;if(run&&!run.over)setPause(true);
 }
 $('wbOk').addEventListener('click',()=>{$('wb').hidden=true;if(run&&!run.over)setPause(false)});

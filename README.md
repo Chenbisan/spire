@@ -33,7 +33,7 @@ python -m http.server 8000
 - **Tiers:** reaching wave 25 unlocks the next tier, which has tougher enemies and more coins.
 - **Records:** the clock button (top right) has a Lifetime stats sheet (earnings, combat, upgrades, per-tier bests) and a Battle history that lists your last 30 runs: tier, wave, coins, coins per hour, shards, kills and run time, with best waves and runs you ended early marked.
 - **Auto-restart:** a run that ends restarts after a short countdown, which you can change or turn off in Settings.
-- **Offline earnings:** your best coins-per-game-hour (from runs of at least 2 game-minutes) is paid out while you're away. The Lab raises the offline speed and cap.
+- **Offline earnings:** your best coins-per-game-hour (from runs of at least 2 game-minutes) is paid out while you're away, as if the game ran at your fastest unlocked speed (8×, up to 24× with Overdrive). The Lab's Offline speed multiplies it and Offline duration sets the cap.
 
 ### Lab
 
@@ -41,7 +41,7 @@ Paid in shards.
 
 | Research | Effect |
 |---|---|
-| Offline speed | ×1 → ×2.5 game-hours per real hour away |
+| Offline speed | ×1 → ×2.5 offline earnings |
 | Offline duration | 24 h → 72 h cap |
 | Overdrive | Unlocks 12×, 16×, 24× game speed |
 | Workshop discount | Up to −30% Workshop costs |
