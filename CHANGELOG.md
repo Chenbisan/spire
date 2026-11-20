@@ -1,7 +1,10 @@
 # What's new in Spire
 
+## 1.15.5 — 2026-11-20
+- The version number moved to a small, faint label in the arena's bottom-right corner (tap it to see what's new).
+
 ## 1.15.4 — 2026-11-20
-- **Version number in the top bar,** next to the Spire name, so you can tell at a glance whether you're on the latest version. Tap it to see what's new.
+- Version number shown next to the Spire name.
 
 ## 1.15.3 — 2026-11-20
 - **Distance rings every 100 m,** labelled along the crosshair, so you can read range at a glance.
