@@ -1,6 +1,7 @@
 // Spire — balance and content tables. Tweak numbers here.
-// Game version (SemVer). Bump on every release and add a CHANGELOG.md entry.
-const VERSION='1.0.1';
+// Game version — bump it (and add a CHANGELOG.md entry) with every published update
+const APP_VERSION='1.0.1';
+const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
   step:1/60, waveLen:20, arenaR:320, spawnR:335, towerR:14, bulletSpd:420, ebSpd:120,

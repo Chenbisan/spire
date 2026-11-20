@@ -1,5 +1,7 @@
 # Spire
 
+**Play:** https://chenbisan.github.io/spire/
+
 An offline idle tower-defense game for the browser. One spire in the center, waves of geometric enemies, upgrades during a run, and permanent progression between runs. It has no servers, accounts, paid currency or timers.
 
 ## Play
@@ -73,7 +75,7 @@ These are classic `<script>` files, not ES modules, so the game keeps working fr
 
 ## Versioning
 
-Spire uses [Semantic Versioning](https://semver.org). The current version is `VERSION` in `js/config.js`, and it's shown at the bottom of the Settings tab.
+Spire uses [Semantic Versioning](https://semver.org). The current version is `APP_VERSION` in `js/config.js`. It's shown at the bottom of the Settings tab and links to the changelog.
 
 - **Major:** old saves can't be loaded as-is (save format change without a migration), or the game is substantially reworked.
 - **Minor:** new features or content, such as an ability, a Lab research or an enemy type.
@@ -81,8 +83,8 @@ Spire uses [Semantic Versioning](https://semver.org). The current version is `VE
 
 To release:
 
-1. Bump `VERSION` in `js/config.js`.
-2. Move the items under **Unreleased** in `CHANGELOG.md` to a new version heading with today's date.
+1. Bump `APP_VERSION` in `js/config.js`.
+2. Add a `## X.Y.Z — date` section at the top of `CHANGELOG.md`, written for players.
 3. Commit, then tag the commit `vX.Y.Z`.
 
 The save format has its own number (`v` in the save, `spire-save-v1` key), which only changes when the save layout changes.

@@ -105,7 +105,7 @@ function settingsHtml(){return`<div class="set">
   <div class="btns"><button data-act="export">Copy backup code</button><button data-act="import">Import code</button></div>
   <div class="gh">Run</div><div class="btns"><button data-act="abandon" ${run&&!run.over?'':'disabled'}>End current run</button></div>
   <div class="gh">Danger zone</div><div class="btns"><button data-act="reset" class="danger">Reset all progress</button></div>
-  <p class="note">Keys: Space pause · 1–5 speed</p><p class="note">Spire v${VERSION}</p></div>`}
+  <p class="note">Keys: Space pause · 1–5 speed</p><p class="note"><a href="${CHANGELOG_URL}" target="_blank" rel="noopener" style="color:inherit">Version ${APP_VERSION} · what's new</a></p></div>`}
 let resetArm=0;
 function settingsClick(b){
   const a=b.dataset.act,tx=$('saveTxt');
