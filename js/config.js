@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.21.2';
+const APP_VERSION='1.22.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -27,6 +27,7 @@ const CFG={
           // enemies keep (sum of sizes × sepGap) apart; sepPush = how hard they shove per step
 };
 // stat: base, ra = per in-run level, wa/wm = per workshop level, c/w = [cost, growth]
+// min: the stat can't go below this (for stats that shrink as you upgrade) · t: shown as m:ss
 const ST=[
  {k:'damage',g:'Attack',n:'Damage',base:3,mul:1,ra:.35,wm:1.08,c:[4,1.14],w:[12,1.2]},
  {k:'aspd',g:'Attack',n:'Attack speed',base:1,ra:.06,wa:.03,max:25,c:[6,1.16],w:[15,1.22],u:'/s'},
@@ -44,7 +45,8 @@ const ST=[
  {k:'health',g:'Defense',n:'Health',base:30,mul:1,ra:.4,wm:1.08,c:[4,1.14],w:[12,1.2]},
  {k:'regen',g:'Defense',n:'Regen',base:.4,mul:1,ra:.4,wm:1.08,c:[6,1.15],w:[15,1.2],u:'/s'},
  {k:'barrier',g:'Defense',n:'Barrier health (of max health)',base:0,ra:.02,wa:.01,max:1,c:[12,1.16],w:[30,1.25],p:1},
- {k:'barrierRegen',g:'Defense',n:'Barrier regen (of barrier)',base:.02,ra:.005,wa:.003,max:.5,c:[10,1.16],w:[25,1.25],p:1,u:'/s'},
+ // barrier recharge: once broken, the barrier comes back at full after this many game seconds (key kept from the old regen stat so saves keep their levels)
+ {k:'barrierRegen',g:'Defense',n:'Barrier recharge time',base:300,ra:-4,wa:-3,min:30,c:[10,1.16],w:[25,1.25],t:1},
  {k:'defense',g:'Defense',n:'Defense',base:0,ra:.01,wa:.005,max:.75,c:[10,1.16],w:[25,1.25],p:1},
  {k:'thorns',g:'Defense',n:'Thorns (of attacker max HP)',base:0,ra:.02,wa:.01,max:.5,c:[12,1.17],w:[30,1.25],p:1},
  {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.5,c:[20,1.2],w:[40,1.28],p:1},
@@ -133,7 +135,7 @@ const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.ma
 const ULT={chainJump:70, chainDepth:8, chainMax:40, unlock:50, cost:l=>Math.ceil(10*1.6**l), gravMove:5, laserAim:3, aftershock:1, gravSample:64};
 const S1=v=>(+v.toFixed(1))+' s';
 const ULTS=[
- {k:'chain',n:'Chain Lightning',col:'barrier',d:'Your shots have a chance to spark a bolt that splits from enemy to enemy like lightning, weaker with every bounce.',passive:1,
+ {k:'chain',n:'Chain Lightning',col:'bolt',d:'Your shots have a chance to spark a bolt that splits from enemy to enemy like lightning, weaker with every bounce.',passive:1,
   icon:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   t:[{k:'chance',n:'Proc chance',base:.1,per:.05,lv:10,f:v=>PC(v)+' (to start, and to split again)'},{k:'jumps',n:'Bounce targets',base:2,per:1,lv:4,f:v=>`splits into ${v}`},
      {k:'mult',n:'Bounce multiplier',base:.4,per:.05,lv:10,f:v=>PC(v)+' damage per bounce'},{k:'dmg',n:'Damage',base:2,per:1,lv:20,f:v=>`×${v} spire damage`}],

@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.22.0 — 2026-11-20
+- **🛡 Barrier rework:** the barrier no longer trickles back. Once it breaks, it **recharges to full after a timer**, which starts at **5:00** of game time. The *Barrier regen* upgrade is now **Barrier recharge time**: each level takes 4 s off in a run (3 s in the Workshop), down to 0:30. Your existing levels carry over.
+- **Barrier bar:** the barrier now has its own deep blue bar next to your health, showing how much is left, or while it's broken, the recharge filling back up with a countdown. The spire's ring shows a dashed recharge arc while it's down.
+- Chain Lightning keeps its lighter blue, so the two don't get mixed up.
+
 ## 1.21.2 — 2026-11-20
 - **Faster with big crowds and maxed ultimates:** about twice as fast with every ultimate maxed, and about 1.6× faster with 3,000 enemies, so high game speeds hold up far longer.
   - Laser and Gravity Well damage now lands 10 times a second instead of every frame (same total damage).

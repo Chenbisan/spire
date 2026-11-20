@@ -6,7 +6,7 @@ const speeds=()=>[1,2,3,5,8,12,16,24].filter(s=>s<=labVal('speed'));
 // maxOfRange: the stat is capped at that share of your current range (bounce range)
 const curRange=()=>run&&run.s&&run.s.range!=null?run.s.range:valAt(SK.range,0,save.ws.range||0);
 const statMax=s=>s.maxOfRange?curRange()*s.maxOfRange:s.max;
-function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;const m=statMax(s);return m!=null?Math.min(v,m):v}
+function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;const m=statMax(s);if(m!=null)v=Math.min(v,m);return s.min!=null?Math.max(v,s.min):v}
 // enemies always spawn beyond your range
 const spawnRadius=()=>run&&run.s?Math.max(CFG.spawnR,run.s.range*CFG.spawnRatio):CFG.spawnR;
 // the renderer publishes how far the screen reaches (m); spawns start just past the screen edge in their direction,
@@ -16,14 +16,14 @@ function spawnDist(a){const base=spawnRadius();if(!VIEW.hx)return base;
   const c=Math.abs(Math.cos(a)),s=Math.abs(Math.sin(a)),edge=Math.min(c>1e-6?VIEW.hx/c:Infinity,s>1e-6?VIEW.hy/s:Infinity);
   return Math.min(base*2,Math.max(base,edge+CFG.offscreen))}
 const spawnMax=()=>spawnRadius()*2;
-const capped=(s,r,w)=>{const m=statMax(s);return m!=null&&valAt(s,r,w)>=m-1e-9};
+const capped=(s,r,w)=>{const m=statMax(s);if(s.min!=null)return valAt(s,r,w)<=s.min+1e-9;return m!=null&&valAt(s,r,w)>=m-1e-9};
 function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(const s of ST)run.s[s.k]=valAt(s,run.lv[s.k]||0,save.ws[s.k]||0);
   // cards and modules on top (stat caps still apply)
   const F=loadoutFx();for(const k in F.mul)run.s[k]*=F.mul[k];for(const k in F.add)run.s[k]+=F.add[k];
-  for(const s of ST)if(s.max!=null)run.s[s.k]=Math.min(run.s[s.k],s.max);
+  for(const s of ST){if(s.max!=null)run.s[s.k]=Math.min(run.s[s.k],s.max);if(s.min!=null)run.s[s.k]=Math.max(run.s[s.k],s.min)}
   run.s.bounceRange=Math.min(run.s.bounceRange,run.s.range*SK.bounceRange.maxOfRange);
   run.fx=F;run.waveLen=CFG.waveLen*(1-F.rush);
-  const oldBar=run.barMax||0;run.barMax=run.s.health*run.s.barrier;run.bar=Math.min(run.barMax,(run.bar||0)+Math.max(0,run.barMax-oldBar)); // upgrades add their extra right away
+  const oldBar=run.barMax||0;run.barMax=run.s.health*run.s.barrier;run.bar=run.barT>0?0:Math.min(run.barMax,(run.bar||0)+Math.max(0,run.barMax-oldBar)); // upgrades add their extra right away (not while it's recharging)
   if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
 // ================= state =================
 let run=null,paused=false,GEN=0;
@@ -36,7 +36,7 @@ function newRun(tier){
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
   enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;
   run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
-  recalc();run.hp=run.s.health;run.bar=run.barMax;ultInit();run.cash=run.s.startCash;
+  run.barT=0;recalc();run.hp=run.s.health;run.bar=run.barMax;ultInit();run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
@@ -83,7 +83,7 @@ function hitTower(v,att){
   const R=run;
   if(R.invT>0){if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);return} // Second Wind: invincible
   let t=v*(1-R.s.defense);
-  if(R.bar>0){const a=Math.min(R.bar,t);R.bar-=a;t-=a;save.stats.absorbed+=a}
+  if(R.bar>0){const a=Math.min(R.bar,t);R.bar-=a;t-=a;save.stats.absorbed+=a;if(R.bar<=1e-9){R.bar=0;R.barT=R.s.barrierRegen;R.barBrokeAt=performance.now()}} // broken: recharges to full after the timer
   R.hp-=t;save.stats.taken+=t;
   if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.taken-=t;save.stats.defies++;R.defies=(R.defies||0)+1;R.defyAt=performance.now()} // render-only: gold burst + DEFIED
   if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=Math.max(1,R.hp+t);save.stats.taken-=t;R.invT=R.fx.revive;save.stats.winds=(save.stats.winds||0)+1;toast(`Second Wind! Invincible for ${R.fx.revive} s`)}
@@ -140,7 +140,7 @@ function update(dt){GEN_STEP++;
   if(R.waveT>=R.waveLen)nextWave();
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
   if(R.invT>0)R.invT=Math.max(0,R.invT-dt);
-  if(R.barMax>0)R.bar=Math.min(R.barMax,R.bar+R.barMax*s.barrierRegen*dt);
+  if(R.barT>0&&(R.barT-=dt)<=0){R.barT=0;R.bar=R.barMax} // barrier back at full
   // targeting: Closest, or by your type priority (then closest within a type)
   const pr=targetRank();let tgt=null,td=Infinity,tp=Infinity;
   for(let i=enemies.length-1;i>=0;i--){

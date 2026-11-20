@@ -10,7 +10,9 @@ function bars(){
   const wv=run&&!run.over?Math.min(1,(run.waveT+(paused?0:A*CFG.step))/run.waveLen):0;
   if(Math.abs(hp-lastHp)>1e-4){lastHp=hp;hpBar.style.transform=`scaleX(${hp})`}
   $('hpBar').parentNode.classList.toggle('defy',!!run&&performance.now()-(run.defyAt||-1e9)<CFG.defyFx);
-  const br=run&&run.barMax>0?Math.max(0,Math.min(1,run.bar/run.barMax)):0;if(Math.abs(br-lastBar)>1e-4){lastBar=br;barBar.style.transform=`scaleX(${br})`}
+  // barrier bar: its health, or while broken, the recharge filling back up
+  const on=!!run&&!run.over&&run.barMax>0,down=on&&run.barT>0,br=!on?0:down?1-run.barT/Math.max(1e-9,run.s.barrierRegen):Math.max(0,Math.min(1,run.bar/run.barMax));
+  $('barW').hidden=!on;$('barTrack').classList.toggle('down',down);if(Math.abs(br-lastBar)>1e-4){lastBar=br;barBar.style.transform=`scaleX(${Math.max(0,Math.min(1,br))})`}
   if(Math.abs(wv-lastWv)>1e-4){lastWv=wv;waveBar.style.transform=`scaleX(${wv})`}
 }
 // ================= UI =================
@@ -26,8 +28,9 @@ function hud(){
      if(w!==eTabW||t!==eTabT)mBody.innerHTML=enemyHtml();
      else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',Math.ceil(run.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
      else if(eTab==='spire'){const {live,v}=spireStats();if(JSON.stringify(v)+(live?Math.round(run.hp):'')!==eSig)mBody.innerHTML=enemyHtml()}}}
-  if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`+(run.barMax>0?` · ◈ ${fmt(run.bar)}`:'')+(run.invT>0?` · ✦ ${Math.ceil(run.invT)}s`:''))}
+  if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`+(run.invT>0?` · ✦ ${Math.ceil(run.invT)}s`:''))}
   else{TX('hpTxt','–')}
+  if(run&&run.barMax>0)TX('barTxt',run.barT>0?`◈ ${mmss(run.barT)}`:`◈ ${fmt(run.bar)}`);
   const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
   if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame${simCapped?'  ·  busy: running below set speed':''}\n${enemies.length} enemies  ·  ${bullets.length} shots  ·  ${ebs.length} enemy shots`;
   refreshPanel();refreshUltBar();if(typeof updRunNote==='function')updRunNote();
@@ -241,7 +244,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li><b>Modules</b> are gear for the spire's ${MOD_SLOTS.length} slots (${MOD_SLOTS.map(s=>s.n).join(', ')}). Each adds a stat per level and has a special effect that gets stronger every ${MOD.per} levels as it ranks up: ${RARITY.join(', ')}.</li>
   <li>Both are bought directly, with no random draws, and you can swap them any time, even mid-run.</li></ul>
   <h3>Upgrades</h3><ul>
-  <li>The <b>Upgrades</b> and <b>Workshop</b> tabs each have three sections; switch between them with the Attack / Defense / Utility buttons. <b>Attack</b>: damage, attack speed, crits and super crits (a chance for a crit to be multiplied again), range, damage per distance (more damage for every metre between the spire and its target), multishot (a chance to also fire at more enemies in range) and bounce shots (a chance for a shot to hop on to more enemies within bounce range after it hits; bounce range can't exceed 40% of your range). <b>Defense</b>: health, regen, a barrier (a shield ring that soaks up damage before your health and refills over time), damage reduction, thorns (hits back for part of the attacker's max health), lifesteal (heals the spire by a share of the damage its shots deal), death defy (a chance to shrug off a hit that would kill you; the spire flashes gold and shows DEFIED) and knockback (a chance for hits to shove enemies away; heavier enemies move less). <b>Utility</b>: more cash and coins, and a chance for each in-run Attack, Defense or Utility level you buy to be free.</li>
+  <li>The <b>Upgrades</b> and <b>Workshop</b> tabs each have three sections; switch between them with the Attack / Defense / Utility buttons. <b>Attack</b>: damage, attack speed, crits and super crits (a chance for a crit to be multiplied again), range, damage per distance (more damage for every metre between the spire and its target), multishot (a chance to also fire at more enemies in range) and bounce shots (a chance for a shot to hop on to more enemies within bounce range after it hits; bounce range can't exceed 40% of your range). <b>Defense</b>: health, regen, a barrier (a shield that soaks up damage before your health, shown in the blue bar next to it; once it breaks it comes back at full after a recharge timer, 5:00 to start and shorter with upgrades), damage reduction, thorns (hits back for part of the attacker's max health), lifesteal (heals the spire by a share of the damage its shots deal), death defy (a chance to shrug off a hit that would kill you; the spire flashes gold and shows DEFIED) and knockback (a chance for hits to shove enemies away; heavier enemies move less). <b>Utility</b>: more cash and coins, and a chance for each in-run Attack, Defense or Utility level you buy to be free.</li>
   <li><b>Workshop</b> levels are your starting values in every run. In-run levels stack on top.</li>
   <li><b>Lab</b> research raises offline earnings, unlocks faster game speeds, discounts the Workshop and adds auto-buyers.</li>
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>

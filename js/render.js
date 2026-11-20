@@ -2,7 +2,7 @@
 // ================= render =================
 const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
 let C={},A=1;const IX=o=>o.px+(o.x-o.px)*A,IY=o=>o.py+(o.y-o.py)*A;
-function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','barrier','alloy','shard']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}}
+function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','barrier','bolt','alloy','shard']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}}
 readColors();
 new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
@@ -77,7 +77,8 @@ function draw(){
     ctx.fillStyle=C.arena;ctx.beginPath();ctx.arc(0,0,tr*.4,0,6.283);ctx.fill();
     if(R.barMax>0){const f=Math.max(0,R.bar/R.barMax);ctx.strokeStyle=C.barrier;ctx.lineWidth=3;
       ctx.globalAlpha=.2;ctx.beginPath();ctx.arc(0,0,tr+7,0,6.283);ctx.stroke();
-      ctx.globalAlpha=.35+.65*f;ctx.beginPath();ctx.arc(0,0,tr+7,-Math.PI/2,-Math.PI/2+6.283*f);ctx.stroke();ctx.globalAlpha=1}
+      if(R.barT>0){const k=1-R.barT/R.s.barrierRegen;ctx.setLineDash([3,4]);ctx.globalAlpha=.5;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,tr+7,-Math.PI/2,-Math.PI/2+6.283*k);ctx.stroke();ctx.setLineDash([])} // broken: dashed recharge arc
+      else{ctx.globalAlpha=.35+.65*f;ctx.beginPath();ctx.arc(0,0,tr+7,-Math.PI/2,-Math.PI/2+6.283*f);ctx.stroke()}ctx.globalAlpha=1}
     drawUlts(sc,W);
     // Second Wind: pulsing shield and countdown while invincible
     if(R.invT>0){const dpr=W/(stage.clientWidth||W),pz=.5+.5*Math.sin(performance.now()/160);ctx.strokeStyle=C.ink;ctx.lineWidth=3*dpr/sc;
