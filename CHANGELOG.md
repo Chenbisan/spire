@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.15.3 — 2026-11-20
+- **Distance rings every 100 m,** labelled along the crosshair, so you can read range at a glance.
+- **Smooth zoom:** as your range grows mid-run, the arena eases out to show more of the map (the spawn ring always stays 15% beyond your range; enemies already on the field keep their positions).
+
 ## 1.15.2 — 2026-11-20
 - **The spawn ring scales with your range:** enemies spawn 15% beyond your range (never closer than 335 m), so even a very long range keeps a sensible approach.
 - **Range upgrades now go up to 600 m** (was 340 m).

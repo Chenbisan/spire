@@ -22,12 +22,19 @@ function shots(list,col,h){
   ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
   ctx.fillStyle=col;ctx.beginPath();for(const b of list){const x=IX(b),y=IY(b);ctx.rect(x-h,y-h,h*2,h*2);b.rx=x;b.ry=y}ctx.fill();
 }
+let viewR=0,viewT=0;
 function draw(){
   const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
-  const VR=Math.max(CFG.arenaR,spawnRadius()-15),sc=Math.min(W,H)/(2*VR);ctx.setTransform(sc,0,0,sc,W/2,H/2); // view zooms out as the spawn ring grows
-  ctx.strokeStyle=C.grid;ctx.lineWidth=1.5;
-  for(let r=80;r<=VR;r+=80){ctx.beginPath();ctx.arc(0,0,r,0,6.283);ctx.stroke()}
-  ctx.beginPath();ctx.moveTo(-VR-10,0);ctx.lineTo(VR+10,0);ctx.moveTo(0,-VR-10);ctx.lineTo(0,VR+10);ctx.stroke();
+  // the view zooms smoothly to fit the spawn ring, which follows your range
+  const target=Math.max(CFG.arenaR,spawnRadius()-15),now=performance.now();
+  viewR=viewR?viewR+(target-viewR)*Math.min(1,(now-viewT)/300):target;viewT=now;
+  const VR=viewR,sc=Math.min(W,H)/(2*VR),ext=Math.max(W,H)/sc/2;ctx.setTransform(sc,0,0,sc,W/2,H/2);
+  // distance rings every 100 m (every 200 m once the view is huge), labelled along the crosshair
+  ctx.strokeStyle=C.grid;ctx.lineWidth=1.5/sc*Math.min(W,H)/640;const step=VR>1100?200:100;
+  ctx.beginPath();for(let r=step;r<=ext;r+=step){ctx.moveTo(r,0);ctx.arc(0,0,r,0,6.283)}ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-ext,0);ctx.lineTo(ext,0);ctx.moveTo(0,-ext);ctx.lineTo(0,ext);ctx.stroke();
+  ctx.fillStyle=C.mute;ctx.globalAlpha=.7;ctx.font=`500 ${11/sc}px 'Chakra Petch',sans-serif`;ctx.textAlign='left';
+  for(let r=step;r<=ext;r+=step)ctx.fillText(r+' m',r+4/sc,-4/sc);ctx.globalAlpha=1;
   const R=run,tr=CFG.towerR;
   if(R){
     ctx.setLineDash([6,8]);ctx.strokeStyle=C.acc;ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(0,0,R.s.range,0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
