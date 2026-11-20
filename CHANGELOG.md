@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.15.4 — 2026-11-20
+- **Version number in the top bar,** next to the Spire name, so you can tell at a glance whether you're on the latest version. Tap it to see what's new.
+
 ## 1.15.3 — 2026-11-20
 - **Distance rings every 100 m,** labelled along the crosshair, so you can read range at a glance.
 - **Smooth zoom:** as your range grows mid-run, the arena eases out to show more of the map (the spawn ring always stays 15% beyond your range; enemies already on the field keep their positions).

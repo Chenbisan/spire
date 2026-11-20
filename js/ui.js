@@ -13,6 +13,7 @@ function bars(){
   if(Math.abs(wv-lastWv)>1e-4){lastWv=wv;waveBar.style.transform=`scaleX(${wv})`}
 }
 // ================= UI =================
+$('verTag').textContent='v'+APP_VERSION;$('verTag').href=CHANGELOG_URL;
 const TX=(id,t)=>{const e=$(id);t=String(t);if(e.textContent!==t)e.textContent=t};
 function hud(){
   TX('hTier',run?run.tier:'–');TX('hWave',run?run.wave:'–');
