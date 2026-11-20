@@ -1,5 +1,15 @@
 # What's new in Spire
 
+## 1.23.0 — 2026-11-20
+- **Ultimates take real progress to finish:** every upgrade track now has 40 to 100 small levels instead of 4 to 20 big ones, with the same start and end values. Prices climb steadily towards the end of each track (about 11.6k chips to max one), so Silver, Gold and Platinum are proper milestones. Your current levels convert so every ultimate stays exactly as strong as it was.
+- **❄ Frost Field rebuilt:** it's now **always on**. On every tick, each enemy touching the field gains a **frost stack**; stacks never wear off and have no limit.
+  - Each stack slows by 5%, up to your **Max slow** (30% → 95%, shown with the stacks it takes).
+  - **Tick rate** (0.5 → 4 ticks/s), **Radius** (60% → 200% of range) and **Brittle** (enemies take +0.2% → +2% damage per stack they carry).
+  - Silver (Max slow + Tick rate): enemies **freeze solid for 5 s** the first time they reach max slow · Gold: enemy shots that enter the field are destroyed · Platinum: frozen enemies take double brittle damage.
+  - Duration and Cooldown are gone; chips you spent on them are refunded.
+- **Tidier Ultimates tab:** one compact row per ultimate with a progress bar; tap a row to open it (one at a time). Buy ×1, ×10 or Max levels at once.
+- Chain Lightning's Bounce targets now grow in tenths: the fraction is the chance of one extra branch.
+
 ## 1.22.0 — 2026-11-20
 - **🛡 Barrier rework:** the barrier no longer trickles back. Once it breaks, it **recharges to full after a timer**, which starts at **5:00** of game time. The *Barrier regen* upgrade is now **Barrier recharge time**: each level takes 4 s off in a run (3 s in the Workshop), down to 0:30. Your existing levels carry over.
 - **Barrier bar:** the barrier now has its own deep blue bar next to your health, showing how much is left, or while it's broken, the recharge filling back up with a countdown. The spire's ring shows a dashed recharge arc while it's down.

@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.22.0';
+const APP_VERSION='1.23.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -128,37 +128,42 @@ const MODS=[
 const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.map(m=>[m.k,m]));
 // ================= Ultimate weapons =================
 // Bought and upgraded with chips (shared with Equipment). Every owned ultimate is active; each fires on its cooldown,
-// automatically or (per ultimate) when you tap its button. 4 upgrade tracks each: value = base + per × level, up to lv levels.
-// Each level costs ULT.cost(level) chips (×1.6 per level), so maxing needs chips from higher tiers.
+// automatically or (per ultimate) when you tap its button. 4 upgrade tracks each: value = base + per × level, up to lv levels (40-100 small steps).
 // Status: Silver = both silverT tracks maxed (for timed ones that's duration + cooldown, which makes them permanent),
 // Gold = any 3 tracks maxed (including the Silver pair), Platinum = all 4. Each adds the bonus in sb / gb / pb.
-const ULT={chainJump:70, chainDepth:8, chainMax:40, unlock:50, cost:l=>Math.ceil(10*1.6**l), gravMove:5, laserAim:3, aftershock:1, gravSample:64};
+// Each level costs ULT.cost(level, track levels): the price follows how far along the track you are (not the raw level),
+// so every track costs about the same to max: ~11.6k chips for the whole track, ~23k for Silver, ~50-60k for Platinum.
+const ULT={chainJump:70, chainDepth:8, chainMax:40, unlock:50, c0:10, g:1.1, ref:50, gravMove:5, laserAim:3, aftershock:1, gravSample:64, frostPer:.05, freeze:5};  // frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s)
+ULT.cost=(l,L)=>Math.ceil(ULT.c0*ULT.g**(l*ULT.ref/L));
+// track levels before the 1.23 rework (old saves are converted proportionally, keeping each track's value)
+// Frost Field's old Duration and Cooldown were removed in 1.23 (chips spent on them are refunded; old cost was 10×1.6^level)
+const ULT_OLD_LV={chain:{chance:10,jumps:4,mult:10,dmg:20},frost:{slow:10,radius:10,dur:10,cd:12},shock:{force:10,stun:12,radius:10,cd:10},grav:{radius:10,pull:10,dur:10,cd:12},laser:{dmg:20,width:10,dur:12,cd:12}};
 const S1=v=>(+v.toFixed(1))+' s';
 const ULTS=[
  {k:'chain',n:'Chain Lightning',col:'bolt',d:'Your shots have a chance to spark a bolt that splits from enemy to enemy like lightning, weaker with every bounce.',passive:1,
   icon:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
-  t:[{k:'chance',n:'Proc chance',base:.1,per:.05,lv:10,f:v=>PC(v)+' (to start, and to split again)'},{k:'jumps',n:'Bounce targets',base:2,per:1,lv:4,f:v=>`splits into ${v}`},
-     {k:'mult',n:'Bounce multiplier',base:.4,per:.05,lv:10,f:v=>PC(v)+' damage per bounce'},{k:'dmg',n:'Damage',base:2,per:1,lv:20,f:v=>`×${v} spire damage`}],
+  t:[{k:'chance',n:'Proc chance (to start and to split)',base:.1,per:.01,lv:50,f:v=>PC(v)},{k:'jumps',n:'Bounce targets',base:2,per:.1,lv:40,f:v=>`splits into ${+v.toFixed(1)}`},
+     {k:'mult',n:'Bounce multiplier',base:.4,per:.01,lv:50,f:v=>PC(v)+' damage per bounce'},{k:'dmg',n:'Damage',base:2,per:.2,lv:100,f:v=>`×${+v.toFixed(1)} spire damage`}],
   silverT:['chance','jumps'], sb:'bolts can crit and super crit', gb:'strikes twice', pb:'bolts slow what they hit by 50% for 2 s'},
- {k:'frost',n:'Frost Field',col:'alloy',d:'While active, every enemy inside the field around the spire is slowed.',timed:1,
+ {k:'frost',n:'Frost Field',col:'alloy',d:'Always on. On every tick, each enemy touching the field around the spire gains a frost stack. Each stack slows it by 5% (up to your max slow) and makes it brittle: it takes more damage for every stack it carries. Stacks never wear off.',passive:1,aura:1,
   icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
-  t:[{k:'slow',n:'Slow',base:.2,per:.04,lv:10,f:v=>PC(v)},{k:'radius',n:'Radius',base:.6,per:.04,lv:10,f:v=>PC(v)+' of range'},
-     {k:'dur',n:'Duration',base:10,per:5,lv:10,f:S1},{k:'cd',n:'Cooldown',base:300,per:-20,lv:12,f:S1}],
-  silverT:['dur','cd'], sb:'always on, and enemies in the field take +20% damage', gb:'slow +20% (up to 80%)', pb:'enemy shots that enter the field are destroyed'},
+  t:[{k:'slow',n:'Max slow',base:.3,per:.013,lv:50,f:v=>PC(v)+` (${Math.ceil(v/ULT.frostPer-1e-9)} stacks)`},{k:'rate',n:'Tick rate',base:.5,per:.07,lv:50,f:v=>(+v.toFixed(2))+' ticks/s'},
+     {k:'radius',n:'Radius',base:.6,per:.028,lv:50,f:v=>PC(v)+' of range'},{k:'brittle',n:'Brittle',base:.002,per:.00018,lv:100,f:v=>`+${(v*100).toFixed(2).replace(/0$/,'')}% damage taken per stack`}],
+  silverT:['slow','rate'], sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'enemy shots that enter the field are destroyed', pb:'frozen enemies take double brittle damage'},
  {k:'shock',n:'Shockwave',col:'gold',d:'A blast shoves enemies around the spire outward (heavier ones move less) and stuns them.',
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
-  t:[{k:'force',n:'Force',base:40,per:8,lv:10,f:v=>v+' m'},{k:'stun',n:'Stun',base:1,per:.25,lv:12,f:S1},
-     {k:'radius',n:'Radius',base:.6,per:.04,lv:10,f:v=>PC(v)+' of range'},{k:'cd',n:'Cooldown',base:90,per:-7,lv:10,f:S1}],
+  t:[{k:'force',n:'Force',base:40,per:1.6,lv:50,f:v=>(+v.toFixed(1))+' m'},{k:'stun',n:'Stun',base:1,per:.05,lv:60,f:S1},
+     {k:'radius',n:'Radius',base:.6,per:.008,lv:50,f:v=>PC(v)+' of range'},{k:'cd',n:'Cooldown',base:90,per:-1.4,lv:50,f:S1}],
   silverT:['stun','cd'], sb:'stunned enemies take +25% damage', gb:'the blast also deals 20× spire damage', pb:'an aftershock repeats the blast 1 s later'},
  {k:'grav',n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it.',timed:1,
   icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',
-  t:[{k:'radius',n:'Radius',base:50,per:6,lv:10,f:v=>v+' m'},{k:'pull',n:'Pull',base:70,per:10,lv:10,f:v=>v+' m/s'},
-     {k:'dur',n:'Duration',base:10,per:5,lv:10,f:S1},{k:'cd',n:'Cooldown',base:300,per:-20,lv:12,f:S1}],
+  t:[{k:'radius',n:'Radius',base:50,per:1.2,lv:50,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,per:2,lv:50,f:v=>v+' m/s'},
+     {k:'dur',n:'Duration',base:10,per:1,lv:50,f:S1},{k:'cd',n:'Cooldown',base:300,per:-4,lv:60,f:S1}],
   silverT:['dur','cd'], sb:'always on (hops to the biggest cluster every 5 s), and enemies inside take +20% damage', gb:'deals 2× spire damage per second to everything inside', pb:'enemies inside are held: they can\'t move or attack'},
  {k:'laser',n:'Laser',col:'hot',d:'Charges up, then fires a beam toward your target that burns every enemy along it.',timed:1,
   icon:'<circle cx="5" cy="12" r="2.5"/><path d="M8 12h14"/><path d="M8 9.5l3 1M8 14.5l3-1"/>',
-  t:[{k:'dmg',n:'Damage',base:3,per:1.5,lv:20,f:v=>`×${v} spire damage /s`},{k:'width',n:'Width',base:10,per:2,lv:10,f:v=>v+' m'},
-     {k:'dur',n:'Duration',base:3,per:1,lv:12,f:S1},{k:'cd',n:'Charge time',base:60,per:-4,lv:12,f:S1}],
+  t:[{k:'dmg',n:'Damage',base:3,per:.3,lv:100,f:v=>`×${+v.toFixed(1)} spire damage /s`},{k:'width',n:'Width',base:10,per:.4,lv:50,f:v=>(+v.toFixed(1))+' m'},
+     {k:'dur',n:'Duration',base:3,per:.2,lv:60,f:S1},{k:'cd',n:'Charge time',base:60,per:-.8,lv:60,f:S1}],
   silverT:['dur','cd'], sb:'always firing (re-aims every 3 s), and the beam ignores shields', gb:'+50% beam damage', pb:'a second beam fires the opposite way'},
 ];
 const MEDALS=['','Silver','Gold','Platinum'];

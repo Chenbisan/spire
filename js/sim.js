@@ -49,7 +49,7 @@ function spawn(t,x,y){
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
-  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.blk=0;
+  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.blk=0;e.fs=0;e.frz1=false;e.frzT=0;
   enemies.push(e);
 }
 function nextWave(){
@@ -147,8 +147,9 @@ function update(dt){GEN_STEP++;
     const e=enemies[i];
     if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e);continue}
     e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
-    let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;if(R.frostSlow&&dist<=R.frostR)sp*=1-R.frostSlow;
-    if(e.stunT>0)e.stunT-=dt; // stunned: no moving, no attacking
+    let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;if(e.fs&&R.frostCap)sp*=1-Math.min(R.frostCap,e.fs*ULT.frostPer); // frost stacks
+    if(e.frzT>0)e.frzT-=dt; // frozen: no moving, no attacking
+    else if(e.stunT>0)e.stunT-=dt; // stunned: no moving, no attacking
     else if(dist>stop){const m=Math.min(sp*dt,dist-stop)*(1-e.blk);e.x-=e.x/dist*m;e.y-=e.y/dist*m} // blk: held back by the crowd ahead
     else{e.atk+=dt;
       if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg;ebs.push(b)}}
