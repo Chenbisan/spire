@@ -82,7 +82,7 @@ function hitTower(v,att){
   const R=run;let t=v*(1-R.s.defense);
   if(R.bar>0){const a=Math.min(R.bar,t);R.bar-=a;t-=a;save.stats.absorbed+=a}
   R.hp-=t;save.stats.taken+=t;
-  if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.defies++;if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums)dnums.push({x:0,y:-CFG.towerR-8,py:-CFG.towerR-8,v:0,c:0,t:'defied',l:.8})}
+  if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.taken-=t;save.stats.defies++;R.defies=(R.defies||0)+1;if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums)dnums.push({x:0,y:-CFG.towerR-8,py:-CFG.towerR-8,v:0,c:0,t:'defied',l:.8})}
   if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=R.s.health*R.fx.revive;toast('Second Wind!')}
   if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);
   if(R.hp<=0)gameOver();
@@ -100,7 +100,7 @@ function gameOver(quit){
   const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;
   if(prevBest<R.wave)save.best[R.tier]=R.wave;
   {const T=save.stats.tiers[R.tier]||(save.stats.tiers[R.tier]={runs:0,coins:0,cph:0});T.runs++;T.coins+=R.coins;if(R.time>=CFG.offlineMinRun)T.cph=Math.max(T.cph,R.cph)}
-  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
+  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,df:R.defies||0,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
   save.hist.length=Math.min(save.hist.length,CFG.histMax);
   persist();ovTier=R.tier;if(!quit)startAuto(); // a run you end yourself doesn't auto-restart
   showOv('over');buildPanel();

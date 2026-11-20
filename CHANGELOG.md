@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.17.1 — 2026-11-20
+- A hit cancelled by death defy no longer counts toward "Damage taken" in Lifetime stats.
+- Deaths defied in a run now show on the end-of-run screen and in the battle history (they were already counted in Lifetime stats).
+
 ## 1.17.0 — 2026-11-20
 - **🎯 Target priority:** under Settings → Targeting, keep **Closest** (the default) or switch to **Priority** and rank the enemy types with ▲ / ▼. The spire shoots the highest-ranked type in range first, then the closest of that type; multishot follows the same order. The starting order is Healer, Boss, Splitter, Shielded, Ranged, Tank, Fast, Basic.
 - **Shorter targeting lines:** in clean mode the line is now a short stub off each enemy being shot at, pointing back at the spire, instead of a line all the way from the spire.
