@@ -18,7 +18,11 @@ python -m http.server 8000
 
 ## How it plays
 
-- **Runs:** the spire fires automatically. A new wave starts every 20 s of game time, and a boss arrives every 10 waves. Enemy types are basic (square), fast (triangle), tank (large square), ranged (diamond, stops outside base range) and boss (hexagon).
+- **Runs:** the spire fires automatically. A new wave starts every 20 s of game time, and a boss arrives every 10 waves. Crowds push each other apart, and enemies are drawn as outlines with a light fill so they stay readable when packed.
+- **Enemies** come in three ranks, each type with its own shape and colour:
+  - *Normal:* Basic (grey square), Fast (yellow triangle), Ranged (purple diamond, stops outside base range and shoots), Tank (orange pentagon).
+  - *Elite* (from wave 15): Shielded (blue octagon, shield blocks the first 3 hits), Healer (green cross, heals nearby enemies), Splitter (magenta star, splits into 3 Fast).
+  - *Boss:* red hexagon, every 10th wave.
 - **Cash:** earned from kills and wave bonuses, spent on in-run upgrades (Attack / Defense / Utility). It resets every run.
 - **Coins:** earned from kills, permanent, spent in the Workshop (tower stats).
 - **Shards:** only drop from enemies on tier 2 and up (1.5× more per tier above that), permanent, spent in the Lab (meta upgrades).
@@ -51,9 +55,9 @@ Paid in shards.
 
 All balance numbers are in `js/config.js`:
 
-- `CFG`: wave length, enemy scaling, spawn counts, tier multipliers, rewards (including `shardRate`), offline rules
+- `CFG`: crowd spacing (`sepGap`, `sepPush`), wave length, enemy scaling, spawn counts, tier multipliers, rewards (including `shardRate`), offline rules
 - `ST`: tower stats, per-level gains, cash and coin costs
-- `ET`: enemy types, including the name and description shown in Help
+- `ET`: enemy types: rank, shape, colour, stats, abilities, and the name and description shown in Help (shapes are in `SHAPES`)
 - `LAB`: Lab research, effects and costs
 
 ## Code layout

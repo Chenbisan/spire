@@ -9,7 +9,8 @@
 --gold:light-dark(#9a6b00,#ffcc4d);--hot:light-dark(#d8432a,#ff6b4a);
 --arena:light-dark(#f6f4ec,#080d10);--grid:light-dark(#e3e0d5,#131c21);
 --shard:light-dark(#6f4fd0,#b49aff);
---e1:light-dark(#3a4146,#dfe6e1);--e2:light-dark(#c38600,#ffcc4d);--e3:light-dark(#d8432a,#ff6b4a);--e4:light-dark(#6f4fd0,#b49aff);--e5:light-dark(#c8174f,#ff3d6e)}
+--e1:light-dark(#3a4146,#dfe6e1);--e2:light-dark(#b07a00,#ffcc4d);--e3:light-dark(#c95f12,#ff9a4a);--e4:light-dark(#6f4fd0,#b49aff);--e5:light-dark(#c81e1e,#ff4747);
+--e6:light-dark(#1f63d1,#5aa2ff);--e7:light-dark(#17884a,#4fd67a);--e8:light-dark(#a8259f,#f067e6)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}

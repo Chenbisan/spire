@@ -129,8 +129,8 @@ $('helpBtn').addEventListener('click',()=>modalKind==='help'?closeModal():openMo
 $('mClose').addEventListener('click',closeModal);
 modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();const b=e.target.closest('button');if(b&&b.dataset.act)settingsClick(b)});
 modal.addEventListener('change',optChange);
-const SHP=['M-1-1H1V1H-1Z','M1.3 0L-.8 .7-.8-.7Z','M0-1.2L1 0 0 1.2-1 0Z','M1 0 .5 .87-.5 .87-1 0-.5-.87.5-.87Z'];
-const mobIcon=(t,d)=>{const z=d.sz/22*.9+.35;return`<svg viewBox="-1.4 -1.4 2.8 2.8" width="34" height="34" aria-hidden="true"><path d="${SHP[d.sh]}" transform="scale(${z.toFixed(2)})" fill="var(--${ECOL[t]})"/></svg>`};
+const mobIcon=d=>{const z=d.sz/22*.75+.4,pts=SHAPES[d.sh].map(p=>p.map(v=>(v*z).toFixed(3)).join(',')).join(' ');
+  return`<svg viewBox="-1.5 -1.5 3 3" width="34" height="34" aria-hidden="true">${d.shield?`<circle r="${(z*1.4).toFixed(2)}" fill="none" stroke="var(--e6)" stroke-width=".1"/>`:''}<polygon points="${pts}" fill="var(--${d.c})" fill-opacity=".3" stroke="var(--${d.c})" stroke-width=".12" stroke-linejoin="round"/></svg>`};
 function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=v=>Math.round((v-1)*100)+'%',rng=SK.range.base;
   return`<div class="help">
   <p>Your spire sits in the middle and fires at the closest enemy in range on its own. Enemies come in from every side. The run ends when the spire's health hits 0.</p>
@@ -149,9 +149,10 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>
   <h3>Offline earnings</h3>
   <p>Your best coins per game-hour, from a run of at least ${CFG.offlineMinRun/60} game-minutes, keeps paying while you're away, up to the Lab's time cap.</p>
-  <h3>Enemies</h3><div class="mobs">${TYPES.map(t=>{const d=ET[t];
-    const when=t==='boss'?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';
-    return`<div class="mob">${mobIcon(t,d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>
+  <h3>Enemies</h3><p>Enemies come in three ranks. Normal enemies make up most of every wave. Elites start turning up from wave ${Math.min(...TYPES.filter(t=>ET[t].r===2).map(t=>ET[t].from))}, a few per wave, and pay out much more. A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart, so every enemy stays visible.</p>
+  ${[1,2,3].map(rk=>`<div class="gh">${RANKS[rk]}</div><div class="mobs">${TYPES.filter(t=>ET[t].r===rk).map(t=>{const d=ET[t];
+    const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';
+    return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join('')}
   <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng}; ranged enemies stop at ${ET.ranged.stop}.</p>
   <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}
 function buildSpeeds(){$('speeds').innerHTML=speeds().map(s=>`<button data-sp="${s}" class="${save.set.speed===s?'on':''}">${s}×</button>`).join('')}

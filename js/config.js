@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.1.0';
+const APP_VERSION='1.2.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -14,7 +14,8 @@ const CFG={
   shardRate:.1,              // shards per kill = enemy coin value × this × tier shard mult (tier 2+ only)
   offlineMinRun:120,         // a run must last this many game seconds to set the offline rate
   offlineMinAway:60,          // offline cap and speed come from the Lab
-  bossEvery:10, maxDmgNums:50, maxParts:240
+  bossEvery:10, maxDmgNums:50, maxParts:240,
+  sepGap:.9, sepPush:.5          // enemies keep (sum of sizes × sepGap) apart; sepPush = how hard they shove per step
 };
 // stat: base, ra = per in-run level, wa/wm = per workshop level, c/w = [cost, growth]
 const ST=[
@@ -42,11 +43,29 @@ const LAB=[
  {k:'auto',n:'Auto-buyer',d:'Adds an auto-buy toggle to the Attack, Defense and Utility tabs. Buys the cheapest upgrade first.',max:1,c:[150,1],val:l=>l,f:v=>v?'unlocked':'locked'},
 ];
 const LK=Object.fromEntries(LAB.map(l=>[l.k,l]));
-const ET={ // sh: 0 square, 1 triangle, 2 diamond, 3 hexagon; n/d are shown in Help
- basic:{n:'Basic',d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,sz:7,cash:1,coin:1,sh:0},
- fast:{n:'Fast',d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,sz:6,cash:1,coin:1,sh:1,from:3,wt:.25},
- tank:{n:'Tank',d:'Slow, with lots of health and a hard hit. Shows a health bar.',hp:18,dmg:2.5,spd:13,sz:12,cash:4,coin:3,sh:0,from:8,wt:.12,bar:1},
- ranged:{n:'Ranged',d:'Stops outside a new spire\'s range and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,sz:7,cash:2,coin:2,sh:2,from:12,wt:.12,stop:125},
- boss:{n:'Boss',d:'Arrives every 10th wave. Huge health and damage.',hp:250,dmg:12,spd:9,sz:22,cash:60,coin:40,sh:3,bar:1}
+// Enemy shapes as unit polygons (scaled by sz). Used by the canvas and the Help icons.
+const regPoly=(n,r,rot=0)=>Array.from({length:n},(_,i)=>{const a=rot+i*2*Math.PI/n;return[Math.cos(a)*r,Math.sin(a)*r]});
+const SHAPES={
+ square:[[-1,-1],[1,-1],[1,1],[-1,1]],
+ triangle:[[1.3,0],[Math.cos(2.4),Math.sin(2.4)],[Math.cos(2.4),-Math.sin(2.4)]], // points along +x
+ diamond:[[0,-1.2],[1,0],[0,1.2],[-1,0]],
+ pentagon:regPoly(5,1.1,-Math.PI/2),
+ octagon:regPoly(8,1.08,Math.PI/8),
+ cross:[[-.36,-1.1],[.36,-1.1],[.36,-.36],[1.1,-.36],[1.1,.36],[.36,.36],[.36,1.1],[-.36,1.1],[-.36,.36],[-1.1,.36],[-1.1,-.36],[-.36,-.36]],
+ star:Array.from({length:10},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,r=i%2?.55:1.3;return[Math.cos(a)*r,Math.sin(a)*r]}),
+ hexagon:regPoly(6,1),
+};
+const RANKS=['','Normal','Elite','Boss'];
+// r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
+// from/wt: first wave and spawn weight · bar: health bar · n/d: shown in Help
+const ET={
+ basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,sz:7,cash:1,coin:1,sh:'square',c:'e1'},
+ fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,sz:6,cash:1,coin:1,sh:'triangle',rot:'face',c:'e2',from:3,wt:.25},
+ ranged:{n:'Ranged',r:1,d:'Stops outside a new spire\'s range and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,sz:7,cash:2,coin:2,sh:'diamond',c:'e4',from:12,wt:.12,stop:125},
+ tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,wt:.12,bar:1},
+ shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,wt:.05,bar:1,shield:3},
+ healer:{n:'Healer',r:2,d:'Every second, heals enemies around it by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,wt:.05,bar:1,heal:.1,healR:70},
+ splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,wt:.05,bar:1,split:3},
+ boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:250,dmg:12,spd:9,sz:22,cash:60,coin:40,sh:'hexagon',rot:'spin',c:'e5',bar:1}
 };
 const TYPES=Object.keys(ET);

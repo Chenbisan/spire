@@ -1,5 +1,15 @@
 # What's new in Spire
 
+## 1.2.0 — 2026-11-20
+- **Enemy ranks:** enemies are now Normal, Elite or Boss, and the ? help groups them that way.
+- **3 new Elite enemies,** a few per wave from wave 15:
+  - 🛡️ **Shielded** (blue octagon): a ring shield blocks its first 3 hits completely.
+  - ➕ **Healer** (green cross): every second, heals enemies around it by 10% of their max health.
+  - ⭐ **Splitter** (magenta star): breaks into 3 Fast enemies when it dies.
+- **Every enemy has its own shape and colour.** Tanks are now orange pentagons (they were squares like Basic), and the boss is red.
+- **No more stacking:** enemies push each other apart instead of piling onto one spot, and they're drawn as outlines with a light fill so you can tell them apart in a crowd.
+- Hits absorbed by a shield show "block".
+
 ## 1.1.0 — 2026-11-20
 - **⚙️ Settings moved** to a gear button at the top right, so the upgrade tabs fit without side-scrolling.
 - **? How to play:** a new button next to the gear explains runs, waves, tiers, currencies and upgrades, and shows every enemy type with when it appears and what it does.
