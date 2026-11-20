@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.17.2 — 2026-11-20
+- **Death defied is hard to miss:** a gold shockwave bursts from the spire, the spire flashes gold, a big DEFIED rises above it and the health bar flashes gold. It shows at any game speed, even with damage numbers off.
+
 ## 1.17.1 — 2026-11-20
 - A hit cancelled by death defy no longer counts toward "Damage taken" in Lifetime stats.
 - Deaths defied in a run now show on the end-of-run screen and in the battle history (they were already counted in Lifetime stats).

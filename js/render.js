@@ -77,6 +77,11 @@ function draw(){
     if(R.barMax>0){const f=Math.max(0,R.bar/R.barMax);ctx.strokeStyle=C.barrier;ctx.lineWidth=3;
       ctx.globalAlpha=.2;ctx.beginPath();ctx.arc(0,0,tr+7,0,6.283);ctx.stroke();
       ctx.globalAlpha=.35+.65*f;ctx.beginPath();ctx.arc(0,0,tr+7,-Math.PI/2,-Math.PI/2+6.283*f);ctx.stroke();ctx.globalAlpha=1}
+    // death defied: gold shockwave, gold spire, big DEFIED (real time, any speed)
+    {const k=(performance.now()-(R.defyAt||-1e9))/CFG.defyFx;if(k<1){const dpr=W/(stage.clientWidth||W);ctx.strokeStyle=C.gold;ctx.fillStyle=C.gold;
+      ctx.globalAlpha=(1-k)*.9;ctx.lineWidth=4*dpr/sc;ctx.beginPath();ctx.arc(0,0,tr+8+k*viewR*.35,0,6.283);ctx.stroke();
+      ctx.globalAlpha=(1-k)*.85;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();
+      ctx.globalAlpha=Math.min(1,(1-k)*2);ctx.font=`700 ${20*dpr/sc}px 'Chakra Petch',sans-serif`;ctx.textAlign='center';ctx.fillText('DEFIED',0,-tr-(14+k*26)*dpr/sc);ctx.globalAlpha=1}}
     if(dnums.length){ctx.font="600 11px 'Chakra Petch',sans-serif";ctx.textAlign='center';
       for(const n of dnums){ctx.fillStyle=n.c===2?C.hot:n.c?C.gold:C.ink;ctx.globalAlpha=Math.min(1,n.l*2);ctx.fillText(n.t||(n.b?'block':fmt(n.v)),n.x,n.py+(n.y-n.py)*A)}ctx.globalAlpha=1}
   }else{ctx.fillStyle=C.acc;ctx.beginPath();ctx.arc(0,0,tr,0,6.283);ctx.fill()}

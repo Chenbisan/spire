@@ -82,7 +82,7 @@ function hitTower(v,att){
   const R=run;let t=v*(1-R.s.defense);
   if(R.bar>0){const a=Math.min(R.bar,t);R.bar-=a;t-=a;save.stats.absorbed+=a}
   R.hp-=t;save.stats.taken+=t;
-  if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.taken-=t;save.stats.defies++;R.defies=(R.defies||0)+1;if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums)dnums.push({x:0,y:-CFG.towerR-8,py:-CFG.towerR-8,v:0,c:0,t:'defied',l:.8})}
+  if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.taken-=t;save.stats.defies++;R.defies=(R.defies||0)+1;R.defyAt=performance.now()} // render-only: gold burst + DEFIED
   if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=R.s.health*R.fx.revive;toast('Second Wind!')}
   if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);
   if(R.hp<=0)gameOver();
