@@ -4,7 +4,7 @@ An offline idle tower-defense game for the browser. One spire in the center, wav
 
 ## Play
 
-Open `index.html` in a browser. It has no build step and no dependencies apart from Google Fonts.
+Open `index.html` in a browser. It has no build step and no dependencies apart from Google Fonts, and it works straight from the file system (no server needed).
 
 To run it from a local server (useful for testing on other devices on your network):
 
@@ -41,23 +41,38 @@ python -m http.server 8000
 
 ## Tuning
 
-All balance numbers are at the top of the script in `index.html`:
+All balance numbers are in `js/config.js`:
 
 - `CFG`: wave length, enemy scaling, spawn counts, tier multipliers, rewards, offline rules
 - `ST`: tower stats, per-level gains, cash and coin costs
 - `ET`: enemy types
 - `LAB`: Lab research, effects and costs
 
+## Code layout
+
+| File | What's in it |
+|---|---|
+| `index.html` | Markup and script order |
+| `css/style.css` | All styles and theme colours |
+| `js/config.js` | Balance and content tables (`CFG`, `ST`, `LAB`, `ET`) |
+| `js/util.js` | `$`, number formatting, toast |
+| `js/save.js` | localStorage save/load, offline earnings |
+| `js/sim.js` | Run state, stats, fixed-step `update()`, auto-buyer |
+| `js/render.js` | Canvas drawing |
+| `js/ui.js` | HUD, overlays, upgrade panel, settings, controls, auto-restart |
+| `js/main.js` | Main loop and boot (loaded last) |
+
+These are classic `<script>` files, not ES modules, so the game keeps working from `file://` (browsers block module imports there). They share one global scope and load in the order listed in `index.html`. Code that runs at load time may only use things from files above it; anything inside a function can use any file.
+
 ## Tech notes
 
-- Single self-contained HTML file using Canvas 2D.
+- Plain HTML, CSS and JS using Canvas 2D, with no build step.
 - Fixed-timestep simulation (60 Hz) with render interpolation, so motion is smooth at any refresh rate and game speed adds simulation steps instead of skipping frames.
 - Object pooling for enemies and projectiles, and batched drawing per enemy type.
 - Saves to `localStorage` (`spire-save-v1`). Settings → Copy backup code exports a save, and Import restores it. Saves are tied to the site the game runs on, so use a backup code when moving between hosts.
 
 ## Ideas / next up
 
-- Split `index.html` into modules (config, sim, render, UI, save)
 - Ultimate abilities (chain lightning, slow field)
 - Cards/modules bought directly (no gacha)
 - More Lab research
