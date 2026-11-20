@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.16.0 — 2026-11-20
+- **Clean shot effects at high speed:** from 8× up, the flicker of hundreds of shots is replaced by a faint, steady line from the spire to each enemy it's shooting at, plus a quick flash on each enemy it hits. Only crit and super crit damage numbers pop up, and kill particles are thinned out. Choose Auto, Full or Clean under Settings → Shot effects.
+- **Hit flashes at every speed:** enemies briefly light up when they take a hit.
+
 ## 1.15.9 — 2026-11-20
 - Distance rings space out (100, 200 or 500 m) when the view is small or far out, so their labels never overlap, e.g. on phones.
 

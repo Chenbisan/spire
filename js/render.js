@@ -22,6 +22,8 @@ function shots(list,col,h){
   ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
   ctx.fillStyle=col;ctx.beginPath();for(const b of list){const x=IX(b),y=IY(b);ctx.rect(x-h,y-h,h*2,h*2);b.rx=x;b.ry=y}ctx.fill();
 }
+// clean effects: at high game speed, show steady targeting beams and hit flashes instead of strobing shots
+const cleanFx=()=>save.set.fx==='clean'||(save.set.fx!=='full'&&save.set.speed>=CFG.cleanFxAt);
 let viewR=0,viewT=0;
 function draw(){
   const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
@@ -52,12 +54,19 @@ function draw(){
     ctx.fillStyle=C.hot;
     for(const e of enemies)if(e.d.bar&&!e.dead&&e.hp<e.mhp){const s=e.d.sz;ctx.fillRect(IX(e)-s,IY(e)-s-6,2*s*Math.max(0,e.hp/e.mhp),3)}
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
-    shots(bullets,C.acc,2);shots(ebs,C.e4,2.5);
+    const clean=cleanFx();
+    if(clean){ // one faint, steady line per enemy being shot at
+      const now=performance.now();ctx.strokeStyle=C.acc;ctx.globalAlpha=.3;ctx.lineWidth=1.5;ctx.beginPath(); // held for beamHold real ms after each shot
+      for(const e of enemies)if(!e.dead&&now-(e.shotAt||0)<CFG.beamHold){ctx.moveTo(0,0);ctx.lineTo(IX(e),IY(e))}ctx.stroke();ctx.globalAlpha=1;
+      ctx.fillStyle=C.e4;ctx.beginPath();for(const b of ebs){const x=IX(b),y=IY(b);ctx.rect(x-2.5,y-2.5,5,5);b.rx=x;b.ry=y}ctx.fill();
+    }else{shots(bullets,C.acc,2);shots(ebs,C.e4,2.5)}
     ctx.lineCap='round';
-    for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===3?C.hot:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
+    if(!clean)for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===3?C.hot:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
       let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}
       ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1);ctx.stroke()}
     ctx.globalAlpha=1;ctx.lineCap='butt';
+    // hit flash: the outline brightens briefly (real time, so it reads the same at any speed)
+    {const now=performance.now();ctx.strokeStyle=C.ink;ctx.lineWidth=2.5;for(const e of enemies){const t=now-(e.hitAt||0);if(e.dead||t>CFG.hitFlash)continue;ctx.globalAlpha=.85*(1-t/CFG.hitFlash);ctx.beginPath();shape(e);ctx.stroke()}ctx.globalAlpha=1}
     ctx.fillStyle=C.mute;ctx.beginPath();for(const p of parts){const z=3*p.l/.5;ctx.rect(IX(p)-z/2,IY(p)-z/2,z,z)}ctx.fill();
     // tower
     ctx.fillStyle=C.acc;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();
