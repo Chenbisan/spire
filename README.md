@@ -19,6 +19,7 @@ python -m http.server 8000
 ## How it plays
 
 - **Runs:** the spire fires automatically. A new wave starts every 20 s of game time, and a boss arrives every 10 waves. Crowds push each other apart, and enemies are drawn as outlines with a light fill so they stay readable when packed.
+- **Enemy stats:** the top bar shows this wave's Basic enemy (♥ health, ⚔ attack, » speed, ⚖ weight). Tap it for a table of every type. Weight decides who shoves whom in a crowd, and is meant for future knockback.
 - **Enemies** come in three ranks, each type with its own shape and colour:
   - *Normal:* Basic (grey square), Fast (yellow triangle), Ranged (purple diamond, stops outside base range and shoots), Tank (orange pentagon).
   - *Elite* (from wave 15): Shielded (blue octagon, shield blocks the first 3 hits), Healer (green cross, heals nearby enemies), Splitter (magenta star, splits into 3 Fast).
@@ -55,6 +56,7 @@ Paid in shards.
 
 All balance numbers are in `js/config.js`:
 
+- `ET` uses `freq` for spawn frequency and `weight` for push/knockback resistance.
 - `CFG`: crowd spacing (`sepGap`, `sepPush`), wave length, enemy scaling, spawn counts, tier multipliers, rewards (including `shardRate`), offline rules
 - `ST`: tower stats, per-level gains, cash and coin costs
 - `ET`: enemy types: rank, shape, colour, stats, abilities, and the name and description shown in Help (shapes are in `SHAPES`)

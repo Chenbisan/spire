@@ -16,6 +16,9 @@ const TX=(id,t)=>{const e=$(id);t=String(t);if(e.textContent!==t)e.textContent=t
 function hud(){
   TX('hTier',run?run.tier:'–');TX('hWave',run?run.wave:'–');
   TX('hCash',run?fmt(run.cash):'0');TX('hCoins',fmt(save.coins));TX('hShards',fmt(save.shards));$('shardChip').hidden=!shardsOn();
+  {const w=run?run.wave:1,t=run?run.tier:ovTier,e=enemyStats('basic',w,t);
+   TX('eHp',fmt(e.hp));TX('eAtk',fmt(e.atk));TX('eSpd',fmt(e.spd));TX('eWt',fmt(e.weight));
+   if(modalKind==='enemies'&&(w!==eTabW||t!==eTabT))mBody.innerHTML=enemyHtml()}
   if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`)}
   else{TX('hpTxt','–')}
   const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
@@ -122,12 +125,21 @@ function optChange(e){if(e.target.id==='optDn')save.set.dmgNums=e.target.checked
 $('panel').addEventListener('change',optChange);
 // ---- modals: settings (gear) and help (?) ----
 const modal=$('modal'),mBody=$('mBody');let modalKind=null;
-function openModal(kind){modalKind=kind;$('mTitle').textContent=kind==='help'?'How to play':'Settings';
-  mBody.innerHTML=kind==='help'?helpHtml():settingsHtml();modal.hidden=false;mBody.scrollTop=0;$('mClose').focus()}
+function openModal(kind){modalKind=kind;$('mTitle').textContent={help:'How to play',settings:'Settings',enemies:'Enemies this wave'}[kind];
+  mBody.innerHTML=kind==='help'?helpHtml():kind==='enemies'?enemyHtml():settingsHtml();modal.hidden=false;mBody.scrollTop=0;$('mClose').focus()}
 function closeModal(){modal.hidden=true;modalKind=null}
 $('setBtn').addEventListener('click',()=>modalKind==='settings'?closeModal():openModal('settings'));
 $('helpBtn').addEventListener('click',()=>modalKind==='help'?closeModal():openModal('help'));
 $('mClose').addEventListener('click',closeModal);
+$('eBtn').addEventListener('click',()=>modalKind==='enemies'?closeModal():openModal('enemies'));
+let eTabW=0,eTabT=0;
+function enemyHtml(){const w=eTabW=run?run.wave:1,t=eTabT=run?run.tier:ovTier;
+  const rows=TYPES.map(k=>{const d=ET[k],e=enemyStats(k,w,t),on=d.r===3?w%CFG.bossEvery===0:w>=(d.from||1);
+    const when=d.r===3?(on?'this wave':`wave ${Math.ceil(w/CFG.bossEvery)*CFG.bossEvery}`):on?'':`from wave ${d.from}`;
+    return`<tr class="${on?'':'off'}"><td>${mobIcon(d)}<span>${d.n}${when?`<span class="when">${when}</span>`:''}</span></td><td>${fmt(e.hp)}</td><td>${fmt(e.atk)}</td><td>${fmt(e.spd)}</td><td>${fmt(e.weight)}</td></tr>`}).join('');
+  return`<p class="note">${run&&!run.over?`Tier ${t}, wave ${w}. Updates as waves go by.`:`Tier ${t}, wave 1 (start a run to see live values).`} Greyed-out types can't spawn yet.</p>
+  <table class="etab"><thead><tr><th>Enemy</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed">» SPD</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
+  <p class="note">Attack is damage per hit, before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is distance per second (a new spire's range is ${SK.range.base}). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside in a crowd, and it will resist knockback.</p>`}
 modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();const b=e.target.closest('button');if(b&&b.dataset.act)settingsClick(b)});
 modal.addEventListener('change',optChange);
 const mobIcon=d=>{const z=d.sz/22*.75+.4,pts=SHAPES[d.sh].map(p=>p.map(v=>(v*z).toFixed(3)).join(',')).join(' ');
@@ -150,7 +162,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>
   <h3>Offline earnings</h3>
   <p>Your best coins per game-hour, from a run of at least ${CFG.offlineMinRun/60} game-minutes, keeps paying while you're away, up to the Lab's time cap.</p>
-  <h3>Enemies</h3><p>Enemies come in three ranks. Normal enemies make up most of every wave. Elites start turning up from wave ${Math.min(...TYPES.filter(t=>ET[t].r===2).map(t=>ET[t].from))}, a few per wave, and pay out much more. A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart, so every enemy stays visible.</p>
+  <h3>Enemies</h3><p>Enemies come in three ranks. Normal enemies make up most of every wave. Elites start turning up from wave ${Math.min(...TYPES.filter(t=>ET[t].r===2).map(t=>ET[t].from))}, a few per wave, and pay out much more. A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart (heavier enemies win), so every enemy stays visible. Tap the Enemy stats in the top bar to see every type's numbers for the current wave.</p>
   ${[1,2,3].map(rk=>`<div class="gh">${RANKS[rk]}</div><div class="mobs">${TYPES.filter(t=>ET[t].r===rk).map(t=>{const d=ET[t];
     const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';
     return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join('')}

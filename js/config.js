@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.5.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -58,15 +58,15 @@ const SHAPES={
 };
 const RANKS=['','Normal','Elite','Boss'];
 // r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
-// from/wt: first wave and spawn weight · bar: health bar · n/d: shown in Help
+// from/freq: first wave and spawn frequency · weight: resists being pushed (crowds now, knockback later) · bar: health bar · n/d: shown in Help
 const ET={
- basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,sz:7,cash:1,coin:1,sh:'square',c:'e1'},
- fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,sz:6,cash:1,coin:1,sh:'triangle',rot:'face',c:'e2',from:3,wt:.25},
- ranged:{n:'Ranged',r:1,d:'Stops outside a new spire\'s range and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,sz:7,cash:2,coin:2,sh:'diamond',c:'e4',from:12,wt:.12,stop:125},
- tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,wt:.12,bar:1},
- shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,wt:.05,bar:1,shield:3},
- healer:{n:'Healer',r:2,d:'Every second, heals enemies around it by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,wt:.05,bar:1,heal:.1,healR:70},
- splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,wt:.05,bar:1,split:3},
- boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:250,dmg:12,spd:9,sz:22,cash:60,coin:40,sh:'hexagon',rot:'spin',c:'e5',bar:1}
+ basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:1,sh:'square',c:'e1'},
+ fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:1,sh:'triangle',rot:'face',c:'e2',from:3,freq:.25},
+ ranged:{n:'Ranged',r:1,d:'Stops outside a new spire\'s range and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:2,sh:'diamond',c:'e4',from:12,freq:.12,stop:125},
+ tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,freq:.12,bar:1},
+ shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,freq:.05,bar:1,shield:3},
+ healer:{n:'Healer',r:2,d:'Every second, heals enemies around it by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.05,bar:1,heal:.1,healR:70},
+ splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,freq:.05,bar:1,split:3},
+ boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:250,dmg:12,spd:9,weight:10,sz:22,cash:60,coin:40,sh:'hexagon',rot:'spin',c:'e5',bar:1}
 };
 const TYPES=Object.keys(ET);

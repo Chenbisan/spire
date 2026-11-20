@@ -20,7 +20,9 @@ function newRun(tier){
   recalc();run.hp=run.s.health;run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
-function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.wt||w<d.from)continue;acc+=d.wt;if(r<acc)return t}return'basic'}
+// an enemy type's stats on wave w of tier t (same formulas spawn() uses)
+function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpGrow**(w-1)*tm.hp,atk:d.dmg*CFG.dmgGrow**(w-1)*tm.dmg,spd:d.spd,weight:d.weight}}
+function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;acc+=d.freq;if(r<acc)return t}return'basic'}
 function spawn(t,x,y){
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
   if(x==null){x=Math.cos(a)*CFG.spawnR;y=Math.sin(a)*CFG.spawnR}
@@ -116,7 +118,7 @@ function separate(){
       for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){if(j<=i)continue;const b=enemies[j],sb=b.d.sz,min=(sa+sb)*CFG.sepGap;
         let dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;if(d2>=min*min)continue;
         let d=Math.sqrt(d2);if(d<1e-3){const r=Math.random()*6.283;dx=Math.cos(r);dy=Math.sin(r);d=1}else{dx/=d;dy/=d}
-        const p=(min-d)*k,wa=sb*sb/(sa*sa+sb*sb),wb=1-wa; // bigger enemies get shoved less
+        const p=(min-d)*k,wa=b.d.weight/(a.d.weight+b.d.weight),wb=1-wa; // heavier enemies get shoved less
         a.x-=dx*p*wa;a.y-=dy*p*wa;b.x+=dx*p*wb;b.y+=dy*p*wb}}
   for(let i=0;i<n;i++){const e=enemies[i],m=tr+e.d.sz,d=Math.hypot(e.x,e.y);if(d<m&&d>0){e.x*=m/d;e.y*=m/d}} // never inside the spire
 }

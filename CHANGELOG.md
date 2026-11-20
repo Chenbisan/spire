@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.5.0 — 2026-11-20
+- **Enemy stats in the top bar:** see this wave's enemy ♥ health, ⚔ attack, » speed and ⚖ weight at a glance. Tap it for a table of every enemy type, which updates as the waves go by and shows when locked types arrive.
+- **New stat, weight:** heavier enemies shove lighter ones aside in a crowd (a Tank won't be pushed around by Fast enemies, and nothing moves a Boss). Future knockback will use it too.
+
 ## 1.4.0 — 2026-11-20
 - **Update banner:** when a new version of Spire is published, a banner at the top says so. Tap it to refresh into the new version (your progress is saved first). It warns you if a run is in progress, since refreshing ends it. Tap ✕ to hide it until the next update.
 - The health ring around the spire is gone. Health is shown in the bar at the top.
