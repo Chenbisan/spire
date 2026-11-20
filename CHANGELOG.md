@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.16.1 — 2026-11-20
+- A run you end yourself now says "Ended on wave X" instead of "Fell on wave X". Auto-restart starts the next run after it, just like when the spire falls.
+
 ## 1.16.0 — 2026-11-20
 - **Clean shot effects at high speed:** from 8× up, the flicker of hundreds of shots is replaced by a faint, steady line from the spire to each enemy it's shooting at, plus a quick flash on each enemy it hits. Only crit and super crit damage numbers pop up, and kill particles are thinned out. Choose Auto, Full or Clean under Settings → Shot effects.
 - **Hit flashes at every speed:** enemies briefly light up when they take a hit.

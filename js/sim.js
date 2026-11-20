@@ -92,7 +92,7 @@ function nearest(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dea
 // shards earned by this run so far (paid when it ends)
 const runShards=R=>R.kills*CFG.shardPerKill*R.tm.shard*(1+R.fx.drop);
 function gameOver(quit){
-  const R=run;if(R.over)return;R.over=true;R.hp=0;save.runs++;
+  const R=run;if(R.over)return;R.over=true;R.quit=!!quit;R.hp=0;save.runs++;
   R.shards=runShards(R);save.shards+=R.shards;save.stats.shards+=R.shards;
   R.cph=R.time>0?R.coins/R.time*3600:0;R.newBest=false;
   if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
