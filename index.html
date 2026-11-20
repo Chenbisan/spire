@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: terse, arcade-console; numbers first, no fluff
+   IDEA: a lone defense spire on a radar scope, upgrades as a console rack
+   PICTURE: the live arena itself, full-height, enemies as flat geometry
+   COLOUR and TYPE: ink/paper ground, teal spire, warm enemy palette; Chakra Petch + Inter
+   LAYOUT: arena left (fills), upgrade rack right; stacks under 860px */
+:root{color-scheme:light dark;
+--bg:light-dark(#e9e7df,#0c1114);--panel:light-dark(#fbfaf6,#141b1f);--line:light-dark(#d3d0c6,#243038);
+--ink:light-dark(#14181b,#e7ede8);--mute:light-dark(#5e6569,#8a979d);--acc:light-dark(#0b8f80,#34d1bf);
+--gold:light-dark(#9a6b00,#ffcc4d);--hot:light-dark(#d8432a,#ff6b4a);
+--arena:light-dark(#f6f4ec,#080d10);--grid:light-dark(#e3e0d5,#131c21);
+--e1:light-dark(#3a4146,#dfe6e1);--e2:light-dark(#c38600,#ffcc4d);--e3:light-dark(#d8432a,#ff6b4a);--e4:light-dark(#6f4fd0,#b49aff);--e5:light-dark(#c8174f,#ff3d6e)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+textarea{-webkit-user-select:text;user-select:text}
+button,select,input{touch-action:manipulation}
+button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:8px;min-height:40px;padding:0 12px}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
+.top{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:12px max(2vw,14px);border-bottom:1px solid var(--line)}
+.brand{font:700 26px/1 'Chakra Petch',sans-serif;letter-spacing:.02em}
+.chips{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:'Chakra Petch',sans-serif;font-size:17px}
+.chips span{color:var(--mute);font-size:13px;margin-right:6px}
+.cash{color:var(--acc)}.coin{color:var(--gold)}
+.hp{flex:1 1 200px;max-width:380px;height:12px;border-radius:6px;background:var(--grid);overflow:hidden;position:relative}
+.hp i{position:absolute;inset:0;background:var(--acc);transform-origin:left;will-change:transform}
+.hpt{font:500 13px 'Chakra Petch',sans-serif;color:var(--mute);white-space:nowrap}
+.wrap{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 360px}
+.wrap>section{display:flex;flex-direction:column;min-height:0}
+.stage{position:relative;background:var(--arena);flex:1;min-height:220px}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.perf{position:absolute;left:10px;top:8px;font:500 12px 'Chakra Petch',monospace;color:var(--mute);pointer-events:none;white-space:pre}
+.wavebar{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grid)}.wavebar i{display:block;height:100%;background:var(--gold);transform-origin:left;transform:scaleX(0);will-change:transform}
+.ov{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--arena) 70%,transparent)}
+.ov[hidden]{display:none}
+.card{max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;width:min(440px,100%);box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.card h2{font:700 32px/1.05 'Chakra Petch',sans-serif;margin:0 0 6px}
+.card p{margin:0 0 14px;color:var(--mute)}
+.tiers{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px}
+.tiers button{display:grid;line-height:1.15;padding:6px 12px;text-align:left}
+.tiers small{color:var(--mute);font-size:12px}.tiers .on small{color:inherit}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:0 0 16px;font-family:'Chakra Petch',sans-serif}
+.grid2 span{color:var(--mute);font-family:Inter,sans-serif;font-size:13px;display:block}
+.go{background:var(--acc);color:var(--arena);border-color:var(--acc);font-weight:600;width:100%;min-height:46px}
+.ctrl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;border-top:1px solid var(--line);background:var(--panel)}
+.ctrl .sp{display:flex;gap:4px}.ctrl .sp button{min-width:44px;padding:0 8px}
+.ctrl .grow{flex:1}
+.side{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;gap:4px;padding:10px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{flex:1 0 auto;padding:0 7px;font-size:14px}
+.body{padding:10px;overflow-y:auto;flex:1}
+.mults{display:flex;gap:4px;margin-bottom:8px}.mults button{flex:1}
+.note{color:var(--mute);font-size:13px;margin:4px 2px 10px}
+.gh{font:700 13px 'Chakra Petch',sans-serif;color:var(--mute);margin:14px 2px 6px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px;align-items:center;padding:7px 2px;border-bottom:1px solid var(--line)}
+.row b{display:block;font-weight:600}
+.row .v{font:500 13px 'Chakra Petch',sans-serif;color:var(--mute);white-space:nowrap}
+.buy{font-family:'Chakra Petch',sans-serif;white-space:nowrap;text-align:right}
+.buy .q{color:var(--mute);font-size:12px;margin-right:6px}
+.ab{display:flex;gap:10px;align-items:center;min-height:40px;margin:0 2px 4px;font-weight:600}.ab input{width:20px;height:20px;accent-color:var(--acc)}
+.set label{display:flex;gap:10px;align-items:center;min-height:40px}
+.set input[type=checkbox]{width:20px;height:20px;accent-color:var(--acc)}
+textarea{width:100%;min-height:80px;font:12px/1.4 monospace;background:var(--arena);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
+.set .btns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
+.danger{color:var(--hot)}
+.wb{position:fixed;z-index:8}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+.toast.show{opacity:1}
+.probe{position:absolute;width:0;height:0;overflow:hidden}
+@media(max-width:860px){.wrap{grid-template-columns:1fr;grid-template-rows:minmax(0,1.2fr) minmax(0,1fr)}.side{border-left:0;border-top:1px solid var(--line)}
+.top{padding:8px 12px;gap:6px 14px}.brand{font-size:20px}.chips{font-size:15px;gap:4px 12px}.hp{flex-basis:120px}
+.tabs{padding:6px}.body{padding:6px 10px}.ctrl{padding:6px 8px}.row{padding:5px 2px}.card{padding:16px}.card h2{font-size:26px}}
+@media(max-width:420px){.ctrl{gap:4px}.ctrl button{padding:0 8px}.ctrl .sp button{min-width:38px;padding:0 4px}}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">Spire</div>
+  <div class="chips">
+    <div><span>Tier</span><b id="hTier">1</b></div>
+    <div><span>Wave</span><b id="hWave">–</b></div>
+    <div><span>Cash</span><b id="hCash" class="cash">0</b></div>
+    <div><span>Coins</span><b id="hCoins" class="coin">0</b></div>
+  </div>
+  <div class="hp"><i id="hpBar"></i></div><div class="hpt" id="hpTxt">–</div>
+</header>
+<main class="wrap">
+  <section>
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="perf" id="perf" hidden></div>
+      <div class="wavebar"><i id="waveBar"></i></div>
+      <div class="ov" id="ov"><div class="card" id="ovCard"></div></div>
+    </div>
+    <div class="ctrl">
+      <button id="pause" title="Space">Pause</button>
+      <div class="sp" id="speeds"></div>
+      <div class="grow"></div>
+      <button id="perfBtn">FPS</button>
+    </div>
+  </section>
+  <aside class="side">
+    <div class="tabs" id="tabs"></div>
+    <div class="body" id="panel"></div>
+  </aside>
+</main>
+<div class="toast" id="toast"></div>
+<div class="ov wb" id="wb" hidden><div class="card"><h2>Welcome back</h2><p id="wbTxt"></p><div class="grid2"><div><span>Coins collected</span><b class="coin" id="wbCoins"></b></div><div><span>Rate</span><span id="wbRate" style="color:inherit;font-size:inherit"></span></div></div><button class="go" id="wbOk">Collect</button></div></div>
+<span class="probe" id="probe"></span>
+<script>
+{
+// ================= CONFIG: tweak everything here =================
+const CFG={
+  step:1/60, waveLen:20, arenaR:320, spawnR:335, towerR:14, bulletSpd:420, ebSpd:120,
+  tierUnlockWave:25,                       // reach this wave to unlock the next tier
+  tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:2.2**(t-1)}),
+  hpGrow:1.068, dmgGrow:1.05,              // per-wave enemy scaling
+  spawnCount:w=>Math.floor(8+w*1.3),
+  waveCash:w=>4+w*2,
+  killCash:w=>1+w*.05, killCoin:w=>1+w*.02,
+  offlineMinRun:120,         // a run must last this many game seconds to set the offline rate
+  offlineMinAway:60,          // offline cap and speed come from the Lab
+  bossEvery:10, maxDmgNums:50, maxParts:240
+};
+// stat: base, ra = per in-run level, wa/wm = per workshop level, c/w = [cost, growth]
+const ST=[
+ {k:'damage',g:'Attack',n:'Damage',base:3,mul:1,ra:.35,wm:1.08,c:[4,1.14],w:[12,1.2]},
+ {k:'aspd',g:'Attack',n:'Attack speed',base:1,ra:.06,wa:.03,max:10,c:[6,1.16],w:[15,1.22],u:'/s'},
+ {k:'crit',g:'Attack',n:'Crit chance',base:.02,ra:.01,wa:.005,max:.8,c:[8,1.15],w:[20,1.25],p:1},
+ {k:'critMult',g:'Attack',n:'Crit damage',base:1.5,ra:.1,wa:.05,c:[10,1.15],w:[20,1.22],x:1},
+ {k:'range',g:'Attack',n:'Range',base:110,ra:3,wa:2,max:300,c:[8,1.16],w:[25,1.25]},
+ {k:'health',g:'Defense',n:'Health',base:30,mul:1,ra:.4,wm:1.08,c:[4,1.14],w:[12,1.2]},
+ {k:'regen',g:'Defense',n:'Regen',base:.4,mul:1,ra:.4,wm:1.08,c:[6,1.15],w:[15,1.2],u:'/s'},
+ {k:'defense',g:'Defense',n:'Defense',base:0,ra:.01,wa:.005,max:.75,c:[10,1.16],w:[25,1.25],p:1},
+ {k:'thorns',g:'Defense',n:'Thorns (of attacker max HP)',base:0,ra:.02,wa:.01,max:.5,c:[12,1.17],w:[30,1.25],p:1},
+ {k:'cashBonus',g:'Utility',n:'Cash per kill',base:1,ra:.05,wa:.04,c:[10,1.15],w:[20,1.2],x:1},
+ {k:'waveCash',g:'Utility',n:'Wave bonus',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
+ {k:'coinBonus',g:'Utility',n:'Coins per kill',base:1,ra:.03,wa:.05,c:[15,1.17],w:[25,1.2],x:1},
+ {k:'startCash',g:'Utility',n:'Starting cash',base:0,wa:25,ws:1,w:[20,1.2]},
+];
+const SK=Object.fromEntries(ST.map(s=>[s.k,s]));
+// Lab: meta upgrades, paid in coins, applied instantly
+const LAB=[
+ {k:'offSpd',n:'Offline speed',d:'Each hour away counts as more game-hours.',max:10,c:[200,1.6],val:l=>1+.15*l,f:v=>'×'+v.toFixed(2)},
+ {k:'offCap',n:'Offline duration',d:'How long offline earnings keep counting.',max:12,c:[150,1.5],val:l=>24+4*l,f:v=>v+'h'},
+ {k:'speed',n:'Overdrive',d:'Unlocks faster game speeds.',max:3,c:[2000,5],val:l=>[8,12,16,24][l],f:v=>'up to '+v+'×'},
+ {k:'disc',n:'Workshop discount',d:'Cheaper workshop upgrades.',max:15,c:[300,1.5],val:l=>.02*l,f:v=>'−'+Math.round(v*100)+'%'},
+ {k:'auto',n:'Auto-buyer',d:'Adds an auto-buy toggle to the Attack, Defense and Utility tabs. Buys the cheapest upgrade first.',max:1,c:[1500,1],val:l=>l,f:v=>v?'unlocked':'locked'},
+];
+const LK=Object.fromEntries(LAB.map(l=>[l.k,l]));
+const labLv=k=>Math.min(LK[k].max,save.lab[k]||0),labVal=k=>LK[k].val(labLv(k));
+const speeds=()=>[1,2,3,5,8,12,16,24].filter(s=>s<=labVal('speed'));
+const ET={ // sh: 0 square, 1 triangle, 2 diamond, 3 hexagon
+ basic:{hp:4,dmg:1,spd:24,sz:7,cash:1,coin:1,sh:0},
+ fast:{hp:2.5,dmg:.8,spd:46,sz:6,cash:1,coin:1,sh:1,from:3,wt:.25},
+ tank:{hp:18,dmg:2.5,spd:13,sz:12,cash:4,coin:3,sh:0,from:8,wt:.12,bar:1},
+ ranged:{hp:3.5,dmg:1.2,spd:20,sz:7,cash:2,coin:2,sh:2,from:12,wt:.12,stop:125},
+ boss:{hp:250,dmg:12,spd:9,sz:22,cash:60,coin:40,sh:3,bar:1}
+};
+const TYPES=Object.keys(ET);
+// ================= helpers =================
+const $=id=>document.getElementById(id);
+const SUF=['','K','M','B','T','aa','ab','ac','ad','ae','af','ag'];
+function fmt(n){if(!isFinite(n))return'∞';if(n<1000)return n<10?String(+n.toFixed(1)):String(Math.floor(n));let i=0;while(n>=1000&&i<SUF.length-1){n/=1000;i++}return n.toFixed(n<10?2:n<100?1:0)+SUF[i]}
+const fv=(s,v)=>s.p?(v*100).toFixed(1).replace(/\.0$/,'')+'%':s.x?'×'+v.toFixed(2):s.k==='aspd'?v.toFixed(2)+'/s':fmt(v)+(s.u||'');
+const toastEl=$('toast');let toastT;
+function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove('show'),2200)}
+// ================= save =================
+const KEY='spire-save-v1';
+const fresh=()=>({v:1,bestCph:0,lastSeen:0,coins:0,ws:{},lab:{},tierMax:1,best:{},runs:0,kills:0,set:{dmgNums:true,perf:false,speed:1,auto:true,autoDelay:5,ab:{}}});
+let save=fresh();
+try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)save=Object.assign(fresh(),s,{set:Object.assign(fresh().set,s.set)})}catch(e){}
+function persist(){save.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.stringify(save))}catch(e){}}
+// ================= stats =================
+function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;return s.max!=null?Math.min(v,s.max):v}
+const capped=(s,r,w)=>s.max!=null&&valAt(s,r,w)>=s.max-1e-9;
+function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(const s of ST)run.s[s.k]=valAt(s,run.lv[s.k]||0,save.ws[s.k]||0);if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
+// ================= state =================
+let run=null,paused=false,GEN=0;
+const enemies=[],ePool=[],bullets=[],bPool=[],ebs=[],ebPool=[],dnums=[],parts=[];
+function newRun(tier){
+  stopAuto();
+  for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
+  enemies.length=bullets.length=ebs.length=dnums.length=parts.length=0;
+  run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
+  recalc();run.hp=run.s.health;run.cash=run.s.startCash;
+  paused=false;showOv(null);buildPanel();
+}
+function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.wt||w<d.from)continue;acc+=d.wt;if(r<acc)return t}return'basic'}
+function spawn(t){
+  const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
+  e.t=t;e.d=d;e.x=Math.cos(a)*CFG.spawnR;e.y=Math.sin(a)*CFG.spawnR;e.px=e.x;e.py=e.y;e.dist=CFG.spawnR;
+  e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
+  enemies.push(e);
+}
+function nextWave(){
+  const R=run;R.wave++;R.waveT=R.spawnT=R.spawned=0;
+  R.cash+=CFG.waveCash(R.wave)*R.s.waveCash;
+  if(R.wave%CFG.bossEvery===0)spawn('boss');
+  if((save.best[R.tier]||0)<R.wave)save.best[R.tier]=R.wave;
+  if(R.wave>=CFG.tierUnlockWave&&R.tier===save.tierMax){save.tierMax++;persist();toast(`Tier ${save.tierMax} unlocked`)}
+}
+function kill(e){
+  const R=run;e.dead=true;R.kills++;save.kills++;
+  const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave);R.cash+=c;R.cashEarned+=c;
+  const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;
+  for(let i=0;i<4&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
+}
+function damage(e,v,crit){
+  e.hp-=v;
+  if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums)dnums.push({x:e.x,y:e.y-e.d.sz,py:e.y-e.d.sz,v,c:crit,l:.6});
+  if(e.hp<=0&&!e.dead)kill(e);
+}
+function hitTower(v,att){
+  const R=run;R.hp-=v*(1-R.s.defense);
+  if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false);
+  if(R.hp<=0)gameOver();
+}
+function nearest(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
+function gameOver(){
+  const R=run;if(R.over)return;R.over=true;R.hp=0;save.runs++;
+  R.cph=R.time>0?R.coins/R.time*3600:0;R.newBest=false;
+  if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
+  if((save.best[R.tier]||0)<R.wave)save.best[R.tier]=R.wave;
+  persist();ovTier=R.tier;startAuto();showOv('over');buildPanel();
+}
+// ---- auto-restart after a run ends ----
+let autoLeft=0,autoTimer=null;
+function stopAuto(){clearInterval(autoTimer);autoTimer=null;autoLeft=0}
+function startAuto(){stopAuto();if(!save.set.auto)return;autoLeft=save.set.autoDelay;
+  autoTimer=setInterval(()=>{autoLeft--;const el=document.getElementById('autoTxt');if(el)el.textContent=autoLeft;if(autoLeft<=0){stopAuto();newRun(ovTier)}},1000)}
+// ================= simulation (fixed step) =================
+function update(dt){
+  const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;R.waveT+=dt;R.spawnT+=dt;
+  const cnt=CFG.spawnCount(R.wave),iv=CFG.waveLen*.9/cnt;
+  while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
+  if(R.waveT>=CFG.waveLen)nextWave();
+  R.hp=Math.min(s.health,R.hp+s.regen*dt);
+  let tgt=null,td=Infinity;
+  for(let i=enemies.length-1;i>=0;i--){
+    const e=enemies[i];
+    if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e);continue}
+    e.px=e.x;e.py=e.y;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
+    if(dist>stop){const m=Math.min(d.spd*dt,dist-stop);e.x-=e.x/dist*m;e.y-=e.y/dist*m}
+    else{e.atk+=dt;
+      if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=e.x;b.y=b.py=e.y;b.dmg=e.dmg;ebs.push(b)}}
+      else if(e.atk>=1){e.atk=0;hitTower(e.dmg,e);if(R.over)return}}
+    if(!e.dead&&dist<=s.range+d.sz&&dist<td){td=dist;tgt=e}
+  }
+  const fi=1/s.aspd;R.fireT+=dt;
+  if(!tgt)R.fireT=Math.min(R.fireT,fi);
+  else while(R.fireT>=fi){R.fireT-=fi;const b=bPool.pop()||{},c=Math.random()<s.crit;b.x=b.y=b.px=b.py=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1);b.l=2;bullets.push(b)}
+  const m=CFG.bulletSpd*dt;
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;
+    if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
+    if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
+      if(dd<=m+e.d.sz){damage(e,b.dmg,b.c);drop=true}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
+    if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
+  }
+  const em=CFG.ebSpd*dt;
+  for(let i=ebs.length-1;i>=0;i--){const b=ebs[i],d=Math.hypot(b.x,b.y);b.px=b.x;b.py=b.y;
+    if(d<=tr+em){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);hitTower(b.dmg,null);if(R.over)return}
+    else{b.x-=b.x/d*em;b.y-=b.y/d*em}}
+  for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.px=p.x;p.py=p.y;p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;if(p.l<=0){parts[i]=parts[parts.length-1];parts.pop()}}
+  for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}
+}
+// ================= render =================
+const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
+let C={},A=1;const IX=o=>o.px+(o.x-o.px)*A,IY=o=>o.py+(o.y-o.py)*A;
+function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}}
+readColors();
+new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
+const ro=new ResizeObserver(()=>{const d=Math.min(2,devicePixelRatio||1);cv.width=Math.round(stage.clientWidth*d);cv.height=Math.round(stage.clientHeight*d)});ro.observe(stage);
+const ECOL={basic:'e1',fast:'e2',tank:'e3',ranged:'e4',boss:'e5'};
+function shape(e){
+  const s=e.d.sz,x=IX(e),y=IY(e);
+  switch(e.d.sh){
+    case 0:ctx.rect(x-s,y-s,s*2,s*2);break;
+    case 1:{const a=Math.atan2(-y,-x);ctx.moveTo(x+Math.cos(a)*s*1.3,y+Math.sin(a)*s*1.3);ctx.lineTo(x+Math.cos(a+2.4)*s,y+Math.sin(a+2.4)*s);ctx.lineTo(x+Math.cos(a-2.4)*s,y+Math.sin(a-2.4)*s);ctx.closePath();break}
+    case 2:ctx.moveTo(x,y-s*1.2);ctx.lineTo(x+s,y);ctx.lineTo(x,y+s*1.2);ctx.lineTo(x-s,y);ctx.closePath();break;
+    case 3:for(let i=0;i<6;i++){const a=i*1.0472+run.time*.5;i?ctx.lineTo(x+Math.cos(a)*s,y+Math.sin(a)*s):ctx.moveTo(x+Math.cos(a)*s,y+Math.sin(a)*s)}ctx.closePath();break;
+  }
+}
+function draw(){
+  const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
+  const sc=Math.min(W,H)/(2*CFG.arenaR);ctx.setTransform(sc,0,0,sc,W/2,H/2);
+  ctx.strokeStyle=C.grid;ctx.lineWidth=1.5;
+  for(let r=80;r<=320;r+=80){ctx.beginPath();ctx.arc(0,0,r,0,6.283);ctx.stroke()}
+  ctx.beginPath();ctx.moveTo(-330,0);ctx.lineTo(330,0);ctx.moveTo(0,-330);ctx.lineTo(0,330);ctx.stroke();
+  const R=run,tr=CFG.towerR;
+  if(R){
+    ctx.setLineDash([6,8]);ctx.strokeStyle=C.acc;ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(0,0,R.s.range,0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+    for(const t of TYPES){ctx.beginPath();let any=false;for(const e of enemies)if(e.t===t&&!e.dead){shape(e);any=true}if(any){ctx.fillStyle=C[ECOL[t]];ctx.fill()}}
+    ctx.fillStyle=C.hot;
+    for(const e of enemies)if(e.d.bar&&!e.dead&&e.hp<e.mhp){const s=e.d.sz;ctx.fillRect(IX(e)-s,IY(e)-s-6,2*s*Math.max(0,e.hp/e.mhp),3)}
+    ctx.fillStyle=C.acc;ctx.beginPath();for(const b of bullets)ctx.rect(IX(b)-2,IY(b)-2,4,4);ctx.fill();
+    ctx.fillStyle=C.e4;ctx.beginPath();for(const b of ebs)ctx.rect(IX(b)-2.5,IY(b)-2.5,5,5);ctx.fill();
+    ctx.fillStyle=C.mute;ctx.beginPath();for(const p of parts){const z=3*p.l/.5;ctx.rect(IX(p)-z/2,IY(p)-z/2,z,z)}ctx.fill();
+    // tower
+    ctx.fillStyle=C.acc;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();
+    ctx.fillStyle=C.arena;ctx.beginPath();ctx.arc(0,0,tr*.4,0,6.283);ctx.fill();
+    ctx.strokeStyle=C.acc;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,tr+6,-Math.PI/2,-Math.PI/2+6.283*Math.max(0,R.hp/R.s.health));ctx.stroke();
+    if(dnums.length){ctx.font="600 11px 'Chakra Petch',sans-serif";ctx.textAlign='center';
+      for(const n of dnums){ctx.fillStyle=n.c?C.gold:C.ink;ctx.globalAlpha=Math.min(1,n.l*2);ctx.fillText(fmt(n.v),n.x,n.py+(n.y-n.py)*A)}ctx.globalAlpha=1}
+  }else{ctx.fillStyle=C.acc;ctx.beginPath();ctx.arc(0,0,tr,0,6.283);ctx.fill()}
+}
+// ================= loop =================
+let last=performance.now(),acc=0,frames=0,fpsT=0,fps=0,simMs=0,hudT=0;
+function frame(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(run&&!run.over&&!paused){
+    const sp=save.set.speed;acc+=dt*sp;let n=0;const max=sp*3+2,t0=performance.now();
+    while(acc>=CFG.step&&n<max&&!run.over){update(CFG.step);acc-=CFG.step;n++}
+    if(n>=max)acc=Math.min(acc,CFG.step);simMs=simMs*.9+(performance.now()-t0)*.1;
+  }
+  A=(run&&!run.over&&!paused)?Math.min(1,acc/CFG.step):1;
+  draw();bars();frames++;fpsT+=dt;hudT+=dt;
+  if(fpsT>=.5){fps=Math.round(frames/fpsT);frames=0;fpsT=0}
+  if(hudT>=.1){hudT=0;autoBuy();hud()}
+  requestAnimationFrame(frame);
+}
+const hpBar=$('hpBar'),waveBar=$('waveBar');let lastHp=-1,lastWv=-1;
+function bars(){
+  const hp=run?Math.max(0,Math.min(1,run.hp/run.s.health)):0;
+  const wv=run&&!run.over?Math.min(1,(run.waveT+(paused?0:A*CFG.step))/CFG.waveLen):0;
+  if(Math.abs(hp-lastHp)>1e-4){lastHp=hp;hpBar.style.transform=`scaleX(${hp})`}
+  if(Math.abs(wv-lastWv)>1e-4){lastWv=wv;waveBar.style.transform=`scaleX(${wv})`}
+}
+function autoBuy(){
+  if(!run||run.over||paused||!labLv('auto'))return;let any=false;
+  for(let i=0;i<100;i++){let best=null,bc=Infinity;
+    for(const s of ST){if(s.ws||!save.set.ab[s.g])continue;const r=run.lv[s.k]||0;if(capped(s,r,save.ws[s.k]||0))continue;const c=s.c[0]*s.c[1]**r;if(c<bc){bc=c;best=s}}
+    if(!best||bc>run.cash)break;run.cash-=bc;run.lv[best.k]=(run.lv[best.k]||0)+1;any=true}
+  if(any)recalc();
+}
+// ================= UI =================
+const TX=(id,t)=>{const e=$(id);t=String(t);if(e.textContent!==t)e.textContent=t};
+function hud(){
+  TX('hTier',run?run.tier:'–');TX('hWave',run?run.wave:'–');
+  TX('hCash',run?fmt(run.cash):'0');TX('hCoins',fmt(save.coins));
+  if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`)}
+  else{TX('hpTxt','–')}
+  const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
+  if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame\n${enemies.length} enemies  ·  ${bullets.length} shots  ·  ${ebs.length} enemy shots`;
+  refreshPanel();
+}
+let ovTier=save.tierMax;
+function tierPicker(){let h='<div class="tiers">';for(let t=1;t<=save.tierMax;t++)h+=`<button data-tier="${t}" class="${t===ovTier?'on':''}">Tier ${t}<small>best wave ${save.best[t]||0}</small></button>`;return h+'</div>'}
+function showOv(kind){
+  const ov=$('ov'),c=$('ovCard');if(!kind){ov.hidden=true;return}ov.hidden=false;
+  ovTier=Math.min(ovTier,save.tierMax);
+  if(kind==='start')c.innerHTML=`<h2>Hold the center</h2><p>Your spire fires automatically. Spend cash on upgrades during a run; coins carry over to the workshop. Reach wave ${CFG.tierUnlockWave} to unlock the next tier.</p>${tierPicker()}<button class="go" id="goBtn">Start run</button>`;
+  else{const R=run,m=Math.floor(R.time/60),s=Math.floor(R.time%60);
+    c.innerHTML=`<h2>Fell on wave ${R.wave}</h2><p>Tier ${R.tier} · best ${save.best[R.tier]||0}</p><div class="grid2"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':''}</div><div><span>Offline rate</span>${fmt(save.bestCph)}/h${R.time<CFG.offlineMinRun?' (run too short to count)':''}</div><div><span>Kills</span>${fmt(R.kills)}</div><div><span>Cash earned</span>${fmt(R.cashEarned)}</div><div><span>Run time</span>${m}m ${s}s (game time)</div></div><button id="toWs" style="width:100%;margin-bottom:8px">Open workshop (${fmt(save.coins)} coins)</button>${tierPicker()}<button class="go" id="goBtn">${autoTimer?`Run again · auto in <span id="autoTxt">${autoLeft}</span>s`:'Run again'}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
+}
+$('ovCard').addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.tier){ovTier=+t.dataset.tier;showOv(run&&run.over?'over':'start')}
+  else if(t.id==='goBtn'){stopAuto();newRun(ovTier)}
+  else if(t.id==='stopAuto'){stopAuto();showOv('over')}
+  else if(t.id==='toWs'){ui.tab='Workshop';buildPanel()}
+});
+const ui={tab:'Attack',mult:1};let rows=[];
+const TABS=['Attack','Defense','Utility','Workshop','Lab','Settings'];
+function buildTabs(){$('tabs').innerHTML=TABS.map(t=>`<button data-tab="${t}" class="${t===ui.tab?'on':''}">${t}</button>`).join('')}
+$('tabs').addEventListener('click',e=>{const t=e.target.closest('button');if(t){ui.tab=t.dataset.tab;buildPanel()}});
+function plan(s,ws){
+  const r=run?run.lv[s.k]||0:0,w=save.ws[s.k]||0,[c0r,g]=ws?s.w:s.c,lv=ws?w:r,c0=ws?c0r*(1-labVal('disc')):c0r;
+  const bank=ws?save.coins:(run&&!run.over?run.cash:0),lim=ui.mult==='Max'?1000:ui.mult;
+  let n=0,tot=0;
+  while(n<lim){if(ws?capped(s,0,w+n):capped(s,r+n,w))break;const c=c0*g**(lv+n);if(ui.mult==='Max'&&tot+c>bank)break;tot+=c;n++}
+  const isCap=ws?capped(s,0,w):capped(s,r,w);
+  let show=n,cost=tot;if(n===0&&!isCap){show=1;cost=c0*g**lv}
+  const cur=ws?valAt(s,0,w):valAt(s,r,w),nxt=ws?valAt(s,0,w+show):valAt(s,r+show,w);
+  return{n,cost,show,cur,nxt,isCap,ok:n>0&&tot<=bank};
+}
+function buildPanel(){
+  buildTabs();const P=$('panel');
+  labRows=[];
+  if(ui.tab==='Settings'){P.innerHTML=settingsHtml();return rows=[]}
+  if(ui.tab==='Lab'){rows=[];
+    P.innerHTML=`<p class="note">Research applies instantly and lasts forever. No timers.</p>`+LAB.map(l=>`<div class="row"><div><b>${l.n}</b><span class="v"></span><span class="note" style="display:block;margin:2px 0 0">${l.d}</span></div><button class="buy coin" data-lab="${l.k}"></button></div>`).join('');
+    labRows=[...P.querySelectorAll('[data-lab]')].map(b=>({l:LK[b.dataset.lab],b,v:b.parentNode.querySelector('.v')}));
+    return refreshPanel()}
+  const ws=ui.tab==='Workshop';
+  let h=`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`;
+  if(ws){h+='<p class="note">Permanent upgrades, paid in coins. They apply to every run, including the one in progress. Values shown are your starting values.</p>'+`<p class="note">Offline rate: <b class="coin">${fmt(save.bestCph*labVal('offSpd'))} coins/hour</b> (best run ${fmt(save.bestCph)}/h × lab ${labVal('offSpd').toFixed(2)}, up to ${labVal('offCap')}h). Runs under ${CFG.offlineMinRun/60} minutes of game time don't count. Rate is per game-hour, so game speed doesn't change it.</p>`;
+    for(const g of['Attack','Defense','Utility'])h+=`<div class="gh">${g}</div>`+ST.filter(s=>s.g===g).map(rowHtml).join('')}
+  else{if(labLv('auto'))h+=`<label class="ab"><input type="checkbox" data-ab="${ui.tab}" ${save.set.ab[ui.tab]?'checked':''}> Auto-buy ${ui.tab.toLowerCase()} upgrades</label>`;
+    if(!run||run.over)h+='<p class="note">Start a run to buy in-run upgrades.</p>';h+=ST.filter(s=>s.g===ui.tab&&!s.ws).map(rowHtml).join('')}
+  P.innerHTML=h;
+  rows=[...P.querySelectorAll('.row')].map(r=>({s:SK[r.dataset.k],v:r.querySelector('.v'),b:r.querySelector('.buy')}));
+  refreshPanel();
+}
+let labRows=[];
+const labCost=l=>l.c[0]*l.c[1]**labLv(l.k);
+const rowHtml=s=>`<div class="row" data-k="${s.k}"><div><b>${s.n}</b><span class="v"></span></div><button class="buy" data-k="${s.k}"></button></div>`;
+function refreshPanel(){
+  for(const r of labRows){const l=r.l,lv=labLv(l.k),mx=lv>=l.max,c=labCost(l);
+    const vt=mx?l.f(l.val(lv))+' (max)':`${l.f(l.val(lv))} → ${l.f(l.val(lv+1))}`;if(r.v.textContent!==vt)r.v.textContent=vt;
+    const ok=!mx&&save.coins>=c;if(r.b.disabled===ok)r.b.disabled=!ok;const t=mx?'Max':fmt(c);if(r.b.textContent!==t)r.b.textContent=t}
+  const ws=ui.tab==='Workshop';
+  for(const r of rows){const p=plan(r.s,ws);
+    const vt=p.isCap?fv(r.s,p.cur)+' (max)':`${fv(r.s,p.cur)} → ${fv(r.s,p.nxt)}`;if(r.v.textContent!==vt)r.v.textContent=vt;
+    if(r.b.disabled===p.ok)r.b.disabled=!p.ok;
+    const html=p.isCap?'Max':`<span class="q">+${p.show}</span>${fmt(p.cost)}`;
+    if(r.b.innerHTML!==html)r.b.innerHTML=html;
+    r.b.classList.toggle('coin',ws);r.b.classList.toggle('cash',!ws)}
+}
+$('panel').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.mult){ui.mult=b.dataset.mult==='Max'?'Max':+b.dataset.mult;return buildPanel()}
+  if(b.dataset.lab){const l=LK[b.dataset.lab],c=labCost(l);if(labLv(l.k)>=l.max||save.coins<c)return;save.coins-=c;save.lab[l.k]=labLv(l.k)+1;persist();
+    if(l.k==='speed')buildSpeeds();if(l.k==='auto')toast('Auto-buy toggles added to the upgrade tabs');refreshPanel();return}
+  if(b.dataset.k){const s=SK[b.dataset.k],ws=ui.tab==='Workshop',p=plan(s,ws);if(!p.ok)return;
+    if(ws){save.coins-=p.cost;save.ws[s.k]=(save.ws[s.k]||0)+p.n;persist()}else{run.cash-=p.cost;run.lv[s.k]=(run.lv[s.k]||0)+p.n}
+    recalc();refreshPanel();return}
+  settingsClick(b);
+});
+function settingsHtml(){return`<div class="set">
+  <label><input type="checkbox" id="optDn" ${save.set.dmgNums?'checked':''}> Damage numbers</label>
+  <label><input type="checkbox" id="optPf" ${save.set.perf?'checked':''}> Performance overlay</label>
+  <label><input type="checkbox" id="optAuto" ${save.set.auto?'checked':''}> Auto-restart after a run ends, after
+    <select id="optDelay" style="font:inherit;min-height:36px;border-radius:8px;background:var(--arena);color:var(--ink);border:1px solid var(--line)">${[3,5,10,15].map(n=>`<option ${save.set.autoDelay===n?'selected':''}>${n}</option>`).join('')}</select> s</label>
+  <div class="gh">Save</div><p class="note">Progress saves in this browser automatically. Copy a backup code to be safe, or paste one to restore.</p>
+  <textarea id="saveTxt" placeholder="Backup code appears here, or paste one to import"></textarea>
+  <div class="btns"><button data-act="export">Copy backup code</button><button data-act="import">Import code</button></div>
+  <div class="gh">Run</div><div class="btns"><button data-act="abandon" ${run&&!run.over?'':'disabled'}>End current run</button></div>
+  <div class="gh">Danger zone</div><div class="btns"><button data-act="reset" class="danger">Reset all progress</button></div>
+  <p class="note">Keys: Space pause · 1–5 speed</p></div>`}
+let resetArm=0;
+function settingsClick(b){
+  const a=b.dataset.act,tx=$('saveTxt');
+  if(a==='export'){const code=btoa(unescape(encodeURIComponent(JSON.stringify(save))));tx.value=code;tx.select();
+    navigator.clipboard?.writeText(code).then(()=>toast('Backup code copied'),()=>toast('Select the code and copy it'))||toast('Select the code and copy it')}
+  else if(a==='import'){try{const s=JSON.parse(decodeURIComponent(escape(atob(tx.value.trim()))));if(s.v!==1)throw 0;save=Object.assign(fresh(),s,{set:Object.assign(fresh().set,s.set)});persist();recalc();toast('Save imported');buildPanel();if(!run)showOv('start')}catch(e){toast('That code did not work')}}
+  else if(a==='abandon'){if(run&&!run.over)gameOver()}
+  else if(a==='reset'){if(Date.now()-resetArm<3000){stopAuto();save=fresh();persist();run=null;enemies.length=bullets.length=ebs.length=0;ovTier=1;showOv('start');buildPanel();toast('Progress reset')}else{resetArm=Date.now();b.textContent='Click again to confirm'}}
+}
+$('panel').addEventListener('change',e=>{if(e.target.id==='optDn')save.set.dmgNums=e.target.checked;if(e.target.id==='optPf')save.set.perf=e.target.checked;
+  if(e.target.id==='optAuto'){save.set.auto=e.target.checked;if(!save.set.auto&&autoTimer){stopAuto();if(run&&run.over)showOv('over')}}
+  if(e.target.id==='optDelay')save.set.autoDelay=+e.target.value;
+  if(e.target.dataset.ab)save.set.ab[e.target.dataset.ab]=e.target.checked;persist()});
+function buildSpeeds(){$('speeds').innerHTML=speeds().map(s=>`<button data-sp="${s}" class="${save.set.speed===s?'on':''}">${s}×</button>`).join('')}
+$('speeds').addEventListener('click',e=>{const b=e.target.closest('button');if(b){save.set.speed=+b.dataset.sp;persist();buildSpeeds()}});
+const setPause=v=>{paused=v;$('pause').textContent=v?'Resume':'Pause';$('pause').classList.toggle('on',v)};
+$('pause').addEventListener('click',()=>setPause(!paused));
+$('perfBtn').addEventListener('click',()=>{save.set.perf=!save.set.perf;persist()});
+addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))return;
+  if(e.code==='Space'){e.preventDefault();if(run&&!run.over)setPause(!paused)}
+  const n=+e.key,sp=speeds();if(n>=1&&n<=sp.length){save.set.speed=sp[n-1];persist();buildSpeeds()}});
+// ---- offline earnings ----
+function awayText(s){const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h}h ${m}m`:`${m}m`}
+function offline(){
+  const now=Date.now(),last=save.lastSeen;persist();
+  if(!last||!save.bestCph)return;
+  const away=(now-last)/1000;if(away<CFG.offlineMinAway)return;
+  const cap=labVal('offCap'),counted=Math.min(away,cap*3600),earned=save.bestCph*labVal('offSpd')*counted/3600;
+  save.coins+=earned;persist();
+  $('wbTxt').textContent=`You were away for ${awayText(away)}`+(away>counted?` (capped at ${cap}h)`:'')+'.';
+  $('wbCoins').textContent=fmt(earned);$('wbRate').textContent=fmt(save.bestCph*labVal('offSpd'))+'/h';
+  $('wb').hidden=false;if(run&&!run.over)setPause(true);
+}
+$('wbOk').addEventListener('click',()=>{$('wb').hidden=true;if(run&&!run.over)setPause(false)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)persist();else offline()});
+setInterval(()=>{if(!document.hidden)persist()},5000);addEventListener('pagehide',persist);
+offline();
+if(!speeds().includes(save.set.speed))save.set.speed=1;
+buildSpeeds();buildPanel();showOv('start');requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
