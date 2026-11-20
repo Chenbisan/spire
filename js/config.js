@@ -1,10 +1,10 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.15.1';
+const APP_VERSION='1.15.2';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
-  step:1/60, waveLen:20, arenaR:320, spawnR:335, spawnGap:40,  // enemies spawn at least spawnGap m beyond your range
+  step:1/60, waveLen:20, arenaR:320, spawnR:335, spawnRatio:1.15,  // the spawn ring sits this far out relative to your range (15% beyond)
   towerR:14, bulletSpd:420, ebSpd:120,
   tierUnlockWave:25,                       // reach this wave to unlock the next tier
   tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:2.2**(t-1),  // coin: the tier coin multiplier, exponential so higher tiers pay off
@@ -29,7 +29,7 @@ const ST=[
  {k:'critMult',g:'Attack',n:'Crit damage',base:1.5,ra:.1,wa:.05,c:[10,1.15],w:[20,1.22],x:1},
  {k:'superCrit',g:'Attack',n:'Super crit chance (of crits)',base:0,ra:.01,wa:.005,max:.8,c:[20,1.18],w:[40,1.25],p:1},
  {k:'superMult',g:'Attack',n:'Super crit damage',base:2,ra:.1,wa:.05,c:[20,1.17],w:[40,1.22],x:1},
- {k:'range',g:'Attack',n:'Range',base:110,ra:3,wa:2,max:340,c:[8,1.16],w:[25,1.25],u:' m'},
+ {k:'range',g:'Attack',n:'Range',base:110,ra:3,wa:2,max:600,c:[8,1.16],w:[25,1.25],u:' m'},
  {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.02,c:[15,1.17],w:[30,1.25],p:1,u:' per m'},
  {k:'multiChance',g:'Attack',n:'Multishot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
  {k:'multiTargets',g:'Attack',n:'Multishot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},

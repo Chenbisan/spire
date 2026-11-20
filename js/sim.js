@@ -8,7 +8,7 @@ const curRange=()=>run&&run.s&&run.s.range!=null?run.s.range:valAt(SK.range,0,sa
 const statMax=s=>s.maxOfRange?curRange()*s.maxOfRange:s.max;
 function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;const m=statMax(s);return m!=null?Math.min(v,m):v}
 // enemies always spawn beyond your range
-const spawnRadius=()=>run&&run.s?Math.max(CFG.spawnR,run.s.range+CFG.spawnGap):CFG.spawnR;
+const spawnRadius=()=>run&&run.s?Math.max(CFG.spawnR,run.s.range*CFG.spawnRatio):CFG.spawnR;
 const capped=(s,r,w)=>{const m=statMax(s);return m!=null&&valAt(s,r,w)>=m-1e-9};
 function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(const s of ST)run.s[s.k]=valAt(s,run.lv[s.k]||0,save.ws[s.k]||0);
   // cards and modules on top (stat caps still apply)
