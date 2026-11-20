@@ -43,16 +43,17 @@ function draw(){
     ctx.setLineDash([6,8]);ctx.strokeStyle=C.acc;ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(0,0,R.s.range,0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
     // healer pulses and shield rings sit under the bodies
     ctx.lineWidth=1.5;
-    for(const e of enemies)if(!e.dead&&e.hf>0){ctx.strokeStyle=C[e.d.c];ctx.globalAlpha=e.hf/.4*.6;ctx.beginPath();ctx.arc(IX(e),IY(e),e.d.healR*(1.1-e.hf/.4*.4),0,6.283);ctx.stroke()}
+    if(enemies.length<=CFG.lodCount)for(const e of enemies)if(!e.dead&&e.hf>0){ctx.strokeStyle=C[e.d.c];ctx.globalAlpha=e.hf/.4*.6;ctx.beginPath();ctx.arc(IX(e),IY(e),e.d.healR*(1.1-e.hf/.4*.4),0,6.283);ctx.stroke()}
     ctx.globalAlpha=1;
-    for(const e of enemies)if(!e.dead&&e.shield>0){ctx.strokeStyle=C.e6;ctx.lineWidth=1+e.shield*.6;ctx.beginPath();ctx.arc(IX(e),IY(e),e.d.sz*1.65,0,6.283);ctx.stroke()}
+    const lod=enemies.length>CFG.lodCount; // crowd detail mode: fewer, cheaper paint operations
+    ctx.strokeStyle=C.e6;ctx.lineWidth=2;ctx.beginPath();for(const e of enemies)if(!e.dead&&e.shield>0){const x=IX(e),y=IY(e),r=e.d.sz*1.65;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();
     // bodies: light fill + solid outline, one batched path per type (later types draw on top, boss last)
     ctx.lineWidth=2;ctx.lineJoin='round';
     for(const t of TYPES){ctx.beginPath();let any=false;for(const e of enemies)if(e.t===t&&!e.dead&&e.age>=CFG.fadeIn){shape(e);any=true}
-      if(any){const col=C[ET[t].c];ctx.fillStyle=col;ctx.globalAlpha=.3;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.stroke()}}
+      if(any){const col=C[ET[t].c];ctx.fillStyle=col;if(lod){ctx.globalAlpha=.6;ctx.fill()}else{ctx.globalAlpha=.3;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1}}
     for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=.3*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
     ctx.fillStyle=C.hot;
-    for(const e of enemies)if(e.d.bar&&!e.dead&&e.hp<e.mhp){const s=e.d.sz;ctx.fillRect(IX(e)-s,IY(e)-s-6,2*s*Math.max(0,e.hp/e.mhp),3)}
+    for(const e of enemies)if(e.d.bar&&!e.dead&&e.hp<e.mhp&&(!lod||e.d.r>=2)){const s=e.d.sz;ctx.fillRect(IX(e)-s,IY(e)-s-6,2*s*Math.max(0,e.hp/e.mhp),3)}
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
     const clean=cleanFx();
     if(clean){ // one faint, steady line per enemy being shot at
@@ -67,9 +68,10 @@ function draw(){
       let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}
       ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1);ctx.stroke()}
     ctx.globalAlpha=1;ctx.lineCap='butt';
-    // hit flash: the outline brightens briefly (real time, so it reads the same at any speed)
-    {const now=performance.now();ctx.strokeStyle=C.ink;ctx.lineWidth=2.5;for(const e of enemies){const t=now-(e.hitAt||0);if(e.dead||t>CFG.hitFlash)continue;const k=1-t/CFG.hitFlash;
-      ctx.beginPath();shape(e);ctx.fillStyle=C[e.d.c];ctx.globalAlpha=.85*k;ctx.fill();ctx.globalAlpha=k;ctx.stroke()}ctx.globalAlpha=1} // hit: lights up solid in its colour
+    // hit flash: hit enemies light up solid in their colour (real time, so it reads the same at any speed); one path per type
+    {const now=performance.now();ctx.strokeStyle=C.ink;ctx.lineWidth=2.5;
+      for(const t of TYPES){ctx.beginPath();let any=false;for(const e of enemies)if(e.t===t&&!e.dead&&now-(e.hitAt||0)<CFG.hitFlash){shape(e);any=true}
+        if(any){ctx.fillStyle=C[ET[t].c];ctx.globalAlpha=.8;ctx.fill();if(!lod){ctx.globalAlpha=.9;ctx.stroke()}}}ctx.globalAlpha=1}
     ctx.fillStyle=C.mute;ctx.beginPath();for(const p of parts){const z=3*p.l/.5;ctx.rect(IX(p)-z/2,IY(p)-z/2,z,z)}ctx.fill();
     // tower
     ctx.fillStyle=C.acc;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();

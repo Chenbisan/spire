@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.21.0';
+const APP_VERSION='1.21.1';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -23,7 +23,8 @@ const CFG={
   defyFx:900,  // death defied effect length (real ms)
   cleanFxAt:8, hitFlash:180, beamHold:150, beamLen:.07,  // beamLen: stub length as a share of the view radius   // Auto shot effects switch to clean at this game speed; hit flash length (real ms)
   tracerLife:.12, maxTracers:300, streakMax:90,   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
-  sepGap:.9, sepPush:.5          // enemies keep (sum of sizes × sepGap) apart; sepPush = how hard they shove per step
+  sepGap:.9, sepPush:.5, sepChecks:400, sepEveryOther:800, simBudget:20, lodCount:500, boltsDrawn:20, // lodCount: above this many enemies, cheaper drawing // sepChecks: safety cap on neighbours checked per enemy per step; simBudget: max ms of simulation per frame
+          // enemies keep (sum of sizes × sepGap) apart; sepPush = how hard they shove per step
 };
 // stat: base, ra = per in-run level, wa/wm = per workshop level, c/w = [cost, growth]
 const ST=[

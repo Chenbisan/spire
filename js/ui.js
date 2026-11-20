@@ -29,7 +29,7 @@ function hud(){
   if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`+(run.barMax>0?` · ◈ ${fmt(run.bar)}`:'')+(run.invT>0?` · ✦ ${Math.ceil(run.invT)}s`:''))}
   else{TX('hpTxt','–')}
   const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
-  if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame\n${enemies.length} enemies  ·  ${bullets.length} shots  ·  ${ebs.length} enemy shots`;
+  if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame${simCapped?'  ·  busy: running below set speed':''}\n${enemies.length} enemies  ·  ${bullets.length} shots  ·  ${ebs.length} enemy shots`;
   refreshPanel();refreshUltBar();if(typeof updRunNote==='function')updRunNote();
 }
 let ovTier=save.tierMax;

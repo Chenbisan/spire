@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.21.1 — 2026-11-20
+- **Much faster with huge crowds:** with 2,000+ enemies on screen the simulation runs several times faster (crowd spacing uses a finer grid, and Chain Lightning and bounce shots only look at nearby enemies).
+- **No more frame-rate collapse:** the simulation gets a fixed time budget per frame. If a crowd is too big to keep up, the game runs a little slower than your chosen speed instead of freezing; the FPS overlay says when that happens.
+- **Crowd detail mode:** above 500 enemies the arena draws more cheaply (solid shapes, batched hit flashes, no healer pulses, fewer lightning bolts, health bars only on elites and bosses) so the frame rate holds up.
+
 ## 1.21.0 — 2026-11-20
 - **🔴 New ultimate, Laser:** charges up, then fires a beam toward your target that burns every enemy along it. Upgrade damage, width, duration and charge time.
 - **Every ultimate now has 4 upgrades** and three statuses, each with a bonus: **Silver** for maxing the 2 starred upgrades (for Frost Field, Gravity Well and Laser that's duration and cooldown, which makes them always on), **Gold** for any 3, **Platinum** for all 4.

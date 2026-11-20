@@ -32,7 +32,7 @@ const enemies=[],ePool=[],bullets=[],bPool=[],ebs=[],ebPool=[],dnums=[],parts=[]
 const tracers=[];
 function trace(x0,y0,x1,y1,k){if(tracers.length<CFG.maxTracers)tracers.push({x0,y0,x1,y1,k,l:CFG.tracerLife})}
 function newRun(tier){
-  stopAuto();
+  stopAuto();sepBuilt=false;
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
   enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;
   run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
@@ -90,7 +90,11 @@ function hitTower(v,att){
   if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);
   if(R.hp<=0)gameOver();
 }
-function nearestOther(x,y,ex,r){let best=null,bd=r*r;for(const e of enemies){if(e.dead||e===ex)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
+// enemies near (x,y) within r: uses this step's push-apart grid when it's built, otherwise scans everything
+function forNear(x,y,r,fn){if(!sepBuilt){for(const e of enemies)if(!e.dead)fn(e);return}
+  const c0x=sepCell(x-r),c1x=sepCell(x+r),c0y=sepCell(y-r),c1y=sepCell(y+r);
+  for(let gy=c0y;gy<=c1y;gy++)for(let gx=c0x;gx<=c1x;gx++)for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){const e=enemies[j];if(e&&!e.dead)fn(e)}}
+function nearestOther(x,y,ex,r){let best=null,bd=r*r;forNear(x,y,r,e=>{if(e===ex)return;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}});return best}
 function nearest(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
 // shards earned by this run so far (paid when it ends)
 const runShards=R=>R.kills*CFG.shardPerKill*R.tm.shard*(1+R.fx.drop);
@@ -166,23 +170,31 @@ function update(dt){
   for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}
 }
 // ---- crowding: enemies push each other apart (spatial grid, so it stays cheap with hundreds) ----
-const SEPC=48;let SEPN=16,SEPO=SEPC*SEPN/2,sepHead=new Int32Array(SEPN*SEPN),sepNext=new Int32Array(256);
+// grid cell (m): about one enemy wide, so crowded cells stay small
+const SEPC=24;let sepBuilt=false,SEPN=16,SEPO=SEPC*SEPN/2,sepHead=new Int32Array(SEPN*SEPN),sepNext=new Int32Array(256);
 const sepCell=v=>Math.max(0,Math.min(SEPN-1,Math.floor((v+SEPO)/SEPC)));
+let sepFlip=0,SX=new Float32Array(256),SY=new Float32Array(256),SS=new Float32Array(256),SW=new Float32Array(256);
 function separate(){
-  const n=enemies.length;if(n<2)return;
-  if(sepNext.length<n)sepNext=new Int32Array(n*2);
+  sepBuilt=false;const n=enemies.length;if(n<2)return;
+  if(sepNext.length<n){sepNext=new Int32Array(n*2);SX=new Float32Array(n*2);SY=new Float32Array(n*2);SS=new Float32Array(n*2);SW=new Float32Array(n*2)}
   const N=Math.ceil(2*(spawnMax()+60)/SEPC);if(N!==SEPN){SEPN=N;SEPO=SEPC*N/2;sepHead=new Int32Array(N*N)} // grid grows with the arena
-  sepHead.fill(-1);
-  for(let i=0;i<n;i++){const e=enemies[i];if(e.dead)continue;const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i}
-  const tr=CFG.towerR,k=CFG.sepPush;
-  for(let i=0;i<n;i++){const a=enemies[i];if(a.dead)continue;const cx=sepCell(a.x),cy=sepCell(a.y),sa=a.d.sz;
-    for(let gy=Math.max(0,cy-1);gy<=Math.min(SEPN-1,cy+1);gy++)for(let gx=Math.max(0,cx-1);gx<=Math.min(SEPN-1,cx+1);gx++)
-      for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){if(j<=i)continue;const b=enemies[j],sb=b.d.sz,min=(sa+sb)*CFG.sepGap;
-        let dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;if(d2>=min*min)continue;
+  sepHead.fill(-1);sepBuilt=true;
+  // flat copies of position/size/weight: much faster to read in the pair loop than enemy objects
+  for(let i=0;i<n;i++){const e=enemies[i];if(e.dead){SS[i]=-1;continue}SX[i]=e.x;SY[i]=e.y;SS[i]=e.d.sz;SW[i]=e.d.weight;
+    const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i}
+  // with a huge crowd, push every other step (it still settles, just over two steps)
+  if(n>CFG.sepEveryOther&&(sepFlip^=1))return;
+  const k=CFG.sepPush,g=CFG.sepGap,cap=CFG.sepChecks;
+  for(let i=0;i<n;i++){const sa=SS[i];if(sa<0)continue;const cx=sepCell(SX[i]),cy=sepCell(SY[i]),wa0=SW[i];let chk=0;
+    const y0=Math.max(0,cy-1),y1=Math.min(SEPN-1,cy+1),x0=Math.max(0,cx-1),x1=Math.min(SEPN-1,cx+1);
+    cells:for(let gy=y0;gy<=y1;gy++)for(let gx=x0;gx<=x1;gx++)
+      for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){if(j<=i)continue;if(++chk>cap)break cells;
+        const min=(sa+SS[j])*g;let dx=SX[j]-SX[i],dy=SY[j]-SY[i];const d2=dx*dx+dy*dy;if(d2>=min*min)continue;
         let d=Math.sqrt(d2);if(d<1e-3){const r=Math.random()*6.283;dx=Math.cos(r);dy=Math.sin(r);d=1}else{dx/=d;dy/=d}
-        const p=(min-d)*k,wa=b.d.weight/(a.d.weight+b.d.weight),wb=1-wa; // heavier enemies get shoved less
-        a.x-=dx*p*wa;a.y-=dy*p*wa;b.x+=dx*p*wb;b.y+=dy*p*wb}}
-  for(let i=0;i<n;i++){const e=enemies[i],m=tr+e.d.sz,d=Math.hypot(e.x,e.y);if(d<m&&d>0){e.x*=m/d;e.y*=m/d}} // never inside the spire
+        const p=(min-d)*k,wb0=SW[j],wa=wb0/(wa0+wb0),wb=1-wa; // heavier enemies get shoved less
+        SX[i]-=dx*p*wa;SY[i]-=dy*p*wa;SX[j]+=dx*p*wb;SY[j]+=dy*p*wb}}
+  const tr=CFG.towerR;
+  for(let i=0;i<n;i++){if(SS[i]<0)continue;const e=enemies[i];let x=SX[i],y=SY[i];const m=tr+SS[i],d=Math.hypot(x,y);if(d<m&&d>0){x*=m/d;y*=m/d}e.x=x;e.y=y} // never inside the spire
 }
 // ---- in-run purchase: each level rolls its section's free-upgrade chance and costs nothing on a hit ----
 function buyRun(s,n){const r=run.lv[s.k]||0,ch=run.s['free'+s.g]||0;let paid=0,free=0;

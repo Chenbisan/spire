@@ -47,7 +47,7 @@ function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),n=uv('c
     if(S.chain>=3){e.slowT=2;e.slowF=Math.max(e.slowF||0,.5)}};
   for(let qi=0;qi<q.length;qi++){const [e,v,dp]=q[qi];strike(e,v);
     if(dp>=ULT.chainDepth||hit.size>=ULT.chainMax||Math.random()>=ch)continue;
-    const near=[];for(const o of enemies){if(o.dead||hit.has(o))continue;const d=(o.x-e.x)**2+(o.y-e.y)**2;if(d<=jr)near.push([d,o])}
+    const near=[];forNear(e.x,e.y,ULT.chainJump,o=>{if(hit.has(o))return;const d=(o.x-e.x)**2+(o.y-e.y)**2;if(d<=jr)near.push([d,o])});
     near.sort((a,b)=>a[0]-b[0]);for(const [,o] of near.slice(0,n)){if(hit.size>=ULT.chainMax)break;hit.add(o);segs.push([e.x,e.y,o.x,o.y,Math.random()-.5,Math.random()-.5,dp]);q.push([o,v*mul,dp+1])}}
   if(ultFx.length<80)ultFx.push({k:'chain',x:e0.x,y:e0.y,segs,at:performance.now()})}
 function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[k].passive||st.cd>0||st.act>0||R.over)return false;
@@ -72,12 +72,13 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
       ctx.globalAlpha=.9*fl;ctx.lineWidth=Math.max(2*dpr/sc,w*.25);ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt'}
     else if(L.cd<1.5){const k=1-Math.max(0,L.cd)/1.5;ctx.fillStyle=C.hot;ctx.globalAlpha=.15+.5*k;ctx.beginPath();ctx.arc(0,0,CFG.towerR+4+8*k,0,6.283);ctx.fill();ctx.globalAlpha=1}} // charging glow
   for(let i=ultFx.length-1;i>=0;i--){const f=ultFx[i],k=(now-f.at)/(f.k==='chain'?260:450);if(k>=1){ultFx.splice(i,1);continue}
-    if(f.k==='chain'){ctx.strokeStyle=C.barrier;ctx.globalAlpha=1-k;ctx.fillStyle=C.barrier;ctx.beginPath();ctx.arc(f.x,f.y,5*dpr/sc,0,6.283);ctx.fill(); // spark, then branches thinning with depth
-      for(const [x0,y0,x1,y1,jx,jy,dp] of f.segs){const L=Math.hypot(x1-x0,y1-y0)*.35;ctx.lineWidth=Math.max(1,3-dp*.5)*dpr/sc;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo((x0+x1)/2+jx*L,(y0+y1)/2+jy*L);ctx.lineTo(x1,y1);ctx.stroke()}}
+    if(f.k==='chain'){if(i<ultFx.length-CFG.boltsDrawn)continue; // only the newest bolts; one path each
+      ctx.strokeStyle=C.barrier;ctx.globalAlpha=1-k;ctx.fillStyle=C.barrier;ctx.beginPath();ctx.arc(f.x,f.y,5*dpr/sc,0,6.283);ctx.fill();
+      ctx.lineWidth=2*dpr/sc;ctx.beginPath();for(const [x0,y0,x1,y1,jx,jy] of f.segs){const L=Math.hypot(x1-x0,y1-y0)*.35;ctx.moveTo(x0,y0);ctx.lineTo((x0+x1)/2+jx*L,(y0+y1)/2+jy*L);ctx.lineTo(x1,y1)}ctx.stroke()}
     else if(f.k==='shock'){ctx.strokeStyle=C.gold;ctx.lineWidth=(f.after?2.5:4)*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(0,0,CFG.towerR+k*f.r,0,6.283);ctx.stroke()}}
   ctx.globalAlpha=1;
   // stunned enemies get a gold dashed ring
-  ctx.strokeStyle=C.gold;ctx.lineWidth=1.5*dpr/sc;ctx.setLineDash([3*dpr/sc,3*dpr/sc]);ctx.beginPath();
+  ctx.strokeStyle=C.gold;ctx.lineWidth=1.5*dpr/sc;if(enemies.length<=CFG.lodCount)ctx.setLineDash([3*dpr/sc,3*dpr/sc]);ctx.beginPath();
   for(const e of enemies)if(!e.dead&&e.stunT>0){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();ctx.setLineDash([]);
 }
 // ---- Ultimates tab ----
