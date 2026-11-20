@@ -26,7 +26,7 @@ let viewR=0,viewT=0;
 function draw(){
   const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
   // the view zooms smoothly to fit the spawn ring, which follows your range
-  const target=Math.max(CFG.arenaR,spawnRadius()-15),now=performance.now();
+  const target=Math.max(CFG.arenaR,run&&run.s?run.s.range*CFG.viewRatio:0),now=performance.now();
   viewR=viewR?viewR+(target-viewR)*Math.min(1,(now-viewT)/300):target;viewT=now;
   const VR=viewR,sc=Math.min(W,H)/(2*VR),ext=Math.max(W,H)/sc/2;ctx.setTransform(sc,0,0,sc,W/2,H/2);
   // distance rings every 100 m (every 200 m once the view is huge), labelled along the crosshair
@@ -45,8 +45,9 @@ function draw(){
     for(const e of enemies)if(!e.dead&&e.shield>0){ctx.strokeStyle=C.e6;ctx.lineWidth=1+e.shield*.6;ctx.beginPath();ctx.arc(IX(e),IY(e),e.d.sz*1.65,0,6.283);ctx.stroke()}
     // bodies: light fill + solid outline, one batched path per type (later types draw on top, boss last)
     ctx.lineWidth=2;ctx.lineJoin='round';
-    for(const t of TYPES){ctx.beginPath();let any=false;for(const e of enemies)if(e.t===t&&!e.dead){shape(e);any=true}
+    for(const t of TYPES){ctx.beginPath();let any=false;for(const e of enemies)if(e.t===t&&!e.dead&&e.age>=CFG.fadeIn){shape(e);any=true}
       if(any){const col=C[ET[t].c];ctx.fillStyle=col;ctx.globalAlpha=.3;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.stroke()}}
+    for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=.3*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
     ctx.fillStyle=C.hot;
     for(const e of enemies)if(e.d.bar&&!e.dead&&e.hp<e.mhp){const s=e.d.sz;ctx.fillRect(IX(e)-s,IY(e)-s-6,2*s*Math.max(0,e.hp/e.mhp),3)}
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping

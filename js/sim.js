@@ -39,10 +39,10 @@ function spawnChance(w){const o={};let left=1;for(const t of TYPES){const d=ET[t
 function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;acc+=d.freq;if(r<acc)return t}return'basic'}
 function spawn(t,x,y){
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
-  if(x==null){const sr=spawnRadius();x=Math.cos(a)*sr;y=Math.sin(a)*sr}
+  const x0given=x!=null;if(!x0given){const sr=spawnRadius();x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
-  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;
+  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;
   enemies.push(e);
 }
 function nextWave(){
@@ -111,7 +111,7 @@ function update(dt){
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e);continue}
-    e.px=e.x;e.py=e.y;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
+    e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
     let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;
     if(dist>stop){const m=Math.min(sp*dt,dist-stop);e.x-=e.x/dist*m;e.y-=e.y/dist*m}
     else{e.atk+=dt;

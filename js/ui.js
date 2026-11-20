@@ -243,7 +243,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   ${[1,2,3].map(rk=>`<div class="gh">${RANKS[rk]}</div><div class="mobs">${TYPES.filter(t=>ET[t].r===rk).map(t=>{const d=ET[t];
     const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';
     return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join('')}
-  <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; ranged enemies stop at ${ET.ranged.stop} m. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so a long range never shoots past them; the arena zooms out to fit. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
+  <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; ranged enemies stop at ${ET.ranged.stop} m. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so they have to walk in; the arena zooms with your range. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
   <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}
 function buildSpeeds(){$('speeds').innerHTML=speeds().map(s=>`<button data-sp="${s}" class="${save.set.speed===s?'on':''}">${s}×</button>`).join('')}
 $('speeds').addEventListener('click',e=>{const b=e.target.closest('button');if(b){save.set.speed=+b.dataset.sp;persist();buildSpeeds()}});

@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.15.6 — 2026-11-20
+- **Enemies spawn much farther out:** 35% beyond your range (was 15%), so they have real travel time before they reach it.
+- **They walk in from off-screen:** the view now fits your range ring rather than the spawn ring, so enemies enter from beyond the edge, and any that spawn in view fade in instead of popping up.
+
 ## 1.15.5 — 2026-11-20
 - The version number moved to a small, faint label in the arena's bottom-right corner (tap it to see what's new).
 
