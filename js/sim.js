@@ -10,6 +10,7 @@ function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(con
   const F=loadoutFx();for(const k in F.mul)run.s[k]*=F.mul[k];for(const k in F.add)run.s[k]+=F.add[k];
   for(const s of ST)if(s.max!=null)run.s[s.k]=Math.min(run.s[s.k],s.max);
   run.fx=F;run.waveLen=CFG.waveLen*(1-F.rush);
+  const oldBar=run.barMax||0;run.barMax=run.s.health*run.s.barrier;run.bar=Math.min(run.barMax,(run.bar||0)+Math.max(0,run.barMax-oldBar)); // upgrades add their extra right away
   if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
 // ================= state =================
 let run=null,paused=false,GEN=0;
@@ -22,7 +23,7 @@ function newRun(tier){
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
   enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;
   run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
-  recalc();run.hp=run.s.health;run.cash=run.s.startCash;
+  recalc();run.hp=run.s.health;run.bar=run.barMax;run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
@@ -59,16 +60,21 @@ function kill(e){
 }
 function damage(e,v,crit,thorn){
   const blocked=e.shield>0,st=save.stats;
-  if(blocked){e.shield--;st.blocked++}else{const a=Math.min(v,Math.max(0,e.hp));e.hp-=v;st.dmg+=a;if(thorn)st.thorn+=a}
+  let a=0;if(blocked){e.shield--;st.blocked++}else{a=Math.min(v,Math.max(0,e.hp));e.hp-=v;st.dmg+=a;if(thorn)st.thorn+=a}
   if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums)dnums.push({x:e.x,y:e.y-e.d.sz,py:e.y-e.d.sz,v,c:crit,b:blocked,l:.6});
   if(e.hp<=0&&!e.dead)kill(e);
+  return a;
 }
 function hitTower(v,att){
-  const R=run,t=v*(1-R.s.defense);R.hp-=t;save.stats.taken+=t;
+  const R=run;let t=v*(1-R.s.defense);
+  if(R.bar>0){const a=Math.min(R.bar,t);R.bar-=a;t-=a;save.stats.absorbed+=a}
+  R.hp-=t;save.stats.taken+=t;
+  if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.defies++;if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums)dnums.push({x:0,y:-CFG.towerR-8,py:-CFG.towerR-8,v:0,c:0,t:'defied',l:.8})}
   if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=R.s.health*R.fx.revive;toast('Second Wind!')}
   if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);
   if(R.hp<=0)gameOver();
 }
+function nearestOther(x,y,ex,r){let best=null,bd=r*r;for(const e of enemies){if(e.dead||e===ex)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
 function nearest(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
 function gameOver(quit){
   const R=run;if(R.over)return;R.over=true;R.hp=0;save.runs++;
@@ -82,14 +88,16 @@ function gameOver(quit){
   persist();ovTier=R.tier;startAuto();showOv('over');buildPanel();
 }
 // ================= simulation (fixed step) =================
-function fire(tgt){const s=run.s,b=bPool.pop()||{},c=Math.random()<s.crit;save.stats.shots++;if(c)save.stats.crits++;
-  b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1);b.l=2;bullets.push(b)}
+function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:0;save.stats.shots++;if(c){save.stats.crits++;if(s.superCrit>0&&Math.random()<s.superCrit){c=2;save.stats.supers++}}
+  b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
+  b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
 function update(dt){
   const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;save.stats.time+=dt;R.waveT+=dt;R.spawnT+=dt;
   const cnt=CFG.spawnCount(R.wave),iv=R.waveLen*.9/cnt;
   while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
   if(R.waveT>=R.waveLen)nextWave();
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
+  if(R.barMax>0)R.bar=Math.min(R.barMax,R.bar+R.barMax*s.barrierRegen*dt);
   let tgt=null,td=Infinity;
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
@@ -108,13 +116,17 @@ function update(dt){
   const fi=1/s.aspd;R.fireT+=dt;
   if(!tgt)R.fireT=Math.min(R.fireT,fi);
   else while(R.fireT>=fi){R.fireT-=fi;fire(tgt);
-    if(R.fx.multi&&Math.random()<R.fx.multi){let o=null,od=Infinity;for(const e of enemies)if(!e.dead&&e!==tgt&&e.dist<=s.range+e.d.sz&&e.dist<od){od=e.dist;o=e}if(o)fire(o)}}
+    const mc=s.multiChance+R.fx.multi;
+    if(mc>0&&Math.random()<mc){const extra=[];for(const e of enemies)if(!e.dead&&e!==tgt&&e.dist<=s.range+e.d.sz)extra.push(e);
+      extra.sort((a,b)=>a.dist-b.dist);const n=Math.min(extra.length,Math.floor(s.multiTargets));for(let k=0;k<n;k++)fire(extra[k]);if(n)save.stats.multi++}}
   const m=CFG.bulletSpd*dt;
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
-      if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}damage(e,e.d.r>=2?b.dmg*(1+R.fx.eliteDmg):b.dmg,b.c);drop=true}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
+      if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=2?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
+        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,CFG.spawnR-d);if(k>0){e.x+=e.x/d*k;e.y+=e.y/d*k;e.px=e.x;e.py=e.y;save.stats.kbs++}}
+        if(b.bn>0){const n=nearestOther(e.x,e.y,e,s.bounceRange);if(n){b.bn--;b.rx=b.x=b.px=e.x;b.ry=b.y=b.py=e.y;b.e=n;b.g=n.gen;b.l=2;drop=false;save.stats.bounces++}}}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
   }
   const em=CFG.ebSpd*dt;
@@ -142,11 +154,15 @@ function separate(){
         a.x-=dx*p*wa;a.y-=dy*p*wa;b.x+=dx*p*wb;b.y+=dy*p*wb}}
   for(let i=0;i<n;i++){const e=enemies[i],m=tr+e.d.sz,d=Math.hypot(e.x,e.y);if(d<m&&d>0){e.x*=m/d;e.y*=m/d}} // never inside the spire
 }
+// ---- in-run purchase: each level rolls its section's free-upgrade chance and costs nothing on a hit ----
+function buyRun(s,n){const r=run.lv[s.k]||0,ch=run.s['free'+s.g]||0;let paid=0,free=0;
+  for(let i=0;i<n;i++){if(ch>0&&Math.random()<ch)free++;else paid+=s.c[0]*s.c[1]**(r+i)}
+  run.cash-=paid;run.lv[s.k]=r+n;save.stats.ups+=n;save.stats.freeUps+=free;return free}
 // ---- auto-buyer (runs from the HUD tick) ----
 function autoBuy(){
   if(!run||run.over||paused||!labLv('auto'))return;let any=false;
   for(let i=0;i<100;i++){let best=null,bc=Infinity;
     for(const s of ST){if(s.ws||!save.set.ab[s.g])continue;const r=run.lv[s.k]||0;if(capped(s,r,save.ws[s.k]||0))continue;const c=s.c[0]*s.c[1]**r;if(c<bc){bc=c;best=s}}
-    if(!best||bc>run.cash)break;run.cash-=bc;run.lv[best.k]=(run.lv[best.k]||0)+1;save.stats.ups++;any=true}
+    if(!best||bc>run.cash)break;buyRun(best,1);any=true}
   if(any)recalc();
 }

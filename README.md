@@ -24,6 +24,7 @@ python -m http.server 8000
   - *Normal:* Basic (grey square), Fast (yellow triangle), Ranged (purple diamond, stops outside base range and shoots), Tank (orange pentagon).
   - *Elite* (from wave 15): Shielded (blue octagon, shield blocks the first 3 hits), Healer (green cross, heals nearby enemies), Splitter (magenta star, splits into 3 Fast).
   - *Boss:* red hexagon, every 10th wave.
+- **Spire stats:** Attack has damage, attack speed, crits and super crits, range, damage per distance, multishot (chance + extra targets) and bounce shots (chance + bounces + range). Defense has health, regen, barrier (a refilling shield sized as a share of max health) and barrier regen, defense, thorns, lifesteal, death defy, and knockback (chance + force, divided by the enemy's weight). Utility has cash and coin bonuses, cash interest, starting cash, and free attack / defense / utility upgrade chances.
 - **Cash:** earned from kills and cash interest (paid at the start of every wave), spent in the Upgrades tab (Attack / Defense / Utility sections, as in the Workshop). It resets every run.
 - **Coins:** earned from kills, permanent, spent in the Workshop (tower stats).
 - **Shards:** only drop from enemies on tier 2 and up (1.5× more per tier above that), permanent, spent in the Lab (meta upgrades).

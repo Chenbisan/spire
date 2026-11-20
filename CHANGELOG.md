@@ -1,5 +1,21 @@
 # What's new in Spire
 
+## 1.12.0 — 2026-11-20
+- **New Attack upgrades:**
+  - **Multishot chance / targets:** a chance for each shot to also fire at more enemies in range (1 extra to start, up to 8).
+  - **Bounce shot chance / targets / range:** a chance for a shot to hop on to a nearby enemy after it hits (1 bounce to start, up to 8), and how far it can hop.
+  - **Super crit chance / damage:** a chance for a crit to be multiplied again (×2 to start). Super crits show in red.
+  - **Damage per distance:** extra damage for every unit between the spire and its target, so far-off enemies take more.
+- **New Defense upgrades:**
+  - **Barrier health:** a shield, sized as a share of your max health, that soaks up damage before your health does. It shows as a blue ring around the spire and a strip under the health bar.
+  - **Barrier regen:** how fast the barrier refills, as a share of its size per second.
+  - **Lifesteal:** heals the spire by a share of the damage its shots deal.
+  - **Death defy chance:** a chance to shrug off a hit that would destroy the spire ("defied" pops up).
+  - **Knockback chance / force:** a chance for your hits to shove enemies away from the spire. Heavier enemies (higher ⚖ weight) get pushed less, and bosses barely move.
+- **New Utility upgrades:** free Attack, Defense and Utility upgrade chances. Each in-run level you buy in that section (by hand or with auto-buy) has that chance to cost nothing.
+- The Scatter Cannon module now adds to your multishot chance.
+- Lifetime stats count multishot volleys, shot bounces, super crits, knockbacks, deaths defied, free upgrades, lifesteal healing and damage absorbed by the barrier.
+
 ## 1.11.0 — 2026-11-20
 - **Upgrades and Workshop are split into Attack, Defense and Utility sections** with a switcher under the ×1 / ×10 / Max buttons, so each list is short. Each tab remembers its section after a refresh. Auto-buy toggles show for the section you're looking at.
 

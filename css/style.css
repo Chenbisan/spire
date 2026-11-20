@@ -8,7 +8,7 @@
 --ink:light-dark(#14181b,#e7ede8);--mute:light-dark(#5e6569,#8a979d);--acc:light-dark(#0b8f80,#34d1bf);
 --gold:light-dark(#9a6b00,#ffcc4d);--hot:light-dark(#d8432a,#ff6b4a);
 --arena:light-dark(#f6f4ec,#080d10);--grid:light-dark(#e3e0d5,#131c21);
---shard:light-dark(#6f4fd0,#b49aff);--chip:light-dark(#c2185b,#ff7aa8);--alloy:light-dark(#2f6f8f,#8ecbe8);
+--shard:light-dark(#6f4fd0,#b49aff);--barrier:light-dark(#1f7fd1,#6cc4ff);--chip:light-dark(#c2185b,#ff7aa8);--alloy:light-dark(#2f6f8f,#8ecbe8);
 --e1:light-dark(#3a4146,#dfe6e1);--e2:light-dark(#b07a00,#ffcc4d);--e3:light-dark(#c95f12,#ff9a4a);--e4:light-dark(#6f4fd0,#b49aff);--e5:light-dark(#c81e1e,#ff4747);
 --e6:light-dark(#1f63d1,#5aa2ff);--e7:light-dark(#17884a,#4fd67a);--e8:light-dark(#a8259f,#f067e6)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
@@ -42,6 +42,7 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .hst{display:flex;flex-wrap:wrap;gap:2px 16px;margin-top:4px;font-size:13px;color:var(--mute)}.hst b{font:500 14px 'Chakra Petch',sans-serif;color:var(--ink)}.hst b.coin{color:var(--gold)}.hst b.shard{color:var(--shard)}.hst b.chip{color:var(--chip)}.hst b.alloy{color:var(--alloy)}
 .winfo{margin:12px 0 8px}.winfo b{font-weight:500}.winfo small{color:var(--mute);font:12px Inter,sans-serif}
 .etab{width:100%;border-collapse:collapse;font:500 14px 'Chakra Petch',sans-serif}.etab th{font:600 12px Inter,sans-serif;color:var(--mute);text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}.etab th:first-child,.etab td:first-child{text-align:left}.etab td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.etab td:first-child{display:flex;align-items:center;gap:6px}.etab svg{width:24px;height:24px;flex:none}.etab tr.off td{color:var(--mute)}.etab .when{display:block;font:400 12px Inter,sans-serif;color:var(--mute)}.etab td:first-child>span{white-space:normal;line-height:1.2}
+.hp i.bb{inset:auto 0 0 0;height:4px;background:var(--barrier);transform:scaleX(0)}
 .hpt{font:500 13px 'Chakra Petch',sans-serif;color:var(--mute);white-space:nowrap}
 .wrap{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 360px}
 .wrap>section{display:flex;flex-direction:column;min-height:0}

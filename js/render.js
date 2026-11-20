@@ -2,7 +2,7 @@
 // ================= render =================
 const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
 let C={},A=1;const IX=o=>o.px+(o.x-o.px)*A,IY=o=>o.py+(o.y-o.py)*A;
-function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}}
+function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','barrier']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}}
 readColors();
 new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
@@ -45,7 +45,7 @@ function draw(){
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
     shots(bullets,C.acc,2);shots(ebs,C.e4,2.5);
     ctx.lineCap='round';
-    for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
+    for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===3?C.hot:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
       let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}
       ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1);ctx.stroke()}
     ctx.globalAlpha=1;ctx.lineCap='butt';
@@ -53,7 +53,10 @@ function draw(){
     // tower
     ctx.fillStyle=C.acc;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();
     ctx.fillStyle=C.arena;ctx.beginPath();ctx.arc(0,0,tr*.4,0,6.283);ctx.fill();
+    if(R.barMax>0){const f=Math.max(0,R.bar/R.barMax);ctx.strokeStyle=C.barrier;ctx.lineWidth=3;
+      ctx.globalAlpha=.2;ctx.beginPath();ctx.arc(0,0,tr+7,0,6.283);ctx.stroke();
+      ctx.globalAlpha=.35+.65*f;ctx.beginPath();ctx.arc(0,0,tr+7,-Math.PI/2,-Math.PI/2+6.283*f);ctx.stroke();ctx.globalAlpha=1}
     if(dnums.length){ctx.font="600 11px 'Chakra Petch',sans-serif";ctx.textAlign='center';
-      for(const n of dnums){ctx.fillStyle=n.c?C.gold:C.ink;ctx.globalAlpha=Math.min(1,n.l*2);ctx.fillText(n.b?'block':fmt(n.v),n.x,n.py+(n.y-n.py)*A)}ctx.globalAlpha=1}
+      for(const n of dnums){ctx.fillStyle=n.c===2?C.hot:n.c?C.gold:C.ink;ctx.globalAlpha=Math.min(1,n.l*2);ctx.fillText(n.t||(n.b?'block':fmt(n.v)),n.x,n.py+(n.y-n.py)*A)}ctx.globalAlpha=1}
   }else{ctx.fillStyle=C.acc;ctx.beginPath();ctx.arc(0,0,tr,0,6.283);ctx.fill()}
 }

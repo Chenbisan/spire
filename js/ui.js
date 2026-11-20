@@ -4,11 +4,12 @@ let autoLeft=0,autoTimer=null;
 function stopAuto(){clearInterval(autoTimer);autoTimer=null;autoLeft=0}
 function startAuto(){stopAuto();if(!save.set.auto)return;autoLeft=save.set.autoDelay;
   autoTimer=setInterval(()=>{autoLeft--;const el=document.getElementById('autoTxt');if(el)el.textContent=autoLeft;if(autoLeft<=0){stopAuto();newRun(ovTier)}},1000)}
-const hpBar=$('hpBar'),waveBar=$('waveBar');let lastHp=-1,lastWv=-1;
+const hpBar=$('hpBar'),waveBar=$('waveBar'),barBar=$('barBar');let lastHp=-1,lastWv=-1,lastBar=-1;
 function bars(){
   const hp=run?Math.max(0,Math.min(1,run.hp/run.s.health)):0;
   const wv=run&&!run.over?Math.min(1,(run.waveT+(paused?0:A*CFG.step))/run.waveLen):0;
   if(Math.abs(hp-lastHp)>1e-4){lastHp=hp;hpBar.style.transform=`scaleX(${hp})`}
+  const br=run&&run.barMax>0?Math.max(0,Math.min(1,run.bar/run.barMax)):0;if(Math.abs(br-lastBar)>1e-4){lastBar=br;barBar.style.transform=`scaleX(${br})`}
   if(Math.abs(wv-lastWv)>1e-4){lastWv=wv;waveBar.style.transform=`scaleX(${wv})`}
 }
 // ================= UI =================
@@ -23,7 +24,7 @@ function hud(){
      if(w!==eTabW||t!==eTabT)mBody.innerHTML=enemyHtml();
      else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',Math.ceil(run.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
      else if(eTab==='spire'){const {live,v}=spireStats();if(JSON.stringify(v)+(live?Math.round(run.hp):'')!==eSig)mBody.innerHTML=enemyHtml()}}}
-  if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`)}
+  if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`+(run.barMax>0?` · ◈ ${fmt(run.bar)}`:''))}
   else{TX('hpTxt','–')}
   const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
   if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame\n${enemies.length} enemies  ·  ${bullets.length} shots  ·  ${ebs.length} enemy shots`;
@@ -106,7 +107,7 @@ $('panel').addEventListener('click',e=>{
   if(b.dataset.lab){const l=LK[b.dataset.lab],c=labCost(l);if(labLv(l.k)>=l.max||save.shards<c)return;save.shards-=c;save.lab[l.k]=labLv(l.k)+1;save.stats.lab++;save.stats.labShards+=c;persist();
     if(l.k==='speed')buildSpeeds();if(l.k==='auto')toast('Auto-buy toggles added to the Upgrades tab');refreshPanel();return}
   if(b.dataset.k){const s=SK[b.dataset.k],ws=ui.tab==='Workshop',p=plan(s,ws);if(!p.ok)return;
-    if(ws){save.coins-=p.cost;save.ws[s.k]=(save.ws[s.k]||0)+p.n;save.stats.wsUps+=p.n;save.stats.wsCoins+=p.cost;persist()}else{run.cash-=p.cost;run.lv[s.k]=(run.lv[s.k]||0)+p.n;save.stats.ups+=p.n}
+    if(ws){save.coins-=p.cost;save.ws[s.k]=(save.ws[s.k]||0)+p.n;save.stats.wsUps+=p.n;save.stats.wsCoins+=p.cost;persist()}else{const free=buyRun(s,p.n);if(free)toast(free>1?`${free} levels were free!`:'Free upgrade!')}
     recalc();refreshPanel();return}
 });
 function settingsHtml(){return`<div class="set">
@@ -149,9 +150,9 @@ function statsHtml(){const S=save.stats,H=save.hist.slice(0,10),recent=H.length?
   <div class="gh">Earnings</div>
   ${L('Coins earned (runs)',fmt(S.coins),'coin')}${L('Coins earned offline',fmt(S.offCoins),'coin')}${L(`Recent coins per hour (last ${H.length===1?'run':(H.length||10)+' runs'})`,fmt(recent),'coin')}${L('Best coins per hour (offline rate)',fmt(save.bestCph),'coin')}${L('Cash earned',fmt(S.cash),'cash')}${L('Shards earned',fmt(S.shards),'shard')}${L('Chips earned',fmt(S.chips),'chip')}${L('Alloy earned',fmt(S.alloy),'alloy')}
   <div class="gh">Combat</div>
-  ${L('Damage dealt',fmt(S.dmg))}${L('Thorns damage',fmt(S.thorn))}${L('Damage taken',fmt(S.taken))}${L('Enemies destroyed',fmt(save.kills))}${L('Elites destroyed',fmt(S.elite))}${L('Bosses destroyed',fmt(S.boss))}${L('Shots fired',fmt(S.shots))}${L('Critical hits',fmt(S.crits)+(S.shots?` (${pct(S.crits/S.shots)})`:''))}${L('Hits blocked by shields',fmt(S.blocked))}
+  ${L('Damage dealt',fmt(S.dmg))}${L('Thorns damage',fmt(S.thorn))}${L('Damage taken',fmt(S.taken))}${L('Enemies destroyed',fmt(save.kills))}${L('Elites destroyed',fmt(S.elite))}${L('Bosses destroyed',fmt(S.boss))}${L('Shots fired',fmt(S.shots))}${L('Multishot volleys',fmt(S.multi))}${L('Shot bounces',fmt(S.bounces))}${L('Damage absorbed by barrier',fmt(S.absorbed))}${L('Super crits',fmt(S.supers))}${L('Knockbacks',fmt(S.kbs))}${L('Deaths defied',fmt(S.defies))}${L('Health from lifesteal',fmt(S.stolen))}${L('Critical hits',fmt(S.crits)+(S.shots?` (${pct(S.crits/S.shots)})`:''))}${L('Hits blocked by shields',fmt(S.blocked))}
   <div class="gh">Upgrades</div>
-  ${L('In-run upgrades bought',fmt(S.ups))}${L('Workshop upgrades',fmt(S.wsUps))}${L('Workshop coins spent',fmt(S.wsCoins),'coin')}${L('Research completed',fmt(S.lab))}${L('Lab shards spent',fmt(S.labShards),'shard')}${L('Cards owned',CARDS.filter(c=>cardLv(c.k)).length+' / '+CARDS.length)}${L('Chips spent',fmt(S.chipsSpent||0),'chip')}${L('Modules owned',MODS.filter(m=>modLv(m.k)).length+' / '+MODS.length)}${L('Alloy spent',fmt(S.alloySpent||0),'alloy')}
+  ${L('In-run upgrades bought',fmt(S.ups))}${L('Free upgrades',fmt(S.freeUps))}${L('Workshop upgrades',fmt(S.wsUps))}${L('Workshop coins spent',fmt(S.wsCoins),'coin')}${L('Research completed',fmt(S.lab))}${L('Lab shards spent',fmt(S.labShards),'shard')}${L('Cards owned',CARDS.filter(c=>cardLv(c.k)).length+' / '+CARDS.length)}${L('Chips spent',fmt(S.chipsSpent||0),'chip')}${L('Modules owned',MODS.filter(m=>modLv(m.k)).length+' / '+MODS.length)}${L('Alloy spent',fmt(S.alloySpent||0),'alloy')}
   <div class="gh">By tier</div>
   <table class="etab"><thead><tr><th>Tier</th><th>Best wave</th><th>Runs</th><th>Coins</th><th>Best/h</th></tr></thead><tbody>${tiers.map(t=>{const T=S.tiers[t]||{runs:0,coins:0,cph:0};
     return`<tr><td>Tier ${t}</td><td>${save.best[t]||0}</td><td>${fmt(T.runs)}</td><td>${fmt(T.coins)}</td><td>${fmt(T.cph)}</td></tr>`}).join('')||'<tr><td colspan="5">No runs yet</td></tr>'}</tbody></table>
@@ -191,7 +192,7 @@ function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=l
     <div><span>Growth per wave</span><b>♥ +${pct(CFG.hpGrow-1)} · ⚔ +${pct(CFG.dmgGrow-1)}</b></div>
     <div><span>Tier ${t} multiplier</span><b>♥ ×${fmt(tm.hp)} · ⚔ ×${fmt(tm.dmg)}</b></div>
   </div>
-  <p class="note">% is the chance each regular spawn is that type. Attack is damage per hit before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is distance per second (a new spire's range is ${SK.range.base}). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside, and it will resist knockback. Greyed-out types can't spawn yet.</p>`}
+  <p class="note">% is the chance each regular spawn is that type. Attack is damage per hit before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is distance per second (a new spire's range is ${SK.range.base}). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside, and knockback moves them less. Greyed-out types can't spawn yet.</p>`}
 function spireStats(){const live=run&&!run.over;const v={};for(const s of ST)v[s.k]=live?run.s[s.k]:valAt(s,0,save.ws[s.k]||0);return{live,v}}
 function spireHtml(){const {live,v}=spireStats();eSig=JSON.stringify(v)+(live?Math.round(run.hp):'');
   const dps=v.damage*v.aspd*(1+v.crit*(v.critMult-1));
@@ -220,7 +221,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li><b>Modules</b> are gear for the spire's ${MOD_SLOTS.length} slots (${MOD_SLOTS.map(s=>s.n).join(', ')}). Each adds a stat per level and has a special effect that gets stronger every ${MOD.per} levels as it ranks up: ${RARITY.join(', ')}.</li>
   <li>Both are bought directly, with no random draws, and you can swap them any time, even mid-run.</li></ul>
   <h3>Upgrades</h3><ul>
-  <li>The <b>Upgrades</b> and <b>Workshop</b> tabs each have three sections; switch between them with the Attack / Defense / Utility buttons. <b>Attack</b>: damage, attack speed, crits and range. <b>Defense</b>: health, regen, damage reduction and thorns (hits back for part of the attacker's max health). <b>Utility</b>: more cash and coins.</li>
+  <li>The <b>Upgrades</b> and <b>Workshop</b> tabs each have three sections; switch between them with the Attack / Defense / Utility buttons. <b>Attack</b>: damage, attack speed, crits and super crits (a chance for a crit to be multiplied again), range, damage per distance (more damage the farther the target is from the spire), multishot (a chance to also fire at more enemies in range) and bounce shots (a chance for a shot to hop on to more enemies within bounce range after it hits). <b>Defense</b>: health, regen, a barrier (a shield ring that soaks up damage before your health and refills over time), damage reduction, thorns (hits back for part of the attacker's max health), lifesteal (heals the spire by a share of the damage its shots deal), death defy (a chance to shrug off a hit that would kill you) and knockback (a chance for hits to shove enemies away; heavier enemies move less). <b>Utility</b>: more cash and coins, and a chance for each in-run Attack, Defense or Utility level you buy to be free.</li>
   <li><b>Workshop</b> levels are your starting values in every run. In-run levels stack on top.</li>
   <li><b>Lab</b> research raises offline earnings, unlocks faster game speeds, discounts the Workshop and adds auto-buyers.</li>
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>

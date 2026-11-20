@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.11.0';
+const APP_VERSION='1.12.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -25,14 +25,31 @@ const ST=[
  {k:'aspd',g:'Attack',n:'Attack speed',base:1,ra:.06,wa:.03,max:10,c:[6,1.16],w:[15,1.22],u:'/s'},
  {k:'crit',g:'Attack',n:'Crit chance',base:.02,ra:.01,wa:.005,max:.8,c:[8,1.15],w:[20,1.25],p:1},
  {k:'critMult',g:'Attack',n:'Crit damage',base:1.5,ra:.1,wa:.05,c:[10,1.15],w:[20,1.22],x:1},
+ {k:'superCrit',g:'Attack',n:'Super crit chance (of crits)',base:0,ra:.01,wa:.005,max:.8,c:[20,1.18],w:[40,1.25],p:1},
+ {k:'superMult',g:'Attack',n:'Super crit damage',base:2,ra:.1,wa:.05,c:[20,1.17],w:[40,1.22],x:1},
  {k:'range',g:'Attack',n:'Range',base:110,ra:3,wa:2,max:300,c:[8,1.16],w:[25,1.25]},
+ {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.02,c:[15,1.17],w:[30,1.25],p:1,u:' per unit'},
+ {k:'multiChance',g:'Attack',n:'Multishot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
+ {k:'multiTargets',g:'Attack',n:'Multishot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
+ {k:'bounceChance',g:'Attack',n:'Bounce shot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
+ {k:'bounceTargets',g:'Attack',n:'Bounce shot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
+ {k:'bounceRange',g:'Attack',n:'Bounce shot range',base:60,ra:3,wa:2,max:250,c:[12,1.16],w:[25,1.22]},
  {k:'health',g:'Defense',n:'Health',base:30,mul:1,ra:.4,wm:1.08,c:[4,1.14],w:[12,1.2]},
  {k:'regen',g:'Defense',n:'Regen',base:.4,mul:1,ra:.4,wm:1.08,c:[6,1.15],w:[15,1.2],u:'/s'},
+ {k:'barrier',g:'Defense',n:'Barrier health (of max health)',base:0,ra:.02,wa:.01,max:1,c:[12,1.16],w:[30,1.25],p:1},
+ {k:'barrierRegen',g:'Defense',n:'Barrier regen (of barrier)',base:.02,ra:.005,wa:.003,max:.5,c:[10,1.16],w:[25,1.25],p:1,u:'/s'},
  {k:'defense',g:'Defense',n:'Defense',base:0,ra:.01,wa:.005,max:.75,c:[10,1.16],w:[25,1.25],p:1},
  {k:'thorns',g:'Defense',n:'Thorns (of attacker max HP)',base:0,ra:.02,wa:.01,max:.5,c:[12,1.17],w:[30,1.25],p:1},
+ {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.5,c:[20,1.2],w:[40,1.28],p:1},
+ {k:'lifesteal',g:'Defense',n:'Lifesteal (of damage dealt)',base:0,ra:.002,wa:.001,max:.2,c:[20,1.2],w:[40,1.28],p:1},
+ {k:'kbChance',g:'Defense',n:'Knockback chance',base:0,ra:.01,wa:.005,max:.8,c:[12,1.16],w:[25,1.25],p:1},
+ {k:'kbForce',g:'Defense',n:'Knockback force',base:10,ra:1,wa:.8,max:120,c:[12,1.16],w:[25,1.22]},
  {k:'cashBonus',g:'Utility',n:'Cash per kill',base:1,ra:.05,wa:.04,c:[10,1.15],w:[20,1.2],x:1},
  {k:'waveCash',g:'Utility',n:'Cash interest',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
  {k:'coinBonus',g:'Utility',n:'Coins per kill',base:1,ra:.03,wa:.05,c:[15,1.17],w:[25,1.2],x:1},
+ {k:'freeAttack',g:'Utility',n:'Free attack upgrade chance',base:0,ra:.01,wa:.005,max:.5,c:[15,1.18],w:[30,1.25],p:1},
+ {k:'freeDefense',g:'Utility',n:'Free defense upgrade chance',base:0,ra:.01,wa:.005,max:.5,c:[15,1.18],w:[30,1.25],p:1},
+ {k:'freeUtility',g:'Utility',n:'Free utility upgrade chance',base:0,ra:.01,wa:.005,max:.5,c:[15,1.18],w:[30,1.25],p:1},
  {k:'startCash',g:'Utility',n:'Starting cash',base:0,wa:25,ws:1,w:[20,1.2]},
 ];
 const SK=Object.fromEntries(ST.map(s=>[s.k,s]));
@@ -97,7 +114,7 @@ const MOD={buy:30, cost:l=>Math.ceil(8*1.15**l), ascend:4, per:10, max:40};
 const MOD_SLOTS=[{k:'cannon',n:'Cannon'},{k:'armor',n:'Armor'},{k:'core',n:'Core'},{k:'gen',n:'Generator'}];
 const MODS=[
  {k:'rail',s:'cannon',n:'Rail Cannon',st:'damage',per:.03,mul:1,sp:[.1,.25,.5,1],sf:v=>`+${PC(v)} damage to elites and bosses`,fx:(F,v)=>F.eliteDmg+=v},
- {k:'scatter',s:'cannon',n:'Scatter Cannon',st:'aspd',per:.015,mul:1,sp:[.05,.1,.2,.3],sf:v=>`${PC(v)} chance to fire a second shot at another enemy`,fx:(F,v)=>F.multi+=v},
+ {k:'scatter',s:'cannon',n:'Scatter Cannon',st:'aspd',per:.015,mul:1,sp:[.05,.1,.2,.3],sf:v=>`+${PC(v)} multishot chance`,fx:(F,v)=>F.multi+=v},
  {k:'bulwark',s:'armor',n:'Bulwark',st:'health',per:.04,mul:1,sp:[.02,.04,.07,.1],sf:v=>`+${PC(v)} defense`,fx:(F,v)=>F.add.defense+=v},
  {k:'spiked',s:'armor',n:'Spiked Plate',st:'regen',per:.04,mul:1,sp:[.03,.06,.1,.15],sf:v=>`+${PC(v)} thorns`,fx:(F,v)=>F.add.thorns+=v},
  {k:'luckc',s:'core',n:'Lucky Core',st:'crit',per:.003,sp:[.1,.25,.5,1],sf:v=>`+×${v} crit damage`,fx:(F,v)=>F.add.critMult+=v},
