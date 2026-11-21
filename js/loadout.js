@@ -78,4 +78,4 @@ function respec(key){const [kind,k]=key.split(':'),{cur,v}=respecValue(key);if(!
   persist();if(run&&!run.over)recalc();loSig='';buildPanel();if(typeof buildUltBar==='function')buildUltBar()}
 // the refund button: tap once to see the amount, again to confirm
 const respecBtn=(key,label)=>{const {cur,v}=respecValue(key);return v?`<button class="respec" data-respec="${key}" title="Undo every purchase here for a full refund">${label} <span class="${cur}">+${fmt(v)}</span></button>`:''};
-if(save.refund){toast(`Removed equipment refunded: ${fmt(save.refund)} chips`);delete save.refund;persist()}
+if(save.refund){toast(`Refunded ${fmt(save.refund)} chips for removed upgrades`);delete save.refund;persist()}
