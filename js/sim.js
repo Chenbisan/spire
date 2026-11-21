@@ -41,7 +41,7 @@ function newRun(tier){
   paused=false;showOv(null);buildPanel();
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
-function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpMul(w)*tm.hp,atk:d.dmg*CFG.dmgMul(w)*tm.dmg,spd:d.spd,weight:d.weight,coins:d.coin*tm.coin*CFG.killCoin(w)}}
+function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpMul(w)*tm.hp,atk:d.dmg*CFG.dmgMul(w)*tm.dmg,spd:d.spd,weight:d.weight*CFG.wtMul(w),coins:d.coin*tm.coin*CFG.killCoin(w)}}
 // chance each type is picked for a regular spawn on wave w (mirrors pickType; Basic takes what's left)
 const typeFreq=(d,w)=>!d.freq||w<d.from?0:Math.min(d.fmax||d.freq,d.freq+(d.fg||0)*(w-d.from));
 function spawnChance(w){const o={};let left=1;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;const p=Math.min(left,f);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
@@ -55,7 +55,7 @@ function spawn(t,x,y){
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
-  e.mhp=e.hp=d.hp*CFG.hpMul(R.wave)*R.tm.hp;e.dmg=d.dmg*CFG.dmgMul(R.wave)*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
+  e.wt=d.weight*CFG.wtMul(R.wave);e.mhp=e.hp=d.hp*CFG.hpMul(R.wave)*R.tm.hp;e.dmg=d.dmg*CFG.dmgMul(R.wave)*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
   e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.rest=0;e.pend=0;e.gi=-1;e.fs=0;e.frz1=false;e.frzT=0;
   enemies.push(e);
 }
@@ -189,7 +189,7 @@ function update(dt){GEN_STEP++;
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
       if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=2?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(R.chainP&&Math.random()<R.chainP)chainBolt(e);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
-        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,spawnMax()-d);if(k>0){walk(e,e.x/d,e.y/d,k);e.px=e.x;e.py=e.y;e.rest=0;save.stats.kbs++}}
+        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.wt,spawnMax()-d);if(k>0){walk(e,e.x/d,e.y/d,k);e.px=e.x;e.py=e.y;e.rest=0;save.stats.kbs++}}
         if(b.bn>0){const n=nearestOther(e.x,e.y,e,s.bounceRange);if(n){b.bn--;b.rx=b.x=b.px=e.x;b.ry=b.y=b.py=e.y;b.e=n;b.g=n.gen;b.l=2;drop=false;save.stats.bounces++}}}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
   }
@@ -216,7 +216,7 @@ function sepBuild(){
   const N=Math.ceil(2*(spawnMax()+60)/SEPC);if(N!==SEPN){SEPN=N;SEPO=SEPC*N/2;sepHead=new Int32Array(N*N)} // grid grows with the arena
   sepHead.fill(-1);sepBuilt=true;
   // flat copies of position/size/weight (much faster to read than enemy objects); walk() keeps SX/SY in step with moves
-  for(let i=0;i<n;i++){const e=enemies[i];e.gi=i;SX[i]=e.x;SY[i]=e.y;SS[i]=e.dead?-1:e.d.sz;SW[i]=e.d.weight;
+  for(let i=0;i<n;i++){const e=enemies[i];e.gi=i;SX[i]=e.x;SY[i]=e.y;SS[i]=e.dead?-1:e.d.sz;SW[i]=e.wt;
     const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i;if(e.d.sz>BIG_SZ)bigs.push(i)}}
 // move e up to m along the unit vector (ux,uy), stopping where it would come closer than the allowed distance to
 // anyone ahead of it; if blocked, it slides along the blocker with the rest of the step. Long moves (Shockwave,

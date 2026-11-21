@@ -256,7 +256,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <p>Your spire sits in the middle and fires at the closest enemy in range on its own. Enemies come in from every side. The run ends when the spire's health hits 0.</p>
   <h3>Runs and waves</h3><ul>
   <li>A new wave starts every ${CFG.waveLen} s of game time: enemies spawn for the first ${CFG.spawnLen} s, then there's a break to clear the field. Every ${CFG.bossEvery} waves brings a boss and 3 more enemies per wave, and higher waves bring more tanks and elites (which pay more coins and drop alloy).</li>
-  <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. Surviving wave ${CFG.finalWave.toLocaleString()} clears the tier.</li>
+  <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. They also get heavier (×${fmt(CFG.wtMul(1000))} weight by wave 1000), so knockback, Shockwave and Gravity Well move them less. Surviving wave ${CFG.finalWave.toLocaleString()} clears the tier.</li>
   <li><b>Milestones</b> pay coins, alloy, chips (and shards from tier 2) the first time you reach certain waves on each tier, ${MILESTONES.length} per tier from wave ${MILESTONES[0]} to ${CFG.finalWave.toLocaleString()}. See Records → Milestones.</li>
   <li>Reach wave ${CFG.tierUnlockWave} to unlock the next tier. Each tier up multiplies enemy health by ${t2.hp}, damage by ${t2.dmg} and coins by ${t2.coin}.</li></ul>
   <h3>Currencies</h3><ul>

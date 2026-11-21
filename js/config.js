@@ -15,6 +15,7 @@ const CFG={
   // enemy growth is polynomial, not exponential: a spire's power grows like a power of what it earns (exponential prices
   // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1)
   hpMul:w=>(1+(w-1)/10)**4, dmgMul:w=>(1+(w-1)/10)**3,
+  wtMul:w=>(1+(w-1)/50)**.75,  // weight grows too (×2.4 by wave 100, ×10 by 1000, ×53 by 10000), so knockback, Shockwave and Gravity Well move high-wave enemies less
   finalWave:10000,  // surviving this wave clears the tier: the run ends as a win
   enemyCap:5000,  // most enemies on the field at once (each type also has its own cap, ET cap); spawns past it are skipped
   spawnCount:w=>10+Math.floor(6*Math.sqrt(Math.floor((w-1)/10))),  // enemies per wave: steps up every 10 waves, by less and less (29 at wave 100, 70 at 1000, 200 at 10000); harder waves come from the mix, see ET freq
