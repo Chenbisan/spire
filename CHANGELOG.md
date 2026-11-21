@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.26.0 — 2026-11-21
+- **Enemies no longer pile on top of each other.** They always keep at least 90% of their combined size apart: an enemy walking into a crowd stops at the wall, or slides sideways into a gap if there is one, instead of pushing into the pack.
+- Gravity Well, Shockwave and knockback move enemies only as far as the crowd lets them, so they can't shove enemies through each other either. Shockwave pushes the outermost enemies first, so each one has room to be pushed back.
+- Bosses are kept apart from everything around them too (their size used to let some neighbours slip through).
+
 ## 1.25.0 — 2026-11-21
 - **Runs end on the main screen:** when a run ends (you end it or the spire falls) you're back on the same screen as when the game starts, with the tier picker, tier details and shortcuts, plus a compact summary of the run you just played at the top. Auto-restart still counts down on the Start button after the spire falls.
 

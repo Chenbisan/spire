@@ -49,7 +49,7 @@ function spawn(t,x,y){
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
-  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.blk=0;e.fs=0;e.frz1=false;e.frzT=0;
+  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.rest=0;e.pend=0;e.gi=-1;e.fs=0;e.frz1=false;e.frzT=0;
   enemies.push(e);
 }
 function nextWave(){
@@ -144,14 +144,15 @@ function update(dt){GEN_STEP++;
   if(R.barT>0&&(R.barT-=dt)<=0){R.barT=0;R.bar=R.barMax} // barrier back at full
   // targeting: Closest, or by your type priority (then closest within a type)
   const pr=targetRank();let tgt=null,td=Infinity,tp=Infinity;
-  for(let i=enemies.length-1;i>=0;i--){
-    const e=enemies[i];
-    if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e);continue}
+  for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e)}}
+  sepBuild(); // the grid comes first: walking enemies check it so they never step into each other
+  for(let i=0,n0=enemies.length;i<n0;i++){
+    const e=enemies[i];if(e.dead)continue;
     e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
     let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;if(e.fs&&R.frostCap)sp*=1-Math.min(R.frostCap,e.fs*ULT.frostPer); // frost stacks
     if(e.frzT>0)e.frzT-=dt; // frozen: no moving, no attacking
     else if(e.stunT>0)e.stunT-=dt; // stunned: no moving, no attacking
-    else if(dist>stop){const m=Math.min(sp*dt,dist-stop)*(1-e.blk);e.x-=e.x/dist*m;e.y-=e.y/dist*m} // blk: held back by the crowd ahead
+    else if(dist>stop){e.pend+=sp*dt;if(e.rest>0)e.rest--;else if(e.pend>=CFG.walkMin||e.pend>=dist-stop){const m=Math.min(e.pend,dist-stop);e.pend=0;if(walk(e,-e.x/dist,-e.y/dist,m)<1e-3)e.rest=CFG.restSteps}} // stops (or slides aside) when the crowd ahead leaves no room; a fully blocked enemy rests a few steps before checking again; slow movers step every few frames once they've built up walkMin metres
     else{e.atk+=dt;
       if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg;ebs.push(b)}}
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg,e);if(R.over)return}}
@@ -173,7 +174,7 @@ function update(dt){GEN_STEP++;
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
       if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=2?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(R.chainP&&Math.random()<R.chainP)chainBolt(e);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
-        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,spawnMax()-d);if(k>0){e.x+=e.x/d*k;e.y+=e.y/d*k;e.px=e.x;e.py=e.y;save.stats.kbs++}}
+        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,spawnMax()-d);if(k>0){walk(e,e.x/d,e.y/d,k);e.px=e.x;e.py=e.y;e.rest=0;save.stats.kbs++}}
         if(b.bn>0){const n=nearestOther(e.x,e.y,e,s.bounceRange);if(n){b.bn--;b.rx=b.x=b.px=e.x;b.ry=b.y=b.py=e.y;b.e=n;b.g=n.gen;b.l=2;drop=false;save.stats.bounces++}}}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
   }
@@ -184,37 +185,73 @@ function update(dt){GEN_STEP++;
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.px=p.x;p.py=p.y;p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;if(p.l<=0){parts[i]=parts[parts.length-1];parts.pop()}}
   for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}
 }
-// ---- crowding: enemies push each other apart (spatial grid, so it stays cheap with hundreds) ----
-// grid cell (m): about one enemy wide, so crowded cells stay small
+// ---- crowding: enemies never get closer than sepGap × their combined size ----
+// Walking enemies stop at that distance (or slide sideways into a gap), so crowds form a wall instead of piling up.
+// separate() then pushes apart anything shoved together by other means (Shockwave, knockback, splits, new spawns).
+// grid cell (m): about one enemy wide, so crowded cells stay small. Bosses ("big": their reach is wider than a cell)
+// are listed separately and checked over a wider area.
 const SEPC=24;let sepBuilt=false,SEPN=16,SEPO=SEPC*SEPN/2,sepHead=new Int32Array(SEPN*SEPN),sepNext=new Int32Array(256);
 const sepCell=v=>Math.max(0,Math.min(SEPN-1,Math.floor((v+SEPO)/SEPC)));
-const SEPDX=[0,1,-1,0,1],SEPDY=[0,0,1,1,1];
+const SEPDX=[0,1,-1,0,1],SEPDY=[0,0,1,1,1],bigs=[];
+const BIG_SZ=SEPC/(2*CFG.sepGap),MAX_SZ=Math.max(...Object.values(ET).map(d=>d.sz)),BIG_CELLS=Math.ceil((MAX_SZ*2*CFG.sepGap+1)/SEPC);
 let sepFlip=0,SX=new Float32Array(256),SY=new Float32Array(256),SS=new Float32Array(256),SW=new Float32Array(256);
-function separate(){
-  sepBuilt=false;const n=enemies.length;if(n<2)return;
+function sepBuild(){
+  sepBuilt=false;bigs.length=0;const n=enemies.length;if(n<2)return;
   if(sepNext.length<n){sepNext=new Int32Array(n*2);SX=new Float32Array(n*2);SY=new Float32Array(n*2);SS=new Float32Array(n*2);SW=new Float32Array(n*2)}
   const N=Math.ceil(2*(spawnMax()+60)/SEPC);if(N!==SEPN){SEPN=N;SEPO=SEPC*N/2;sepHead=new Int32Array(N*N)} // grid grows with the arena
   sepHead.fill(-1);sepBuilt=true;
-  // flat copies of position/size/weight: much faster to read in the pair loop than enemy objects
-  for(let i=0;i<n;i++){const e=enemies[i];if(e.dead){SS[i]=-1;continue}SX[i]=e.x;SY[i]=e.y;SS[i]=e.d.sz;SW[i]=e.d.weight;
-    const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i}
-  // with a huge crowd, push every other step (it still settles, just over two steps)
+  // flat copies of position/size/weight (much faster to read than enemy objects); walk() keeps SX/SY in step with moves
+  for(let i=0;i<n;i++){const e=enemies[i];e.gi=i;SX[i]=e.x;SY[i]=e.y;SS[i]=e.dead?-1:e.d.sz;SW[i]=e.d.weight;
+    const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i;if(e.d.sz>BIG_SZ)bigs.push(i)}}
+// move e up to m along the unit vector (ux,uy), stopping where it would come closer than the allowed distance to
+// anyone ahead of it; if blocked, it slides along the blocker with the rest of the step. Long moves (Shockwave,
+// knockback) go in cell-sized chunks so they stop at the crowd too. Returns how far it actually moved.
+function walk(e,ux,uy,m){
+  if(!sepBuilt||enemies[e.gi]!==e){e.x+=ux*m;e.y+=uy*m;return m} // not in this step's grid (just spawned): moves freely
+  let moved=0;while(m>1e-9){const c=Math.min(m,SEPC*.5),d=walk1(e,ux,uy,c);moved+=d;m-=c;if(d<c*.5)break}return moved}
+function walk1(e,ux,uy,m){
+  const i=e.gi,x0=e.x,y0=e.y;let t=clampT(i,x0,y0,ux,uy,m),x=x0+ux*t,y=y0+uy*t;
+  if(t<m-1e-6&&walkBy>=0){ // slide: drop the part of the step that heads into the blocker
+    let nx=x-SX[walkBy],ny=y-SY[walkBy];const nl=Math.hypot(nx,ny)||1;nx/=nl;ny/=nl;const dn=ux*nx+uy*ny;
+    let sx=ux-nx*dn,sy=uy-ny*dn;const sl=Math.hypot(sx,sy);
+    if(sl>1e-3){sx/=sl;sy/=sl;const t2=clampT(i,x,y,sx,sy,(m-t)*sl);x+=sx*t2;y+=sy*t2}}
+  e.x=SX[i]=x;e.y=SY[i]=y;return Math.hypot(x-x0,y-y0)}
+let walkBy=-1;
+// how far enemy i at (ex,ey) can go along (ux,uy), up to m, before it is closer than (size + size) × sepGap to a
+// neighbour ahead of it (walkBy = the one that stops it). Bosses look over a wider area; everyone checks the bosses.
+function clampT(i,ex,ey,ux,uy,m){
+  const g=CFG.sepGap,sa=SS[i],big=sa>BIG_SZ,rc=big?BIG_CELLS:1,cx=sepCell(ex),cy=sepCell(ey);let t=m;walkBy=-1;
+  for(let gy=Math.max(0,cy-rc),gy1=Math.min(SEPN-1,cy+rc);gy<=gy1;gy++)for(let gx=Math.max(0,cx-rc),gx1=Math.min(SEPN-1,cx+rc);gx<=gx1;gx++)
+    for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){const sb=SS[j];if(j===i||sb<0||(!big&&sb>BIG_SZ))continue;
+      const D=(sa+sb)*g,dx=SX[j]-ex,dy=SY[j]-ey,b=ux*dx+uy*dy;if(b<=1e-6||b-t>D)continue; // behind it, or too far ahead to reach
+      const c=dx*dx+dy*dy-D*D;if(c<=0){walkBy=j;return 0} // already touching and heading into it
+      const disc=b*b-c;if(disc>0){const t0=b-Math.sqrt(disc);if(t0<t){t=t0>0?t0:0;walkBy=j}}}
+  if(!big)for(const j of bigs){const sb=SS[j];if(j===i||sb<0)continue;
+    const D=(sa+sb)*g,dx=SX[j]-ex,dy=SY[j]-ey,b=ux*dx+uy*dy;if(b<=1e-6||b-t>D)continue;
+    const c=dx*dx+dy*dy-D*D;if(c<=0){walkBy=j;return 0}
+    const disc=b*b-c;if(disc>0){const t0=b-Math.sqrt(disc);if(t0<t){t=t0>0?t0:0;walkBy=j}}}
+  return t}
+function separate(){
+  const n=enemies.length;if(!sepBuilt||n<2)return;
+  for(let i=0;i<n;i++){const e=enemies[i];if(e.dead){SS[i]=-1;continue}SX[i]=e.x;SY[i]=e.y} // positions moved since the grid was built
+  // with a huge crowd, push every other step (walking already keeps them apart; this only fixes shoves)
   if(n>CFG.sepEveryOther&&(sepFlip^=1))return;
   const k=CFG.sepPush,g=CFG.sepGap,cap=CFG.sepChecks;
-  // each pair is visited once: the rest of i's own cell (list entries after i), then 4 of the 8 neighbouring cells
-  for(let i=0;i<n;i++){const sa=SS[i];if(sa<0)continue;const cx=sepCell(SX[i]),cy=sepCell(SY[i]),wa0=SW[i];let chk=0;
+  const pair=(i,j,wa0)=>{const min=(SS[i]+SS[j])*g;let dx=SX[j]-SX[i],dy=SY[j]-SY[i];const d2=dx*dx+dy*dy;if(d2>=min*min)return;
+    let d=Math.sqrt(d2);if(d<1e-3){const r=Math.random()*6.283;dx=Math.cos(r);dy=Math.sin(r);d=1}else{dx/=d;dy/=d}
+    const p=(min-d)*k,wb0=SW[j],wa=wb0/(wa0+wb0),wb=1-wa; // heavier enemies get shoved less
+    SX[i]-=dx*p*wa;SY[i]-=dy*p*wa;SX[j]+=dx*p*wb;SY[j]+=dy*p*wb};
+  // each pair is visited once: the rest of i's own cell (list entries after i), then 4 of the 8 neighbouring cells.
+  // Pairs with a boss are left to the boss's own wider pass below.
+  for(let i=0;i<n;i++){const sa=SS[i];if(sa<0||sa>BIG_SZ)continue;const cx=sepCell(SX[i]),cy=sepCell(SY[i]),wa0=SW[i];let chk=0;
     for(let c=0;c<5;c++){let j;
       if(c===0)j=sepNext[i];else{const gx=cx+SEPDX[c],gy=cy+SEPDY[c];if(gx<0||gx>=SEPN||gy>=SEPN)continue;j=sepHead[gy*SEPN+gx]}
-      for(;j!==-1;j=sepNext[j]){if(++chk>cap)break;
-        const min=(sa+SS[j])*g;let dx=SX[j]-SX[i],dy=SY[j]-SY[i];const d2=dx*dx+dy*dy;if(d2>=min*min)continue;
-        let d=Math.sqrt(d2);if(d<1e-3){const r=Math.random()*6.283;dx=Math.cos(r);dy=Math.sin(r);d=1}else{dx/=d;dy/=d}
-        const p=(min-d)*k,wb0=SW[j],wa=wb0/(wa0+wb0),wb=1-wa; // heavier enemies get shoved less
-        SX[i]-=dx*p*wa;SY[i]-=dy*p*wa;SX[j]+=dx*p*wb;SY[j]+=dy*p*wb}}}
+      for(;j!==-1;j=sepNext[j]){if(++chk>cap)break;if(SS[j]<0||SS[j]>BIG_SZ)continue;pair(i,j,wa0)}}}
+  for(const i of bigs){if(SS[i]<0)continue;const cx=sepCell(SX[i]),cy=sepCell(SY[i]);
+    for(let gy=Math.max(0,cy-BIG_CELLS);gy<=Math.min(SEPN-1,cy+BIG_CELLS);gy++)for(let gx=Math.max(0,cx-BIG_CELLS);gx<=Math.min(SEPN-1,cx+BIG_CELLS);gx++)
+      for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){if(j===i||SS[j]<0||(SS[j]>BIG_SZ&&j<i))continue;pair(i,j,SW[i])}}
   const tr=CFG.towerR;
-    // an enemy shoved back outward by the crowd is blocked: it presses forward less next step, so packed crowds stop
-  // overlapping (which is also what makes them expensive)
-  for(let i=0;i<n;i++){if(SS[i]<0)continue;const e=enemies[i];let x=SX[i],y=SY[i];const m=tr+SS[i],d=Math.hypot(x,y);if(d<m&&d>0){x*=m/d;y*=m/d}
-    const back=d>0?((x-e.x)*x+(y-e.y)*y)/d:0,step=e.d.spd*CFG.step;e.blk=back>0?Math.min(CFG.sepHold,back/step):e.blk*.5;e.x=x;e.y=y} // never inside the spire
+  for(let i=0;i<n;i++){if(SS[i]<0)continue;const e=enemies[i];let x=SX[i],y=SY[i];const m=tr+SS[i],d=Math.hypot(x,y);if(d<m&&d>0){x*=m/d;y*=m/d}e.x=SX[i]=x;e.y=SY[i]=y} // never inside the spire
 }
 // ---- in-run purchase: each level rolls its section's free-upgrade chance and costs nothing on a hit ----
 function buyRun(s,n){const r=run.lv[s.k]||0,ch=run.s['free'+s.g]||0;let paid=0,free=0;

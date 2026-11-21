@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.25.0';
+const APP_VERSION='1.26.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -24,7 +24,7 @@ const CFG={
   hpFill:[.6,.4,.22,.06],  // enemy fill opacity by health band: >75%, >50%, >25%, below
   cleanFxAt:8, hitFlash:180, beamHold:150, beamLen:.07,  // beamLen: stub length as a share of the view radius   // Auto shot effects switch to clean at this game speed; hit flash length (real ms)
   tracerLife:.12, maxTracers:300, streakMax:90,   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
-  sepGap:.9, sepPush:.8, sepHold:.9, sepChecks:400, sepEveryOther:800, simBudget:20, nearR:60, dotHz:10, boltsDrawn:20, // nearR: a retargeting shot looks this far through the grid first; dotHz: damage-over-time ultimates (Laser, Gravity Well) apply damage this many times per game second // sepChecks: safety cap on neighbours checked per enemy per step; simBudget: max ms of simulation per frame
+  sepGap:.9, sepPush:.8, restSteps:3, walkMin:.3, sepChecks:400, sepEveryOther:800, simBudget:20, nearR:60, dotHz:10, boltsDrawn:20, // nearR: a retargeting shot looks this far through the grid first; dotHz: damage-over-time ultimates (Laser, Gravity Well) apply damage this many times per game second // restSteps: a fully blocked enemy waits this many steps before checking for room again; walkMin: slow movers step once they've built up this many metres // sepChecks: safety cap on neighbours checked per enemy per step; simBudget: max ms of simulation per frame
           // enemies keep (sum of sizes × sepGap) apart; sepPush = how hard they shove per step
 };
 // stat: base, ra = per in-run level, wa/wm = per workshop level, c/w = [cost, growth]

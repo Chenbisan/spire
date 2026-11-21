@@ -35,7 +35,7 @@ function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u 
       const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
       if(u.k==='grav'){const rad=uv('grav','radius'),r2=rad*rad,pull=uv('grav','pull'),dmg=S.grav>=2&&dotT?R.s.damage*2*dotT:0,hold=S.grav>=3;
         forNear(st.x,st.y,rad,e=>{const dx=st.x-e.x,dy=st.y-e.y,d2=dx*dx+dy*dy;if(d2>r2)return;
-          if(d2>=1){const d=Math.sqrt(d2),m=Math.min(d,pull*dt/e.d.weight);e.x+=dx/d*m;e.y+=dy/d*m}
+          if(d2>=1){const d=Math.sqrt(d2);walk(e,dx/d,dy/d,Math.min(d,pull*dt/e.d.weight))} // pulled in, but no closer than the crowd allows
           if(hold)e.stunT=Math.max(e.stunT,dt*2);if(dmg)damage(e,dmg,0,false,1)})}
       if(u.k==='laser'&&dotT){const w=uv('laser','width')/2,dmg=R.s.damage*uv('laser','dmg')*(S.laser>=2?1.5:1)*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang),both=S.laser>=3,fl=S.laser>=1?3:1;
         for(const e of enemies){if(e.dead)continue;if(!both&&e.x*cx+e.y*cy<=0)continue;if(Math.abs(e.x*cy-e.y*cx)<=w+e.d.sz)damage(e,dmg,0,false,fl)}}}
@@ -51,8 +51,10 @@ function frostTick(dt,st){const R=run;if(!ultOwned('frost')){R.frostR=R.frostCap
       if(st>=1&&!e.frz1&&e.fs>=maxSt){e.frz1=true;e.frzT=ULT.freeze}}} // Silver: freeze the first time it reaches max slow
   if(st>=2){const r2=R.frostR**2;for(let i=ebs.length-1;i>=0;i--){const b=ebs[i];if(b.x*b.x+b.y*b.y<=r2){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b)}}}} // Gold: shots melt in the field
 function shockBlast(after){const R=run,S=R.ultSt||{},f=uv('shock','force'),sn=uv('shock','stun'),lim=spawnMax(),rad=R.s.range*uv('shock','radius'),bd=S.shock>=2?R.s.damage*20:0;
-  for(const e of enemies){if(e.dead||e.dist>rad+e.d.sz)continue;const d=Math.hypot(e.x,e.y)||1,m=Math.min(f/e.d.weight,lim-d);
-    if(m>0){e.x+=e.x/d*m;e.y+=e.y/d*m;e.px=e.x;e.py=e.y}e.stunT=Math.max(e.stunT,sn);if(bd&&!e.dead)damage(e,bd,0)}
+  // outermost first, so each one has room to be pushed back into; nobody is shoved through the crowd behind it
+  const hit=enemies.filter(e=>!e.dead&&e.dist<=rad+e.d.sz).sort((a,b)=>b.dist-a.dist);
+  for(const e of hit){const d=Math.hypot(e.x,e.y)||1,m=Math.min(f/e.d.weight,lim-d);
+    if(m>0){walk(e,e.x/d,e.y/d,m);e.px=e.x;e.py=e.y;e.rest=0}e.stunT=Math.max(e.stunT,sn);if(bd&&!e.dead)damage(e,bd,0)}
   ultFx.push({k:'shock',at:performance.now(),r:rad,after})}
 // Chain Lightning: sparked by a bullet hit on e. Each enemy struck has the proc chance to split into `jumps` new bolts to
 // nearby unhit enemies (within ULT.chainJump m), each doing `mult` × the previous bolt's damage. Capped for performance.
