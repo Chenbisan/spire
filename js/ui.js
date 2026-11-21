@@ -20,14 +20,14 @@ function bars(){
 $('verTag').textContent='v'+APP_VERSION;$('verTag').href=CHANGELOG_URL;
 const TX=(id,t)=>{const e=$(id);t=String(t);if(e.textContent!==t)e.textContent=t};
 function hud(){
-  TX('hTier',run?run.tier:'–');TX('hWave',run?run.wave:'–');
+  TX('hTier',run?run.tier:'–');TX('hWave',run?(run.wave>=CFG.finalWave&&!run.over?`${run.wave} · ${fmt(aliveN)} left`:run.wave):'–');
   TX('hCash',run?fmt(run.cash):'0');TX('hCoins',fmt(save.coins));TX('hShards',fmt(save.shards));$('shardChip').hidden=!shardsOn();
   TX('hChips',fmt(save.chips));$('chipChip').hidden=!(save.chips>0||save.stats.chips>0);TX('hAlloy',fmt(save.alloy));$('alloyChip').hidden=!(save.alloy>0||save.stats.alloy>0);
   {const w=run?run.wave:1,t=run?run.tier:ovTier,e=enemyStats('basic',w,t);
    TX('eHp',fmt(e.hp));TX('eAtk',fmt(e.atk));TX('eSpd',fmt(e.spd));TX('eWt',fmt(e.weight));
    if(modalKind==='enemies'){
      if(w!==eTabW||t!==eTabT)mBody.innerHTML=enemyHtml();
-     else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',Math.ceil(run.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
+     else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',run.wave>=CFG.finalWave?'final wave':Math.ceil(run.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
      else if(eTab==='spire'){const {live,v}=spireStats();if(JSON.stringify(v)+(live?Math.round(run.hp):'')!==eSig)mBody.innerHTML=enemyHtml()}}}
   if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`+(run.invT>0?` · ✦ ${Math.ceil(run.invT)}s`:''))}
   else{TX('hpTxt','–')}
@@ -206,7 +206,7 @@ let hTab='runs',msTier=null;
 // Milestones tab: every milestone of one tier, claimed ones ticked, with its rewards
 function msHtml(){const t=msTier&&msTier<=save.tierMax?msTier:save.tierMax,n=save.ms[t]||0;
   let h=`<div class="tiers">${Array.from({length:save.tierMax},(_,i)=>`<button data-mstier="${i+1}" class="${i+1===t?'on':''}">Tier ${i+1}<small>${save.ms[i+1]||0}/${MILESTONES.length}${save.cleared[i+1]?' · cleared':''}</small></button>`).join('')}</div>`;
-  h+=`<p class="note">Reach each wave once on a tier to collect its reward. Surviving wave ${CFG.finalWave.toLocaleString()} clears the tier.</p><div class="mslist">`;
+  h+=`<p class="note">Reach each wave once on a tier to collect its reward. On wave ${CFG.finalWave.toLocaleString()} nothing more spawns: destroy every enemy left to clear the tier and collect the last one.</p><div class="mslist">`;
   MILESTONES.forEach((w,i)=>{const r=msReward(w,t,i),got=i<n;
     h+=`<div class="msrow${got?' got':''}${i===n?' next':''}"><b>${got?'✓ ':''}Wave ${w.toLocaleString()}</b><span><b class="coin">${fmt(r.coins)}</b>${r.alloy?` <b class="alloy">${fmt(r.alloy)}</b>`:''}${r.chips?` <b class="chip">${fmt(r.chips)}</b>`:''}${r.shards?` <b class="shard">${fmt(r.shards)}</b>`:''}</span></div>`});
   return h+'</div>'}
@@ -233,7 +233,7 @@ function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=l
   const cnt=CFG.spawnCount(w)+(boss?1:0);
   return tabs+`<table class="etab"><thead><tr><th>Enemy</th><th title="Chance per spawn">%</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed, m/s">» m/s</th><th title="Coins dropped, with your coin bonus">Coins</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
   <div class="grid2 winfo">
-    <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s (spawning for the first ${live?+run.spawnLen.toFixed(1):CFG.spawnLen} s)</small></div>
+    <div><span>Wave time left</span><b id="wiTime">${live&&run.wave>=CFG.finalWave?'final wave':live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s (spawning for the first ${live?+run.spawnLen.toFixed(1):CFG.spawnLen} s)</small></div>
     <div><span>Spawned this wave</span><b id="wiSpawned">${live?run.spawned:0}</b> <small>of ${cnt}</small></div>
     <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b> <small>of ${fmt(CFG.enemyCap)} max</small></div>
     <div><span>Next boss</span><b>${boss?'this wave':'wave '+nextBoss}</b></div>
@@ -256,7 +256,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <p>Your spire sits in the middle and fires at the closest enemy in range on its own. Enemies come in from every side. The run ends when the spire's health hits 0.</p>
   <h3>Runs and waves</h3><ul>
   <li>A new wave starts every ${CFG.waveLen} s of game time: enemies spawn for the first ${CFG.spawnLen} s, then there's a break to clear the field. Every ${CFG.bossEvery} waves brings a boss and 3 more enemies per wave, and higher waves bring more tanks and elites (which pay more coins and drop alloy).</li>
-  <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. They also get heavier (×${fmt(CFG.wtMul(1000))} weight by wave 1000), so knockback, Shockwave and Gravity Well move them less. Surviving wave ${CFG.finalWave.toLocaleString()} clears the tier.</li>
+  <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. They also get heavier (×${fmt(CFG.wtMul(1000))} weight by wave 1000), so knockback, Shockwave and Gravity Well move them less. Wave ${CFG.finalWave.toLocaleString()} is the last: nothing more spawns, and destroying every enemy left clears the tier.</li>
   <li><b>Milestones</b> pay coins, alloy, chips (and shards from tier 2) the first time you reach certain waves on each tier, ${MILESTONES.length} per tier from wave ${MILESTONES[0]} to ${CFG.finalWave.toLocaleString()}. See Records → Milestones.</li>
   <li>Reach wave ${CFG.tierUnlockWave} to unlock the next tier. Each tier up multiplies enemy health by ${t2.hp}, damage by ${t2.dmg}, weight by ${t2.wt}, speed by ${t2.spd} and coins by ${t2.coin}.</li></ul>
   <h3>Currencies</h3><ul>

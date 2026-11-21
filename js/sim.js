@@ -60,11 +60,11 @@ function spawn(t,x,y){
   enemies.push(e);
 }
 function nextWave(){
-  const R=run;if(R.wave>=CFG.finalWave)return gameOver(false,true); // survived the final wave: tier cleared
-  R.wave++;milestones();R.waveT=R.spawnT=R.spawned=0;
+  const R=run;R.wave++;milestones();R.waveT=R.spawnT=R.spawned=0;
   const wc=CFG.waveCash(R.wave)*R.s.waveCash;R.cash+=wc;
   if(R.fx.interest){const it=Math.min(R.cash*R.fx.interest,wc*5);R.cash+=it;save.stats.cash+=it}save.stats.cash+=wc;save.stats.waves++;
-  if(R.wave%CFG.bossEvery===0)spawn('boss');
+  if(R.wave>=CFG.finalWave)toast(`Final wave! Nothing more spawns: destroy the ${fmt(aliveN)} enemies left to clear tier ${R.tier}`);
+  else if(R.wave%CFG.bossEvery===0)spawn('boss');
   if((save.best[R.tier]||0)<R.wave)save.best[R.tier]=R.wave;
   if(R.wave>=CFG.tierUnlockWave&&R.tier===save.tierMax){save.tierMax++;persist();toast(`Tier ${save.tierMax} unlocked`)}
 }
@@ -108,7 +108,8 @@ function nearest(x,y){if(sepBuilt){const n=nearestOther(x,y,null,CFG.nearR);if(n
   let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
 // milestones: paid the first time each wave is reached on this tier (save.ms[tier] = how many are claimed)
 function milestones(){const R=run,t=R.tier;let i=save.ms[t]||0;const i0=i;
-  while(i<MILESTONES.length&&R.wave>=MILESTONES[i]){const r=msReward(MILESTONES[i],t,i),st=save.stats;
+  while(i<MILESTONES.length&&R.wave>=MILESTONES[i]&&(i<MILESTONES.length-1||R.won)){ // the last one is paid for clearing the tier
+    const r=msReward(MILESTONES[i],t,i),st=save.stats;
     save.coins+=r.coins;st.coins+=r.coins;save.alloy+=r.alloy;st.alloy+=r.alloy;save.chips+=r.chips;st.chips+=r.chips;save.shards+=r.shards;st.shards+=r.shards;
     R.msCoins=(R.msCoins||0)+r.coins;i++;save.ms[t]=i;
     toast(`Milestone: wave ${MILESTONES[i-1].toLocaleString()}! +${fmt(r.coins)} coins`+(r.alloy?` · +${fmt(r.alloy)} alloy`:'')+(r.chips?` · +${fmt(r.chips)} chips`:'')+(r.shards?` · +${fmt(r.shards)} shards`:''))}
@@ -116,7 +117,7 @@ function milestones(){const R=run,t=R.tier;let i=save.ms[t]||0;const i0=i;
 // shards earned by this run so far (paid when it ends)
 const runShards=R=>R.kills*CFG.shardPerKill*R.tm.shard*(1+R.fx.drop);
 function gameOver(quit,won){
-  const R=run;if(R.over)return;R.over=true;R.quit=!!quit;R.won=!!won;if(won)save.cleared[R.tier]=(save.cleared[R.tier]||0)+1;R.hp=0;save.runs++;
+  const R=run;if(R.over)return;R.over=true;R.quit=!!quit;R.won=!!won;if(won){save.cleared[R.tier]=(save.cleared[R.tier]||0)+1;milestones()}R.hp=0;save.runs++;
   R.shards=runShards(R);save.shards+=R.shards;save.stats.shards+=R.shards;
   R.cph=R.time>0?R.coins/R.time*3600:0;R.newBest=false;
   if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
@@ -152,8 +153,10 @@ let GEN_STEP=0;
 function update(dt){GEN_STEP++;
   const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;save.stats.time+=dt;R.waveT+=dt;R.spawnT+=dt;
   const cnt=CFG.spawnCount(R.wave),iv=R.spawnLen/cnt; // all of a wave spawns in its first spawnLen s; the rest is a break
-  while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;const t=roomType(pickType(R.wave),R.wave);if(t)spawn(t)}
-  if(R.waveT>=R.waveLen)nextWave();
+  // the final wave spawns nothing and never ends on its own: the tier is cleared once every enemy left is destroyed
+  if(R.wave>=CFG.finalWave){if(aliveN<=0)return gameOver(false,true)}
+  else{while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;const t=roomType(pickType(R.wave),R.wave);if(t)spawn(t)}
+    if(R.waveT>=R.waveLen)nextWave()}
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
   if(R.invT>0)R.invT=Math.max(0,R.invT-dt);
   if(R.barT>0&&(R.barT-=dt)<=0){R.barT=0;R.bar=R.barMax} // barrier back at full

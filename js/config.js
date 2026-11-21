@@ -16,7 +16,7 @@ const CFG={
   // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1)
   hpMul:w=>(1+(w-1)/10)**4, dmgMul:w=>(1+(w-1)/10)**3,
   wtMul:w=>(1+(w-1)/50)**.75,  // weight grows too (×2.4 by wave 100, ×10 by 1000, ×53 by 10000), so knockback, Shockwave and Gravity Well move high-wave enemies less
-  finalWave:10000,  // surviving this wave clears the tier: the run ends as a win
+  finalWave:10000,  // reaching this wave stops all spawning; destroying every enemy left clears the tier (the run ends as a win)
   enemyCap:5000,  // most enemies on the field at once (each type also has its own cap, ET cap); spawns past it are skipped
   spawnCount:w=>10+Math.floor(6*Math.sqrt(Math.floor((w-1)/10))),  // enemies per wave: steps up every 10 waves, by less and less (29 at wave 100, 70 at 1000, 200 at 10000); harder waves come from the mix, see ET freq
   waveCash:w=>6+w*3,
@@ -59,7 +59,7 @@ const ST=[
  {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.5,c:[20,1.2],w:[40,1.28],p:1},
  {k:'lifesteal',g:'Defense',n:'Lifesteal (of damage dealt)',base:0,ra:.002,wa:.001,max:.2,c:[20,1.2],w:[40,1.28],p:1},
  {k:'kbChance',g:'Defense',n:'Knockback chance',base:0,ra:.01,wa:.005,max:.8,c:[12,1.16],w:[25,1.25],p:1},
- {k:'kbForce',g:'Defense',n:'Knockback force (÷ enemy weight)',base:10,mul:1,ra:.05,wm:1.04,max:5000,c:[12,1.16],w:[25,1.22],u:' m'}, // grows by % so it can keep up with heavier high-wave and high-tier enemies
+ {k:'kbForce',g:'Defense',n:'Knockback force (÷ enemy weight)',base:10,mul:1,ra:.05,wm:1.04,c:[12,1.16],w:[25,1.22],u:' m'}, // grows by % with no cap, so it can keep up with ever heavier high-wave and high-tier enemies
  {k:'cashBonus',g:'Utility',n:'Cash per kill',base:1,ra:.05,wa:.04,c:[10,1.15],w:[20,1.2],x:1},
  {k:'waveCash',g:'Utility',n:'Cash interest',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
  {k:'coinBonus',g:'Utility',n:'Coins per kill',base:1,ra:.03,wa:.05,c:[15,1.17],w:[25,1.2],x:1},
