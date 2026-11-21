@@ -6,19 +6,15 @@
 - **New difficulty curve:** enemies get tougher quickly at first and more gently later (polynomial instead of a fixed % per wave), so a stronger spire keeps pushing further instead of hitting a sudden wall. The wave info shows how much tougher the next wave is.
 - **Enemies get heavier:** weight now grows with the wave too (×2.4 by wave 100, ×10 by wave 1,000, ×53 by wave 10,000), so knockback, Shockwave and Gravity Well push high-wave enemies around much less. A strong spire can no longer keep a crowd at bay forever with knockback alone.
 - **Higher tiers bring heavier, faster enemies:** each tier up multiplies enemy weight by 1.6 and speed by 1.08 (×10 weight and ×1.47 speed at tier 6), on top of health and attack.
-- **Push power keeps up:** Shockwave **Force** and Gravity Well **Pull** now have 100 levels that each add 4% (×50 by the last level), and **Knockback force** grows 4% per Workshop level with no cap (it used to stop at 120 m), so it stays useful however heavy enemies get on high tiers. Heavier enemies need these pushed further, which is part of moving up a tier. Your current levels convert so nothing gets weaker.
+- **Push power keeps up:** Shockwave **Force** and Gravity Well **Pull** now have 100 levels that each add 4% (×50 by the last level), and **Knockback force** grows 4% per Workshop level with no cap (it used to stop at 120 m), so it stays useful however heavy enemies get on high tiers. To balance that, its price climbs faster than other stats (×1.28 per Workshop level instead of ×1.22, ×1.2 per run level instead of ×1.16), so high knockback levels take high-tier earnings. Heavier enemies need these pushed further, which is part of moving up a tier. Your current levels convert so nothing gets weaker.
 - **Gentler wave sizes:** waves still grow every 10 waves, but by less and less: 29 enemies at wave 100, 70 at wave 1,000, 200 at wave 10,000.
 - **Enemy limit:** at most 5,000 enemies on the field, and each type has its own limit (e.g. 1,700 Basic, 200 Healers, 25 Bosses). A spawn whose type is full becomes another type, and nothing spawns while the field is full.
-
-## 1.24.0 — 2026-11-21
 
 ## 1.27.0 — 2026-11-21
 - **Waves have a break:** each wave now spawns its enemies over **15 s**, followed by a **15 s break** to clear the field before the next one (30 s per wave in all). The wave bar dims during the break.
 - **Fewer enemies, tougher mix:** waves start at 10 enemies and add **3 more every 10 waves** (instead of one or two more every wave). Higher waves bring more Tanks and elites instead: by wave 100 there are no Basic enemies left, and elites make up about 40% of a wave.
 - **Better rewards:** each kill pays twice the cash and about 3.5× the coins it used to, growing faster with the wave, and wave cash is up 50%. Since elites pay more and drop alloy, pushing to higher waves pays off much more.
 - **Bosses hit less hard:** boss health 250 → 150 and attack 12 → 6 (before wave and tier scaling), so the first bosses are no longer a wall for a new spire.
-
-## 1.23.1 — 2026-11-20
 
 ## 1.26.0 — 2026-11-21
 - **Enemies no longer pile on top of each other.** They always keep at least 90% of their combined size apart: an enemy walking into a crowd stops at the wall, or slides sideways into a gap if there is one, instead of pushing into the pack.

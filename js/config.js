@@ -59,7 +59,7 @@ const ST=[
  {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.5,c:[20,1.2],w:[40,1.28],p:1},
  {k:'lifesteal',g:'Defense',n:'Lifesteal (of damage dealt)',base:0,ra:.002,wa:.001,max:.2,c:[20,1.2],w:[40,1.28],p:1},
  {k:'kbChance',g:'Defense',n:'Knockback chance',base:0,ra:.01,wa:.005,max:.8,c:[12,1.16],w:[25,1.25],p:1},
- {k:'kbForce',g:'Defense',n:'Knockback force (÷ enemy weight)',base:10,mul:1,ra:.05,wm:1.04,c:[12,1.16],w:[25,1.22],u:' m'}, // grows by % with no cap, so it can keep up with ever heavier high-wave and high-tier enemies
+ {k:'kbForce',g:'Defense',n:'Knockback force (÷ enemy weight)',base:10,mul:1,ra:.05,wm:1.04,c:[15,1.2],w:[40,1.28],u:' m'}, // grows by % with no cap, so it can keep up with ever heavier high-wave and high-tier enemies; its price climbs faster than other stats (×1.28 per Workshop level) so high levels take high-tier earnings
  {k:'cashBonus',g:'Utility',n:'Cash per kill',base:1,ra:.05,wa:.04,c:[10,1.15],w:[20,1.2],x:1},
  {k:'waveCash',g:'Utility',n:'Cash interest',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
  {k:'coinBonus',g:'Utility',n:'Coins per kill',base:1,ra:.03,wa:.05,c:[15,1.17],w:[25,1.2],x:1},
