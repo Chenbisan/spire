@@ -130,6 +130,7 @@ function ultsHtml(){
       h+=`<div class="ubody"><p class="note">${u.d}</p><div class="ustat"><span class="medal s${stt>=1?' on':''}">Silver</span><span>${pair} maxed: <b>${u.sb}</b></span><span class="medal g${stt>=2?' on':''}">Gold</span><span>Any 3 maxed: <b>${u.gb}</b></span><span class="medal p${stt>=3?' on':''}">Platinum</span><span>All 4 maxed: <b>${u.pb}</b></span></div>`;
       for(const t of u.t){const l=ultLv(u.k,t.k),mx=l>=t.lv,cur=ultVal(u,t.k,l),{n,c}=mx?{n:0,c:0}:ultBuyPlan(u.k,t),nx=ultVal(u,t.k,l+n);
         h+=`<div class="utr"><div><b>${u.silverT.includes(t.k)?'★ ':''}${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${l/t.lv})"></i></i><span class="v">Lv ${l}/${t.lv}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
+      h+=respecBtn('ult:'+u.k,'Refund upgrades');
       h+=u.aura?'<p class="note" style="margin:4px 0 0">Always on, no cooldown.</p>':u.passive?'<p class="note" style="margin:4px 0 0">Triggers on your shots, no cooldown.</p>':ultPerm(u.k)?'<p class="note" style="margin:4px 0 0">Always on.</p>':`<div class="subs" style="margin:6px 0 0"><button data-umode="${u.k}" data-v="auto" class="${ultManual(u.k)?'':'on'}">Auto</button><button data-umode="${u.k}" data-v="man" class="${ultManual(u.k)?'on':''}">Manual</button></div>`;
       h+='</div>'}
     h+='</div>'}

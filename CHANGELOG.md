@@ -1,5 +1,12 @@
 # What's new in Spire
 
+## 1.30.0 — 2026-11-21
+- **♻ Respec anything, free:** try a build, and if it doesn't work out, get everything back.
+  - **Workshop:** each section (Attack, Defense, Utility) has a *Refund all* button that resets its upgrades and returns all the coins.
+  - **Ultimates:** each ultimate has *Refund upgrades*, which returns every chip spent on its levels (it stays unlocked).
+  - **Equipment** and **Modules:** each owned item has a *Refund* button that returns everything spent on it.
+  - Tap once to see the amount, tap again to confirm. Works any time, even mid-run.
+
 ## 1.29.0 — 2026-11-21
 - **Tiers unlock much later:** the next tier now unlocks at **wave 5,000** (half way to a tier's final wave) instead of wave 25, so each tier is a long climb and pushing deep is how you earn: higher waves spawn more enemies, more of them are tanks and elites, and every kill pays more. Tiers you've already unlocked stay unlocked.
 

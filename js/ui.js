@@ -98,7 +98,7 @@ function buildPanel(){
   let h=`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`
     +`<div class="subs">${GROUPS.map(g=>`<button data-sub="${g}" class="${g===sec?'on':''}">${g}</button>`).join('')}</div>`;
   if(ws){h+='<p class="note">Permanent upgrades, paid in coins. They apply to every run, including the one in progress. Values shown are your starting values.</p>'+`<p class="note">Offline rate: <b class="coin">${fmt(offlineRate())} coins/hour</b>${save.bestSph?` · <b class="shard">${fmt(offlineShardRate())} shards/hour</b>`:''}</p>`;
-    h+=ST.filter(s=>s.g===sec).map(rowHtml).join('')}
+    h+=ST.filter(s=>s.g===sec).map(rowHtml).join('')+respecBtn('ws:'+sec,`Refund all ${sec.toLowerCase()} upgrades`)}
   else{h+=!run||run.over?'<p class="note">Start a run to buy in-run upgrades.</p>':'<p class="note">Paid in cash, which resets every run.</p>';
     if(labLv('auto'))h+=`<label class="ab abs"><input type="checkbox" data-ab="${sec}" ${save.set.ab[sec]?'checked':''}> Auto-buy ${sec.toLowerCase()} upgrades</label>`;
     h+=ST.filter(s=>s.g===sec&&!s.ws).map(rowHtml).join('')}
@@ -115,6 +115,9 @@ function refreshPanel(){
     const vt=mx?l.f(l.val(lv))+' (max)':`${l.f(l.val(lv))} → ${l.f(l.val(lv+1))}`;if(r.v.textContent!==vt)r.v.textContent=vt;
     const ok=!mx&&save.shards>=c;if(r.b.disabled===ok)r.b.disabled=!ok;const t=mx?'Max':fmt(c);if(r.b.textContent!==t)r.b.textContent=t}
   const ws=ui.tab==='Workshop';
+  if(ws){const P=$('panel'),rb=P.querySelector('[data-respec^="ws:"]'),key='ws:'+(GROUPS.includes((save.set.sub||{}).Workshop)?save.set.sub.Workshop:'Attack');
+    if(!rb||!rb.dataset.arm){const html=respecBtn(key,`Refund all ${key.slice(3).toLowerCase()} upgrades`);
+      if(rb){if(rb.outerHTML!==html){if(html)rb.outerHTML=html;else rb.remove()}}else if(html)P.insertAdjacentHTML('beforeend',html)}}
   for(const r of rows){const p=plan(r.s,ws);
     const vt=p.isCap?fv(r.s,p.cur)+' (max)':`${fv(r.s,p.cur)} → ${fv(r.s,p.nxt)}`;if(r.v.textContent!==vt)r.v.textContent=vt;
     if(r.b.disabled===p.ok)r.b.disabled=!p.ok;
@@ -124,6 +127,7 @@ function refreshPanel(){
 }
 $('panel').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.respec){if(b.dataset.arm)return respec(b.dataset.respec);b.dataset.arm=1;b.classList.add('arm');b.firstChild.textContent='Tap again to refund ';return}
   if(b.dataset.sub){save.set.sub=Object.assign({},save.set.sub,{[ui.tab]:b.dataset.sub});persist();return buildPanel()}
   if(b.dataset.mult){ui.mult=save.set.mult=b.dataset.mult==='Max'?'Max':+b.dataset.mult;persist();return buildPanel()}
   if(b.dataset.lab){const l=LK[b.dataset.lab],c=labCost(l);if(labLv(l.k)>=l.max||save.shards<c)return;save.shards-=c;save.lab[l.k]=labLv(l.k)+1;save.stats.lab++;save.stats.labShards+=c;persist();
@@ -259,6 +263,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. They also get heavier (×${fmt(CFG.wtMul(1000))} weight by wave 1000), so knockback, Shockwave and Gravity Well move them less. Wave ${CFG.finalWave.toLocaleString()} is the last: nothing more spawns, and destroying every enemy left clears the tier.</li>
   <li><b>Milestones</b> pay coins, alloy, chips (and shards from tier 2) the first time you reach certain waves on each tier, ${MILESTONES.length} per tier from wave ${MILESTONES[0]} to ${CFG.finalWave.toLocaleString()}. See Records → Milestones.</li>
   <li>Reach wave ${CFG.tierUnlockWave.toLocaleString()} to unlock the next tier. Each tier up multiplies enemy health by ${t2.hp}, damage by ${t2.dmg}, weight by ${t2.wt}, speed by ${t2.spd} and coins by ${t2.coin}.</li></ul>
+  <h3>Respec</h3><p>Every Workshop section, ultimate, piece of equipment and module has a refund button that gives back everything you spent on it, so you can try a different build at no cost. Tap it once to see the amount and again to confirm.</p>
   <h3>Currencies</h3><ul>
   <li><b class="cash">Cash</b> comes from kills and from cash interest, paid at the start of every wave. Spend it on Attack, Defense and Utility upgrades. It resets every run.</li>
   <li><b class="coin">Coins</b> come from kills and are kept forever. Spend them in the Workshop on permanent tower upgrades.</li>

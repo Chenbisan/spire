@@ -136,6 +136,7 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 textarea{width:100%;min-height:80px;font:12px/1.4 monospace;background:var(--arena);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
 .set .btns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
 .danger{color:var(--hot)}
+.respec{width:100%;margin-top:8px;min-height:32px;font-size:13px;color:var(--mute);background:transparent;border:1px dashed var(--line)}.respec.arm{color:var(--hot);border-color:var(--hot)}.lbtns .respec,.item .respec{margin-top:4px}
 .wb,.modal{position:fixed;z-index:8}
 .card.wide{width:min(620px,100%);display:flex;flex-direction:column;padding:0;overflow:hidden}
 .mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 10px;border-bottom:1px solid var(--line)}.mhead h2{margin:0;font-size:26px}
