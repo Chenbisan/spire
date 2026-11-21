@@ -27,6 +27,7 @@ function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(con
   if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
 // ================= state =================
 let run=null,paused=false,GEN=0;
+const typeN={};let aliveN=0; // enemies on the field, per type and in total (for the caps)
 const enemies=[],ePool=[],bullets=[],bPool=[],ebs=[],ebPool=[],dnums=[],parts=[];
 // tracers: visual-only streaks for shots that landed, so hits stay visible at high game speed (faded in real time)
 const tracers=[];
@@ -34,27 +35,33 @@ function trace(x0,y0,x1,y1,k){if(tracers.length<CFG.maxTracers)tracers.push({x0,
 function newRun(tier){
   stopAuto();sepBuilt=false;
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
-  enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;
+  enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;for(const t of TYPES)typeN[t]=0;aliveN=0;
   run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
   run.barT=0;recalc();run.hp=run.s.health;run.bar=run.barMax;ultInit();run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
-function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpGrow**(w-1)*tm.hp,atk:d.dmg*CFG.dmgGrow**(w-1)*tm.dmg,spd:d.spd,weight:d.weight,coins:d.coin*tm.coin*CFG.killCoin(w)}}
+function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpMul(w)*tm.hp,atk:d.dmg*CFG.dmgMul(w)*tm.dmg,spd:d.spd,weight:d.weight,coins:d.coin*tm.coin*CFG.killCoin(w)}}
 // chance each type is picked for a regular spawn on wave w (mirrors pickType; Basic takes what's left)
 const typeFreq=(d,w)=>!d.freq||w<d.from?0:Math.min(d.fmax||d.freq,d.freq+(d.fg||0)*(w-d.from));
 function spawnChance(w){const o={};let left=1;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;const p=Math.min(left,f);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
 function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;acc+=f;if(r<acc)return t}return'basic'}
+const hasRoom=t=>aliveN<CFG.enemyCap&&(typeN[t]||0)<ET[t].cap;
+// a regular spawn whose type is full becomes another type this wave can have, if any has room
+function roomType(t,w){if(hasRoom(t))return t;const ok=TYPES.filter(k=>ET[k].r<3&&(k==='basic'||typeFreq(ET[k],w)>0)&&hasRoom(k));return ok.length?ok[Math.floor(Math.random()*ok.length)]:null}
 function spawn(t,x,y){
+  if(!hasRoom(t))return; // field (or this type) is full
+  typeN[t]=(typeN[t]||0)+1;aliveN++;
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
-  e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
+  e.mhp=e.hp=d.hp*CFG.hpMul(R.wave)*R.tm.hp;e.dmg=d.dmg*CFG.dmgMul(R.wave)*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
   e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.rest=0;e.pend=0;e.gi=-1;e.fs=0;e.frz1=false;e.frzT=0;
   enemies.push(e);
 }
 function nextWave(){
-  const R=run;R.wave++;R.waveT=R.spawnT=R.spawned=0;
+  const R=run;if(R.wave>=CFG.finalWave)return gameOver(false,true); // survived the final wave: tier cleared
+  R.wave++;milestones();R.waveT=R.spawnT=R.spawned=0;
   const wc=CFG.waveCash(R.wave)*R.s.waveCash;R.cash+=wc;
   if(R.fx.interest){const it=Math.min(R.cash*R.fx.interest,wc*5);R.cash+=it;save.stats.cash+=it}save.stats.cash+=wc;save.stats.waves++;
   if(R.wave%CFG.bossEvery===0)spawn('boss');
@@ -62,7 +69,7 @@ function nextWave(){
   if(R.wave>=CFG.tierUnlockWave&&R.tier===save.tierMax){save.tierMax++;persist();toast(`Tier ${save.tierMax} unlocked`)}
 }
 function kill(e){
-  const R=run;e.dead=true;R.kills++;save.kills++;
+  const R=run;e.dead=true;typeN[e.t]--;aliveN--;R.kills++;save.kills++;
   const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave),st=save.stats;R.cash+=c;R.cashEarned+=c;st.cash+=c;if(e.d.r===2)st.elite++;else if(e.d.r===3)st.boss++;
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
   const db=1+R.fx.drop;
@@ -99,10 +106,17 @@ function nearestOther(x,y,ex,r){let best=null,bd=r*r;forNear(x,y,r,e=>{if(e===ex
 // nearest enemy: looks in the grid around (x,y) first (exact if anything is that close), else scans everything
 function nearest(x,y){if(sepBuilt){const n=nearestOther(x,y,null,CFG.nearR);if(n)return n}
   let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
+// milestones: paid the first time each wave is reached on this tier (save.ms[tier] = how many are claimed)
+function milestones(){const R=run,t=R.tier;let i=save.ms[t]||0;const i0=i;
+  while(i<MILESTONES.length&&R.wave>=MILESTONES[i]){const r=msReward(MILESTONES[i],t,i),st=save.stats;
+    save.coins+=r.coins;st.coins+=r.coins;save.alloy+=r.alloy;st.alloy+=r.alloy;save.chips+=r.chips;st.chips+=r.chips;save.shards+=r.shards;st.shards+=r.shards;
+    R.msCoins=(R.msCoins||0)+r.coins;i++;save.ms[t]=i;
+    toast(`Milestone: wave ${MILESTONES[i-1].toLocaleString()}! +${fmt(r.coins)} coins`+(r.alloy?` · +${fmt(r.alloy)} alloy`:'')+(r.chips?` · +${fmt(r.chips)} chips`:'')+(r.shards?` · +${fmt(r.shards)} shards`:''))}
+  if(i!==i0)persist()}
 // shards earned by this run so far (paid when it ends)
 const runShards=R=>R.kills*CFG.shardPerKill*R.tm.shard*(1+R.fx.drop);
-function gameOver(quit){
-  const R=run;if(R.over)return;R.over=true;R.quit=!!quit;R.hp=0;save.runs++;
+function gameOver(quit,won){
+  const R=run;if(R.over)return;R.over=true;R.quit=!!quit;R.won=!!won;if(won)save.cleared[R.tier]=(save.cleared[R.tier]||0)+1;R.hp=0;save.runs++;
   R.shards=runShards(R);save.shards+=R.shards;save.stats.shards+=R.shards;
   R.cph=R.time>0?R.coins/R.time*3600:0;R.newBest=false;
   if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
@@ -110,7 +124,7 @@ function gameOver(quit){
   const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;
   if(prevBest<R.wave)save.best[R.tier]=R.wave;
   {const T=save.stats.tiers[R.tier]||(save.stats.tiers[R.tier]={runs:0,coins:0,cph:0});T.runs++;T.coins+=R.coins;if(R.time>=CFG.offlineMinRun)T.cph=Math.max(T.cph,R.cph)}
-  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,df:R.defies||0,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
+  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,df:R.defies||0,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,won:!!won,best:R.newBestWave});
   save.hist.length=Math.min(save.hist.length,CFG.histMax);
   persist();ovTier=R.tier;if(!quit)startAuto(); // a run you end yourself doesn't auto-restart
   showOv('over');buildPanel();
@@ -138,7 +152,7 @@ let GEN_STEP=0;
 function update(dt){GEN_STEP++;
   const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;save.stats.time+=dt;R.waveT+=dt;R.spawnT+=dt;
   const cnt=CFG.spawnCount(R.wave),iv=R.spawnLen/cnt; // all of a wave spawns in its first spawnLen s; the rest is a break
-  while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
+  while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;const t=roomType(pickType(R.wave),R.wave);if(t)spawn(t)}
   if(R.waveT>=R.waveLen)nextWave();
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
   if(R.invT>0)R.invT=Math.max(0,R.invT-dt);

@@ -54,7 +54,7 @@ function showOv(kind){
   else{const R=run,m=Math.floor(R.time/60),s=Math.floor(R.time%60);
     // after a run: the same screen as the start, with a compact summary of the run on top
     c.className='card big';
-    c.innerHTML=`<div class="lastrun"><div class="lrh"><b>${R.quit?'Ended':'Fell'} on wave ${R.wave}</b><span>Tier ${R.tier} · best ${save.best[R.tier]||0} · ${m}m ${s}s</span></div><div class="grid2 lrg"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':R.time<CFG.offlineMinRun?' · too short to count':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b> <small>${fmt(R.sph)}/h${R.newBestS?' · new best':''}</small></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div>${R.defies?`<div><span>Deaths defied</span>${fmt(R.defies)}</div>`:''}<div><span>Cash earned</span>${fmt(R.cashEarned)}</div></div></div>
+    c.innerHTML=`<div class="lastrun"><div class="lrh"><b>${R.won?`Tier ${R.tier} cleared!`:`${R.quit?'Ended':'Fell'} on wave ${R.wave}`}</b><span>Tier ${R.tier} · best ${save.best[R.tier]||0} · ${m}m ${s}s</span></div><div class="grid2 lrg"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':R.time<CFG.offlineMinRun?' · too short to count':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b> <small>${fmt(R.sph)}/h${R.newBestS?' · new best':''}</small></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div>${R.defies?`<div><span>Deaths defied</span>${fmt(R.defies)}</div>`:''}<div><span>Cash earned</span>${fmt(R.cashEarned)}</div></div></div>
     <h2>Next run</h2>${tierPicker()}${tierInfo(ovTier)}
     <div class="obtns"><button id="toWs">Workshop · <span class="coin">${fmt(save.coins)}</span></button><button id="toHist">Records</button><button id="toHelp">How to play</button></div>
     <button class="go" id="goBtn">${autoTimer?`Start tier ${ovTier} · auto in <span id="autoTxt">${autoLeft}</span>s`:`Start tier ${ovTier}`}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
@@ -202,13 +202,21 @@ mBody.addEventListener('keydown',e=>{const r=e.target.closest&&e.target.closest(
 $('tgtBtn').addEventListener('click',()=>modalKind==='target'?closeModal():openModal('target'));
 $('histBtn').addEventListener('click',()=>modalKind==='history'?closeModal():openModal('history'));
 const dur=s=>{s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${m}m`:`${m}m ${x}s`};
-let hTab='runs';
-function historyHtml(){const H=save.hist,tabs=`<div class="mults"><button data-htab="runs" class="${hTab==='runs'?'on':''}">Battle history</button><button data-htab="stats" class="${hTab==='stats'?'on':''}">Lifetime stats</button></div>`;
+let hTab='runs',msTier=null;
+// Milestones tab: every milestone of one tier, claimed ones ticked, with its rewards
+function msHtml(){const t=msTier&&msTier<=save.tierMax?msTier:save.tierMax,n=save.ms[t]||0;
+  let h=`<div class="tiers">${Array.from({length:save.tierMax},(_,i)=>`<button data-mstier="${i+1}" class="${i+1===t?'on':''}">Tier ${i+1}<small>${save.ms[i+1]||0}/${MILESTONES.length}${save.cleared[i+1]?' · cleared':''}</small></button>`).join('')}</div>`;
+  h+=`<p class="note">Reach each wave once on a tier to collect its reward. Surviving wave ${CFG.finalWave.toLocaleString()} clears the tier.</p><div class="mslist">`;
+  MILESTONES.forEach((w,i)=>{const r=msReward(w,t,i),got=i<n;
+    h+=`<div class="msrow${got?' got':''}${i===n?' next':''}"><b>${got?'✓ ':''}Wave ${w.toLocaleString()}</b><span><b class="coin">${fmt(r.coins)}</b>${r.alloy?` <b class="alloy">${fmt(r.alloy)}</b>`:''}${r.chips?` <b class="chip">${fmt(r.chips)}</b>`:''}${r.shards?` <b class="shard">${fmt(r.shards)}</b>`:''}</span></div>`});
+  return h+'</div>'}
+function historyHtml(){const H=save.hist,tabs=`<div class="mults"><button data-htab="runs" class="${hTab==='runs'?'on':''}">Battle history</button><button data-htab="stats" class="${hTab==='stats'?'on':''}">Lifetime stats</button><button data-htab="ms" class="${hTab==='ms'?'on':''}">Milestones</button></div>`;
   if(hTab==='stats')return tabs+statsHtml();
+  if(hTab==='ms')return tabs+msHtml();
   if(!H.length)return tabs+`<p class="note">No runs yet. Your last ${CFG.histMax} runs will show up here when they end.</p>`;
   const top=Math.max(...H.map(h=>h.cph));
   return tabs+`<p class="note">Your last ${CFG.histMax} runs, newest first. Run time and coins per hour are in game time.</p><div class="hist">${H.map(h=>{const d=new Date(h.at);
-    return`<div class="hrow"><div class="htop"><b>Tier ${h.t}</b><b>Wave ${h.w}</b>${h.best?'<span class="tag">best wave</span>':''}${h.quit?'<span class="tag mute">ended early</span>':''}<span class="hdate">${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+    return`<div class="hrow"><div class="htop"><b>Tier ${h.t}</b><b>Wave ${h.w}</b>${h.best?'<span class="tag">best wave</span>':''}${h.quit?'<span class="tag mute">ended early</span>':''}${h.won?'<span class="tag">cleared</span>':''}<span class="hdate">${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
     <div class="hst"><span>Coins <b class="coin">${fmt(h.c)}</b></span><span>Coins/hour <b class="coin">${fmt(h.cph)}</b>${h.cph===top&&H.length>1?' ★':''}</span>${h.t>=2?`<span>Shards <b class="shard">${fmt(h.s)}</b></span>`:''}${h.ch?`<span>Chips <b class="chip">${fmt(h.ch)}</b></span>`:''}${h.al?`<span>Alloy <b class="alloy">${fmt(h.al)}</b></span>`:''}<span>Kills <b>${fmt(h.k)}</b></span>${h.df?`<span>Defied <b>${fmt(h.df)}</b></span>`:''}<span>Time <b>${dur(h.time)}</b></span></div></div>`}).join('')}</div>`}
 $('eBtn').addEventListener('click',()=>modalKind==='enemies'?closeModal():openModal('enemies'));
 let eTabW=0,eTabT=0,eTab='wave',eSig='';
@@ -227,9 +235,9 @@ function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=l
   <div class="grid2 winfo">
     <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s (spawning for the first ${live?+run.spawnLen.toFixed(1):CFG.spawnLen} s)</small></div>
     <div><span>Spawned this wave</span><b id="wiSpawned">${live?run.spawned:0}</b> <small>of ${cnt}</small></div>
-    <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b></div>
+    <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b> <small>of ${fmt(CFG.enemyCap)} max</small></div>
     <div><span>Next boss</span><b>${boss?'this wave':'wave '+nextBoss}</b></div>
-    <div><span>Growth per wave</span><b>♥ +${pct(CFG.hpGrow-1)} · ⚔ +${pct(CFG.dmgGrow-1)}</b></div>
+    <div><span>Growth next wave</span><b>♥ +${(100*(CFG.hpMul(w+1)/CFG.hpMul(w)-1)).toFixed(1)}% · ⚔ +${(100*(CFG.dmgMul(w+1)/CFG.dmgMul(w)-1)).toFixed(1)}%</b></div>
     <div><span>Tier ${t} multiplier</span><b>♥ ×${fmt(tm.hp)} · ⚔ ×${fmt(tm.dmg)} · <span class="coin">coins ×${fmt(tm.coin)}</span></b></div>
   </div>
   <p class="note">% is the chance each regular spawn is that type. Attack is damage per hit before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is metres per second (a new spire's range is ${SK.range.base} m). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside, and knockback moves them less. Coins is what each enemy drops on this wave, tier multiplier (×${fmt(tm.coin)}) and your coin bonus included. Greyed-out types can't spawn yet.</p>`}
@@ -239,7 +247,7 @@ function spireHtml(){const {live,v}=spireStats();eSig=JSON.stringify(v)+(live?Ma
   return`<p class="note">${live?'Current values in this run, Workshop and in-run upgrades included.':'Your starting values (Workshop). Start a run to see in-run upgrades added.'}</p>
   <div class="grid2 winfo"><div><span>Damage per second</span><b>${fmt(dps)}</b> <small>average, crits included</small></div><div><span>Health</span><b>${live?fmt(Math.max(0,run.hp))+' / ':''}${fmt(v.health)}</b></div></div>
   ${GROUPS.map(g=>`<div class="gh">${g}</div><div class="grid2 winfo">${ST.filter(s=>s.g===g&&!(s.ws&&live)).map(s=>`<div><span>${s.n}</span><b>${fv(s,v[s.k])}</b></div>`).join('')}</div>`).join('')}`}
-modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();const b=e.target.closest('button');if(!b)return;if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.htab){hTab=b.dataset.htab;mBody.innerHTML=historyHtml();return}if(b.dataset.act)settingsClick(b)});
+modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();const b=e.target.closest('button');if(!b)return;if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.mstier){msTier=+b.dataset.mstier;mBody.innerHTML=historyHtml();return}if(b.dataset.htab){hTab=b.dataset.htab;mBody.innerHTML=historyHtml();return}if(b.dataset.act)settingsClick(b)});
 modal.addEventListener('change',optChange);
 const mobIcon=d=>{const z=d.sz/22*.75+.4,pts=SHAPES[d.sh].map(p=>p.map(v=>(v*z).toFixed(3)).join(',')).join(' ');
   return`<svg viewBox="-1.5 -1.5 3 3" width="34" height="34" aria-hidden="true">${d.shield?`<circle r="${(z*1.4).toFixed(2)}" fill="none" stroke="var(--e6)" stroke-width=".1"/>`:''}<polygon points="${pts}" fill="var(--${d.c})" fill-opacity=".3" stroke="var(--${d.c})" stroke-width=".12" stroke-linejoin="round"/></svg>`};
@@ -248,7 +256,8 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <p>Your spire sits in the middle and fires at the closest enemy in range on its own. Enemies come in from every side. The run ends when the spire's health hits 0.</p>
   <h3>Runs and waves</h3><ul>
   <li>A new wave starts every ${CFG.waveLen} s of game time: enemies spawn for the first ${CFG.spawnLen} s, then there's a break to clear the field. Every ${CFG.bossEvery} waves brings a boss and 3 more enemies per wave, and higher waves bring more tanks and elites (which pay more coins and drop alloy).</li>
-  <li>Each wave, enemies get ${pct(CFG.hpGrow)} more health and ${pct(CFG.dmgGrow)} more damage.</li>
+  <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. Surviving wave ${CFG.finalWave.toLocaleString()} clears the tier.</li>
+  <li><b>Milestones</b> pay coins, alloy, chips (and shards from tier 2) the first time you reach certain waves on each tier, ${MILESTONES.length} per tier from wave ${MILESTONES[0]} to ${CFG.finalWave.toLocaleString()}. See Records → Milestones.</li>
   <li>Reach wave ${CFG.tierUnlockWave} to unlock the next tier. Each tier up multiplies enemy health by ${t2.hp}, damage by ${t2.dmg} and coins by ${t2.coin}.</li></ul>
   <h3>Currencies</h3><ul>
   <li><b class="cash">Cash</b> comes from kills and from cash interest, paid at the start of every wave. Spend it on Attack, Defense and Utility upgrades. It resets every run.</li>

@@ -1,5 +1,14 @@
 # What's new in Spire
 
+## 1.28.0 — 2026-11-21
+- **🏁 Every tier has a finish line:** survive **wave 10,000** to clear the tier. The run ends as a win, and cleared tiers are marked in your records.
+- **🏆 Milestones:** 30 per tier, from wave 10 to wave 10,000 (most of them in the first 1,000 waves). The first time you reach one on a tier, you get coins, alloy and chips, plus shards from tier 2. Later milestones pay more, and the final one pays 5× extra. See **Records → Milestones**.
+- **New difficulty curve:** enemies get tougher quickly at first and more gently later (polynomial instead of a fixed % per wave), so a stronger spire keeps pushing further instead of hitting a sudden wall. The wave info shows how much tougher the next wave is.
+- **Gentler wave sizes:** waves still grow every 10 waves, but by less and less: 29 enemies at wave 100, 70 at wave 1,000, 200 at wave 10,000.
+- **Enemy limit:** at most 5,000 enemies on the field, and each type has its own limit (e.g. 1,700 Basic, 200 Healers, 25 Bosses). A spawn whose type is full becomes another type, and nothing spawns while the field is full.
+
+## 1.24.0 — 2026-11-21
+
 ## 1.27.0 — 2026-11-21
 - **Waves have a break:** each wave now spawns its enemies over **15 s**, followed by a **15 s break** to clear the field before the next one (30 s per wave in all). The wave bar dims during the break.
 - **Fewer enemies, tougher mix:** waves start at 10 enemies and add **3 more every 10 waves** (instead of one or two more every wave). Higher waves bring more Tanks and elites instead: by wave 100 there are no Basic enemies left, and elites make up about 40% of a wave.

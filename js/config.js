@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.27.0';
+const APP_VERSION='1.28.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -12,8 +12,12 @@ const CFG={
   tierUnlockWave:25,                       // reach this wave to unlock the next tier
   tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:2.2**(t-1),  // coin: the tier coin multiplier, exponential so higher tiers pay off
            shard:t<2?0:1.5**(t-2)}),
-  hpGrow:1.068, dmgGrow:1.05,              // per-wave enemy scaling
-  spawnCount:w=>10+3*Math.floor((w-1)/10),  // enemies per wave: 10, plus 3 more every 10 waves (harder waves come from the mix, see ET freq)
+  // enemy growth is polynomial, not exponential: a spire's power grows like a power of what it earns (exponential prices
+  // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1)
+  hpMul:w=>(1+(w-1)/10)**4, dmgMul:w=>(1+(w-1)/10)**3,
+  finalWave:10000,  // surviving this wave clears the tier: the run ends as a win
+  enemyCap:5000,  // most enemies on the field at once (each type also has its own cap, ET cap); spawns past it are skipped
+  spawnCount:w=>10+Math.floor(6*Math.sqrt(Math.floor((w-1)/10))),  // enemies per wave: steps up every 10 waves, by less and less (29 at wave 100, 70 at 1000, 200 at 10000); harder waves come from the mix, see ET freq
   waveCash:w=>6+w*3,
   killCash:w=>2*(1+w*.05), killCoin:w=>3.5*(1+w*.03),  // per-kill rewards (× the enemy's own cash/coin); fewer, tougher enemies per wave than before, so each pays more and higher waves pay much more
   shardPerKill:.2,           // shards paid when a run ends = kills × this × tier shard multiplier (tier 2+ only)
@@ -87,16 +91,16 @@ const SHAPES={
 };
 const RANKS=['','Normal','Elite','Boss'];
 // r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
-// from: first wave · freq: spawn chance on that wave, growing by fg per wave up to fmax (higher waves bring more tanks and elites) · weight: resists being pushed (crowds now, knockback later) · bar: (unused; health shows as fill) · n/d: shown in Help
+// cap: most of this type on the field at once · from: first wave · freq: spawn chance on that wave, growing by fg per wave up to fmax (higher waves bring more tanks and elites) · weight: resists being pushed (crowds now, knockback later) · bar: (unused; health shows as fill) · n/d: shown in Help
 const ET={
- basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1'},
- fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:3,freq:.2},
- ranged:{n:'Ranged',r:1,d:'Stops 125 m out, beyond a new spire\'s range, and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:12,freq:.08,fg:.002,fmax:.15,stop:125},
- tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,freq:.08,fg:.003,fmax:.25,bar:1},
- shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,freq:.03,fg:.002,fmax:.15,bar:1,shield:3},
- healer:{n:'Healer',r:2,d:'Every second, heals enemies within 70 m by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.03,fg:.0012,fmax:.1,bar:1,heal:.1,healR:70},
- splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,freq:.03,fg:.002,fmax:.15,bar:1,split:3},
- boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',bar:1}
+ basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1',cap:1700},
+ fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:3,freq:.2,cap:1000},
+ ranged:{n:'Ranged',r:1,d:'Stops 125 m out, beyond a new spire\'s range, and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:12,freq:.08,fg:.002,fmax:.15,stop:125,cap:500},
+ tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,freq:.08,fg:.003,fmax:.25,bar:1,cap:800},
+ shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,freq:.03,fg:.002,fmax:.15,bar:1,shield:3,cap:400},
+ healer:{n:'Healer',r:2,d:'Every second, heals enemies within 70 m by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.03,fg:.0012,fmax:.1,bar:1,heal:.1,healR:70,cap:200},
+ splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,freq:.03,fg:.002,fmax:.15,bar:1,split:3,cap:400},
+ boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',bar:1,cap:25}
 };
 const TYPES=Object.keys(ET);
 // ================= Cards and Modules =================
@@ -169,4 +173,11 @@ const ULTS=[
   silverT:['dur','cd'], sb:'always firing (re-aims every 3 s), and the beam ignores shields', gb:'+50% beam damage', pb:'a second beam fires the opposite way'},
 ];
 const MEDALS=['','Silver','Gold','Platinum'];
+// ================= Milestones =================
+// Paid once per tier, the first time you reach each wave. Most sit in the first 1000 waves; the last one is the final wave.
+// Rewards are worth `mult` waves of that wave's income (coins, plus alloy, chips, and shards from tier 2), so later ones pay more.
+const MILESTONES=[10,13,16,20,25,30,40,50,60,75,100,125,150,200,250,300,400,500,600,750,1000,1250,1500,2000,2500,3000,4000,5000,7500,10000];
+const MS={mult:25, final:5}; // final: the last milestone (clearing the tier) pays this many times more
+function msReward(w,t,i){const tm=CFG.tier(t),n=CFG.spawnCount(w),k=MS.mult*(i===MILESTONES.length-1?MS.final:1);
+  return{coins:Math.round(k*n*4*CFG.killCoin(w)*tm.coin),alloy:Math.round(k*n*.15*DROPS.alloy(w,t)),chips:Math.round(k*.3*DROPS.chips(w,t)),shards:tm.shard?Math.round(k*n*CFG.shardPerKill*tm.shard):0}}
 const UK=Object.fromEntries(ULTS.map(u=>[u.k,u]));
