@@ -132,9 +132,7 @@ function settingsHtml(){return`<div class="set">
   <label><input type="checkbox" id="optPf" ${save.set.perf?'checked':''}> Performance overlay</label>
   <label><input type="checkbox" id="optAuto" ${save.set.auto?'checked':''}> Auto-restart after a run ends, after
     <select id="optDelay" style="font:inherit;min-height:36px;border-radius:8px;background:var(--arena);color:var(--ink);border:1px solid var(--line)">${[3,5,10,15].map(n=>`<option ${save.set.autoDelay===n?'selected':''}>${n}</option>`).join('')}</select> s</label>
-  <div class="gh">Targeting</div>
-  <div class="mults" style="margin-bottom:6px"><button data-act="tgt" data-v="closest" class="${save.set.target!=='priority'?'on':''}">Closest</button><button data-act="tgt" data-v="priority" class="${save.set.target==='priority'?'on':''}">Priority</button></div>
-  ${save.set.target==='priority'?`<p class="note">The spire shoots the highest type on this list that's in range, then the closest of that type. Multishot follows the same order.</p><div class="prio">${save.set.prio.map((t,i)=>`<div class="prow">${mobIcon(ET[t])}<span>${i+1}. ${ET[t].n}</span><button data-act="pup" data-t="${t}" ${i?'':'disabled'} aria-label="Move ${ET[t].n} up">▲</button><button data-act="pdn" data-t="${t}" ${i<save.set.prio.length-1?'':'disabled'} aria-label="Move ${ET[t].n} down">▼</button></div>`).join('')}</div>`:'<p class="note">The spire shoots the closest enemy in range.</p>'}
+  <div class="gh">Targeting</div><div class="btns"><button data-act="tgtOpen">🎯 Target priority…</button></div>
   <div class="gh">Save</div><p class="note">Progress saves in this browser automatically. Copy a backup code to be safe, or paste one to restore.</p>
   <textarea id="saveTxt" placeholder="Backup code appears here, or paste one to import"></textarea>
   <div class="btns"><button data-act="export">Copy backup code</button><button data-act="import">Import code</button></div>
@@ -144,9 +142,7 @@ function settingsHtml(){return`<div class="set">
 let resetArm=0;
 function settingsClick(b){
   const a=b.dataset.act,tx=$('saveTxt');
-  if(a==='tgt'||a==='pup'||a==='pdn'){const P=save.set.prio;
-    if(a==='tgt')save.set.target=b.dataset.v;else{const i=P.indexOf(b.dataset.t),j=a==='pup'?i-1:i+1;if(j>=0&&j<P.length)[P[i],P[j]]=[P[j],P[i]]}
-    persist();const y=mBody.scrollTop;mBody.innerHTML=settingsHtml();mBody.scrollTop=y;return}
+  if(a==='tgtOpen'){openModal('target');return}
   if(a==='export'){const code=btoa(unescape(encodeURIComponent(JSON.stringify(save))));tx.value=code;tx.select();
     navigator.clipboard?.writeText(code).then(()=>toast('Backup code copied'),()=>toast('Select the code and copy it'))||toast('Select the code and copy it')}
   else if(a==='import'){try{const s=JSON.parse(decodeURIComponent(escape(atob(tx.value.trim()))));if(s.v!==1)throw 0;save=fromSaved(s);persist();recalc();toast('Save imported');buildPanel();if(!run)showOv('start');openModal('settings')}catch(e){toast('That code did not work')}}
@@ -160,8 +156,8 @@ function optChange(e){if(e.target.id==='optFx')save.set.fx=e.target.value;if(e.t
 $('panel').addEventListener('change',optChange);
 // ---- modals: settings (gear) and help (?) ----
 const modal=$('modal'),mBody=$('mBody');let modalKind=null;
-function openModal(kind){modalKind=kind;$('mTitle').textContent={help:'How to play',settings:'Settings',enemies:'Enemies this wave',history:'Records'}[kind];
-  mBody.innerHTML=kind==='help'?helpHtml():kind==='enemies'?enemyHtml():kind==='history'?historyHtml():settingsHtml();modal.hidden=false;mBody.scrollTop=0;$('mClose').focus()}
+function openModal(kind){modalKind=kind;$('mTitle').textContent={help:'How to play',settings:'Settings',enemies:'Enemies this wave',history:'Records',target:'Target priority'}[kind];
+  mBody.innerHTML=kind==='help'?helpHtml():kind==='enemies'?enemyHtml():kind==='history'?historyHtml():kind==='target'?targetHtml():settingsHtml();modal.hidden=false;mBody.scrollTop=0;$('mClose').focus()}
 function closeModal(){modal.hidden=true;modalKind=null}
 function refreshHistory(){if(modalKind==='history')mBody.innerHTML=historyHtml()}
 function statsHtml(){const S=save.stats,H=save.hist.slice(0,10),recent=H.length?H.reduce((a,h)=>a+h.cph,0)/H.length:0,day=new Date(S.since);
@@ -183,6 +179,21 @@ function statsHtml(){const S=save.stats,H=save.hist.slice(0,10),recent=H.length?
 $('setBtn').addEventListener('click',()=>modalKind==='settings'?closeModal():openModal('settings'));
 $('helpBtn').addEventListener('click',()=>modalKind==='help'?closeModal():openModal('help'));
 $('mClose').addEventListener('click',closeModal);
+// ---- target priority window: drag rows (or focus + ↑/↓) to reorder; types above Closest are shot first ----
+function targetHtml(){const P=save.set.prio,ci=P.indexOf('closest');
+  return`<p class="note">Enemy types above <b>Closest</b> are shot first, top to bottom. Everything below it is shot closest-first. Drag the rows, or focus one and use ↑ / ↓.</p><div class="tlist" id="tlist">${P.map((k,i)=>{const cl=k==='closest';
+    return`<div class="trow${cl?' tclose':''}" data-k="${k}" tabindex="0"><span class="grip" aria-hidden="true">⠿</span>${cl?'<span class="tico"></span>':mobIcon(ET[k])}<span class="tname">${cl?'Closest (default)':ET[k].n}</span><b class="trank">${i<ci?i+1:cl?'':'–'}</b></div>`}).join('')}</div>`}
+function tlistSave(){const L=$('tlist');if(!L)return;save.set.prio=[...L.children].map(r=>r.dataset.k);const ci=save.set.prio.indexOf('closest');
+  [...L.children].forEach((r,i)=>{r.querySelector('.trank').textContent=r.dataset.k==='closest'?'':i<ci?i+1:'–'});persist()}
+let tdrag=null;
+mBody.addEventListener('pointerdown',e=>{const r=e.target.closest('.trow');if(!r||modalKind!=='target')return;e.preventDefault();r.setPointerCapture(e.pointerId);r.classList.add('drag');tdrag=r;r.focus()});
+mBody.addEventListener('pointermove',e=>{if(!tdrag)return;const L=$('tlist');for(const o of L.children){if(o===tdrag)continue;const b=o.getBoundingClientRect();
+  if(e.clientY<b.top+b.height/2){if(o.previousElementSibling!==tdrag)L.insertBefore(tdrag,o);return}}L.appendChild(tdrag)});
+const tdrop=()=>{if(!tdrag)return;tdrag.classList.remove('drag');tdrag=null;tlistSave()};
+mBody.addEventListener('pointerup',tdrop);mBody.addEventListener('pointercancel',tdrop);
+mBody.addEventListener('keydown',e=>{const r=e.target.closest&&e.target.closest('.trow');if(!r||(e.key!=='ArrowUp'&&e.key!=='ArrowDown'))return;e.preventDefault();
+  const L=r.parentNode;if(e.key==='ArrowUp'&&r.previousElementSibling)L.insertBefore(r,r.previousElementSibling);else if(e.key==='ArrowDown'&&r.nextElementSibling)L.insertBefore(r.nextElementSibling,r);r.focus();tlistSave()});
+$('tgtBtn').addEventListener('click',()=>modalKind==='target'?closeModal():openModal('target'));
 $('histBtn').addEventListener('click',()=>modalKind==='history'?closeModal():openModal('history'));
 const dur=s=>{s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${m}m`:`${m}m ${x}s`};
 let hTab='runs';
@@ -250,13 +261,13 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>
   <h3>Offline earnings</h3>
   <p>Your best coins per game-hour, from a run of at least ${CFG.offlineMinRun/60} game-minutes, keeps paying while you're away, as if the game were running at your fastest unlocked speed (${Math.max(...speeds())}× now; Overdrive in the Lab raises it). Offline speed research multiplies it further, and Offline duration sets how many hours count (${labVal('offCap')} h now). Shorter runs don't set the rate. Shards work the same way: your best shards per game-hour (from tier 2+ runs) is paid while you're away too. The Workshop tab shows your current rates per real hour.</p>
-  <h3>Enemies</h3><p>Enemies come in three ranks. Normal enemies make up most of every wave. Elites start turning up from wave ${Math.min(...TYPES.filter(t=>ET[t].r===2).map(t=>ET[t].from))}, a few per wave, and pay out much more. A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart (heavier enemies win), so every enemy stays visible. Tap the Enemy stats in the top bar to see every type's numbers for the current wave.</p>
+  <h3>Enemies</h3><p>An enemy's fill shows its health: solid at full, emptying to just an outline as it's worn down. Enemies come in three ranks. Normal enemies make up most of every wave. Elites start turning up from wave ${Math.min(...TYPES.filter(t=>ET[t].r===2).map(t=>ET[t].from))}, a few per wave, and pay out much more. A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart (heavier enemies win), so every enemy stays visible. Tap the Enemy stats in the top bar to see every type's numbers for the current wave.</p>
   ${[1,2,3].map(rk=>`<div class="gh">${RANKS[rk]}</div><div class="mobs">${TYPES.filter(t=>ET[t].r===rk).map(t=>{const d=ET[t];
     const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';
     return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join('')}
   <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; ranged enemies stop at ${ET.ranged.stop} m. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so they have to walk in; the arena zooms with your range. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
   <h3>Ultimate weapons</h3><p>Bought and upgraded with chips in the Ultimates tab. Every one you own is active: ${ULTS.map(u=>`<b>${u.n}</b> (${u.d.charAt(0).toLowerCase()+u.d.slice(1,-1)})`).join('; ')}. Chain Lightning and Frost Field are always working; the others fire on their own cooldown when there's an enemy in range, or set one to Manual and fire it with its button under the arena. Each has 4 upgrades of 40 to 100 small levels that get steadily pricier towards the end of the track, so finishing one takes chips from higher tiers. Tap an ultimate in the tab to open it, and use ×1 / ×10 / Max to buy several levels at once. Max the 2 starred upgrades for <b>Silver</b> (for Gravity Well and Laser that's duration and cooldown, which makes them always on), any 3 for <b>Gold</b> and all 4 for <b>Platinum</b>; each status adds a bonus.</p>
-  <h3>Targeting</h3><p>By default the spire shoots the closest enemy in range. Under Settings → Targeting you can switch to Priority and rank the enemy types; the spire then shoots the highest-ranked type in range first (closest first within a type).</p>
+  <h3>Targeting</h3><p>Tap 🎯 <b>Target</b> under the arena to set target priority. Drag enemy types above <b>Closest</b> to have the spire shoot them first, top to bottom (closest first within a type); everything below Closest is shot closest-first. With Closest at the top, it simply shoots the closest enemy.</p>
   <h3>Shot effects</h3><p>At high game speeds, individual shots are too fast to follow, so from ${CFG.cleanFxAt}× up the arena switches to clean effects: a short steady line off each enemy it's shooting at, pointing back at the spire, enemies lighting up when hit, and only crit damage numbers. Change this under Settings → Shot effects.</p>
   <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}
 function buildSpeeds(){$('speeds').innerHTML=speeds().map(s=>`<button data-sp="${s}" class="${save.set.speed===s?'on':''}">${s}×</button>`).join('')}

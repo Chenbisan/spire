@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.24.0 — 2026-11-21
+- **🎯 Target priority has its own window:** tap **Target** under the arena (next to the speed buttons). Drag enemy types above **Closest** to have the spire shoot them first, in order (ranks 1, 2, 3…); everything below Closest is shot closest-first. You can also focus a row and use ↑ / ↓. Your old Priority order carries over. Settings has a shortcut to the same window.
+- **No more enemy health bars:** an enemy's health now shows in its fill. It's solid at full health and empties to just an outline as it's worn down (in four steps). Cheaper to draw, and easier to read in a crowd.
+
 ## 1.23.0 — 2026-11-20
 - **Ultimates take real progress to finish:** every upgrade track now has 40 to 100 small levels instead of 4 to 20 big ones, with the same start and end values. Prices climb steadily towards the end of each track (about 11.6k chips to max one), so Silver, Gold and Platinum are proper milestones. Your current levels convert so every ultimate stays exactly as strong as it was.
 - **❄ Frost Field rebuilt:** it's now **always on**. On every tick, each enemy touching the field gains a **frost stack**; stacks never wear off and have no limit.

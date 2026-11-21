@@ -7,12 +7,12 @@ readColors();
 new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
 const ro=new ResizeObserver(()=>{const d=Math.min(2,devicePixelRatio||1);cv.width=Math.round(stage.clientWidth*d);cv.height=Math.round(stage.clientHeight*d)});ro.observe(stage);
-function shape(e){
+function shape(e,T=ctx){ // T: the canvas context, or a Path2D to collect into
   const d=e.d,P=SHAPES[d.sh],s=d.sz,x=IX(e),y=IY(e),r=d.rot==='face'?Math.atan2(-y,-x):d.rot==='spin'?run.time*.5:0;
   const c=Math.cos(r)*s,n=Math.sin(r)*s;
-  ctx.moveTo(x+P[0][0]*c-P[0][1]*n,y+P[0][0]*n+P[0][1]*c);
-  for(let i=1;i<P.length;i++)ctx.lineTo(x+P[i][0]*c-P[i][1]*n,y+P[i][0]*n+P[i][1]*c);
-  ctx.closePath();
+  T.moveTo(x+P[0][0]*c-P[0][1]*n,y+P[0][0]*n+P[0][1]*c);
+  for(let i=1;i<P.length;i++)T.lineTo(x+P[i][0]*c-P[i][1]*n,y+P[i][0]*n+P[i][1]*c);
+  T.closePath();
 }
 function shots(list,col,h){
   if(!list.length)return;
@@ -46,13 +46,15 @@ function draw(){
     for(const e of enemies)if(!e.dead&&e.hf>0){ctx.strokeStyle=C[e.d.c];ctx.globalAlpha=e.hf/.4*.6;ctx.beginPath();ctx.arc(IX(e),IY(e),e.d.healR*(1.1-e.hf/.4*.4),0,6.283);ctx.stroke()}
     ctx.globalAlpha=1;
     ctx.strokeStyle=C.e6;ctx.lineWidth=2;ctx.beginPath();for(const e of enemies)if(!e.dead&&e.shield>0){const x=IX(e),y=IY(e),r=e.d.sz*1.65;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();
-    // bodies: light fill + solid outline, one batched path per type (later types draw on top, boss last)
-    ctx.lineWidth=2;ctx.lineJoin='round';
-    for(const t of TYPES){ctx.beginPath();let any=false;for(const e of enemies)if(e.t===t&&!e.dead&&e.age>=CFG.fadeIn){shape(e);any=true}
-      if(any){const col=C[ET[t].c];ctx.fillStyle=col;ctx.globalAlpha=.3;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=col;ctx.stroke()}}
-    for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=.3*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
-    ctx.fillStyle=C.hot;
-    for(const e of enemies)if(e.d.bar&&!e.dead&&e.hp<e.mhp){const s=e.d.sz;ctx.fillRect(IX(e)-s,IY(e)-s-6,2*s*Math.max(0,e.hp/e.mhp),3)}
+    // bodies: the fill shows health (solid at full, emptying to just the outline), in 4 bands, batched per type and band;
+    // then one outline path per type (later types draw on top, boss last). No per-enemy health bars.
+    ctx.lineWidth=2;ctx.lineJoin='round';const HF=CFG.hpFill,band=e=>{const f=e.hp/e.mhp;return f>.75?0:f>.5?1:f>.25?2:3};
+    // one pass: each enemy's shape is traced once into its type × health-band path, then each path is filled and outlined
+    const PB={};for(const t of TYPES)PB[t]=[null,null,null,null];
+    for(const e of enemies){if(e.dead||e.age<CFG.fadeIn)continue;const row=PB[e.t],b=band(e);shape(e,row[b]||(row[b]=new Path2D()))}
+    for(const t of TYPES){const col=C[ET[t].c],row=PB[t];ctx.fillStyle=col;ctx.strokeStyle=col;
+      for(let b=0;b<4;b++)if(row[b]){ctx.globalAlpha=HF[b];ctx.fill(row[b])}ctx.globalAlpha=1;for(let b=0;b<4;b++)if(row[b])ctx.stroke(row[b])}
+    for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=HF[band(e)]*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
     const clean=cleanFx();
     if(clean){ // one faint, steady line per enemy being shot at

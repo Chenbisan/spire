@@ -116,8 +116,9 @@ function gameOver(quit){
 }
 // ================= simulation (fixed step) =================
 let rankKey='',rankMap=null;
-function targetRank(){const st=save.set;if(st.target!=='priority')return null;const k=st.prio.join();
-  if(k!==rankKey){rankKey=k;rankMap={};TYPES.forEach(t=>rankMap[t]=TYPES.length);st.prio.forEach((t,i)=>rankMap[t]=i)}return rankMap}
+// target priority: types above 'closest' in save.set.prio are shot first, in order; the rest share one rank (closest first)
+function targetRank(){const P=save.set.prio,ci=P.indexOf('closest');if(ci<=0)return null;const k=P.join();
+  if(k!==rankKey){rankKey=k;rankMap={};TYPES.forEach(t=>rankMap[t]=ci);for(let i=0;i<ci;i++)rankMap[P[i]]=i}return rankMap}
 function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:0;save.stats.shots++;if(c){save.stats.crits++;if(s.superCrit>0&&Math.random()<s.superCrit){c=2;save.stats.supers++}}
   tgt.shotAt=performance.now(); // render-only: targeting beam
   b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;

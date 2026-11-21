@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.23.0';
+const APP_VERSION='1.24.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -21,6 +21,7 @@ const CFG={
   histMax:30,                // battle history keeps this many runs
   bossEvery:10, maxDmgNums:50, maxParts:240,
   defyFx:900,  // death defied effect length (real ms)
+  hpFill:[.6,.4,.22,.06],  // enemy fill opacity by health band: >75%, >50%, >25%, below
   cleanFxAt:8, hitFlash:180, beamHold:150, beamLen:.07,  // beamLen: stub length as a share of the view radius   // Auto shot effects switch to clean at this game speed; hit flash length (real ms)
   tracerLife:.12, maxTracers:300, streakMax:90,   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
   sepGap:.9, sepPush:.8, sepHold:.9, sepChecks:400, sepEveryOther:800, simBudget:20, nearR:60, dotHz:10, boltsDrawn:20, // nearR: a retargeting shot looks this far through the grid first; dotHz: damage-over-time ultimates (Laser, Gravity Well) apply damage this many times per game second // sepChecks: safety cap on neighbours checked per enemy per step; simBudget: max ms of simulation per frame
@@ -85,7 +86,7 @@ const SHAPES={
 };
 const RANKS=['','Normal','Elite','Boss'];
 // r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
-// from/freq: first wave and spawn frequency · weight: resists being pushed (crowds now, knockback later) · bar: health bar · n/d: shown in Help
+// from/freq: first wave and spawn frequency · weight: resists being pushed (crowds now, knockback later) · bar: (unused; health shows as fill) bar · n/d: shown in Help
 const ET={
  basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1'},
  fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:3,freq:.25},

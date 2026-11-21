@@ -30,6 +30,12 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .chips b,.echip b,.hpt{font-variant-numeric:tabular-nums}
 .chips b{display:inline-block;min-width:4.6ch}#hTier{min-width:1.6ch}#hWave{min-width:3.4ch}.echip b{display:inline-block;min-width:4.8ch}.hpt{min-width:20ch;text-align:right}
 .row2{flex:1 1 100%;display:flex;align-items:center;gap:8px 16px}.row2 .hp{max-width:none}
+.tlist{display:grid;gap:6px}.trow{display:grid;grid-template-columns:22px 28px 1fr 32px;gap:8px;align-items:center;min-height:48px;padding:0 12px 0 8px;border:1px solid var(--line);border-radius:10px;background:var(--arena);cursor:grab;touch-action:none;user-select:none}
+.trow:focus-visible{outline:2px solid var(--acc);outline-offset:2px}.trow.drag{border-color:var(--acc);box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:grabbing;position:relative;z-index:1}
+.trow svg{width:26px;height:26px}.grip{color:var(--mute);font-size:18px;line-height:1}.tname{font:600 15px 'Chakra Petch',sans-serif}.trank{text-align:right;font:600 17px 'Chakra Petch',sans-serif;color:var(--mute)}
+.trow.tclose{border-style:dashed;border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--arena))}.trow.tclose .tname{color:var(--acc)}
+#tgtBtn{display:flex;align-items:center;gap:6px}
+@media(max-width:420px){#tgtBtn .lbl{display:none}}
 .prio{display:grid;gap:4px;margin:0 0 10px}.prow{display:grid;grid-template-columns:28px 1fr 40px 40px;gap:6px;align-items:center;padding:2px 4px;border:1px solid var(--line);border-radius:8px}.prow svg{width:24px;height:24px}.prow button{min-height:32px;padding:0}
 .ustat{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:baseline;font-size:12px;color:var(--mute);padding:4px 0 6px}.ustat b{color:var(--ink);font-weight:500}
 .medal{font:700 11px Inter,sans-serif;border-radius:6px;padding:1px 6px;border:1px solid var(--line);color:var(--mute)}.medal.s.on{background:#c7ced6;color:#1c2226;border-color:#c7ced6}.medal.g.on{background:var(--gold);color:var(--arena);border-color:var(--gold)}.medal.p.on{background:linear-gradient(135deg,#f4f8fb,#9fc3da);color:#1c2226;border-color:#bcd6e6}
