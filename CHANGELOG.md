@@ -1,5 +1,13 @@
 # What's new in Spire
 
+## 1.35.0 — 2026-11-21
+- **Ultimate upgrades come in natural steps:** capped stats no longer share the same long track. Each has a handful of big steps, and the price climbs fast:
+  - Max slow 30% → 95% in 13 steps of 5% · Proc chance and Bounce multiplier in 5% steps · Bounce targets +0.5 a step · Tick rate +0.25/s · Frost radius +10% of range · Brittle +0.1% per stack.
+  - Shockwave: Stun +0.25 s, Radius +5% of range, Cooldown −5 s · Gravity Well: Radius +10 m, Duration +5 s, Cooldown −20 s · Laser: Width +2.5 m, Duration +1 s, Charge time −4 s.
+  - Strength upgrades (Chain Lightning and Laser damage, Shockwave Force, Gravity Well Pull) keep their 100 levels, 5 per tier.
+- **Medals by how complete an ultimate is** (the average of its 4 upgrades): **Silver at 10%, Gold at 30%, Platinum at 60%**.
+- Your levels convert so every ultimate stays at least as strong as before.
+
 ## 1.34.0 — 2026-11-21
 - **Ultimate upgrades hit harder:** each upgrade now has **100 levels** (5 per tier) instead of 400, so every level does 4× as much: proc chance +0.5 points a level instead of +0.125, damage upgrades about +25% a level early on instead of +6%. Each level costs more to match (a tier's band costs about 65% more than before).
 - Percentages on ultimate upgrades show a decimal, so every level visibly changes.

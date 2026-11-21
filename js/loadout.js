@@ -65,7 +65,7 @@ $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 // key 'ws:<group>' (Workshop section), 'ult:<k>' (an ultimate's upgrades; it stays unlocked), 'card:<k>', 'mod:<k>'
 function respecValue(key){const [kind,k]=key.split(':');let v=0;
   if(kind==='ws'){const d=1-labVal('disc');for(const s of ST)if(s.g===k)for(let i=0;i<(save.ws[s.k]||0);i++)v+=s.w[0]*d*s.w[1]**i;return{cur:'coin',v}} // at today's discount, never more than was paid
-  if(kind==='ult'){for(const t of UK[k].t)for(let i=0;i<ultLv(k,t.k);i++)v+=ULT.cost(i);return{cur:'chip',v}}
+  if(kind==='ult'){for(const t of UK[k].t)for(let i=0;i<ultLv(k,t.k);i++)v+=ultCost(t,i);return{cur:'chip',v}}
   if(kind==='card'){const l=cardLv(k);if(l)v=CARD.buy;for(let i=0;i<l-1;i++)v+=CARD.up[i];return{cur:'chip',v}}
   if(kind==='mod'){const l=modLv(k);if(l)v=MOD.buy;for(let i=1;i<l;i++)v+=modCost(i);return{cur:'alloy',v}}
   return{cur:'',v:0}}
