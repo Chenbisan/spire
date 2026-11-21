@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.32.0 — 2026-11-21
+- **Next tier at wave 2,500** (was 5,000). Farming a lower tier to get stronger, then pushing a higher one, is part of the game.
+- **Higher tiers pay much more, sooner:** the tier coin multiplier is now tier³ instead of ×2.2 per tier: ×8 coins on tier 2 (was ×2.2), ×27 on tier 3 (×4.8), ×125 on tier 5 (×23), ×1,000 on tier 10. It keeps growing without running away exponentially, so it still makes sense at tier 20 and beyond.
+
 ## 1.31.0 — 2026-11-21
 - **Healers reworked:** a big pack of Healers could keep a crowd alive forever. Now:
   - They pulse **every 15 s** (was every second) and reach **25 m** (was 70 m).

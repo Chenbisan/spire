@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.31.0';
+const APP_VERSION='1.32.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -9,8 +9,8 @@ const CFG={
   offscreen:25,  // offscreen: how far past the screen edge enemies spawn (m)
    // spawn ring 35% beyond your range; the view fits range ×1.12 so enemies walk in from off-screen; new enemies fade in (game s)
   towerR:14, bulletSpd:420, ebSpd:120,
-  tierUnlockWave:5000,                     // reach this wave to unlock the next tier (half way to the final wave)
-  tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:2.2**(t-1),  // coin: the tier coin multiplier, exponential so higher tiers pay off
+  tierUnlockWave:2500,                     // reach this wave to unlock the next tier (a quarter of the way to the final wave)
+  tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:t**3,  // coin: the tier coin multiplier, tier³ (×8 at tier 2, ×1,000 at tier 10, ×1M at tier 100): faster than linear but not exponential
            shard:t<2?0:1.5**(t-2),wt:1.6**(t-1),spd:1.08**(t-1)}),  // wt/spd: enemies are heavier (×10 at tier 6) and faster (×1.47 at tier 6) on higher tiers
   // enemy growth is polynomial, not exponential: a spire's power grows like a power of what it earns (exponential prices
   // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1)
