@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.25.0 — 2026-11-21
+- **Runs end on the main screen:** when a run ends (you end it or the spire falls) you're back on the same screen as when the game starts, with the tier picker, tier details and shortcuts, plus a compact summary of the run you just played at the top. Auto-restart still counts down on the Start button after the spire falls.
+
 ## 1.24.1 — 2026-11-21
 - **Faster drawing:** enemies are now pre-drawn once per zoom level (per type and health step) and stamped onto the arena each frame, instead of being traced shape by shape. They look the same; big crowds paint much faster.
 
