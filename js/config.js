@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.30.0';
+const APP_VERSION='1.31.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -16,6 +16,7 @@ const CFG={
   // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1)
   hpMul:w=>(1+(w-1)/10)**4, dmgMul:w=>(1+(w-1)/10)**3,
   wtMul:w=>(1+(w-1)/50)**.75,  // weight grows too (×2.4 by wave 100, ×10 by 1000, ×53 by 10000), so knockback, Shockwave and Gravity Well move high-wave enemies less
+  healCd:5,  // an enemy can be healed at most once every this many game seconds
   finalWave:10000,  // reaching this wave stops all spawning; destroying every enemy left clears the tier (the run ends as a win)
   enemyCap:5000,  // most enemies on the field at once (each type also has its own cap, ET cap); spawns past it are skipped
   spawnCount:w=>10+Math.floor(6*Math.sqrt(Math.floor((w-1)/10))),  // enemies per wave: steps up every 10 waves, by less and less (29 at wave 100, 70 at 1000, 200 at 10000); harder waves come from the mix, see ET freq
@@ -99,7 +100,7 @@ const ET={
  ranged:{n:'Ranged',r:1,d:'Stops 125 m out, beyond a new spire\'s range, and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:12,freq:.08,fg:.002,fmax:.15,stop:125,cap:500},
  tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,freq:.08,fg:.003,fmax:.25,bar:1,cap:800},
  shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,freq:.03,fg:.002,fmax:.15,bar:1,shield:3,cap:400},
- healer:{n:'Healer',r:2,d:'Every second, heals enemies within 70 m by 10% of their max health. Kill it first.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.03,fg:.0012,fmax:.1,bar:1,heal:.1,healR:70,cap:200},
+ healer:{n:'Healer',r:2,d:'Every second, heals nearby enemies (within 70 m) for half its own max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other. Kill it first.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.03,fg:.0012,fmax:.1,bar:1,heal:.5,healR:70,cap:200},
  splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,freq:.03,fg:.002,fmax:.15,bar:1,split:3,cap:400},
  boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',bar:1,cap:25}
 };

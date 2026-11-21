@@ -1,5 +1,11 @@
 # What's new in Spire
 
+## 1.31.0 — 2026-11-21
+- **Healers reworked:** a big pack of Healers could keep a crowd alive forever. Now:
+  - They heal a **flat amount**, half of the Healer's own max health, instead of 10% of the target's. Tanks and bosses with huge health pools barely notice a heal.
+  - Each enemy can be healed **at most once every 5 s**, however many Healers are around.
+  - Healers **can't heal each other** (or themselves).
+
 ## 1.30.0 — 2026-11-21
 - **♻ Respec anything, free:** try a build, and if it doesn't work out, get everything back.
   - **Workshop:** each section (Attack, Defense, Utility) has a *Refund all* button that resets its upgrades and returns all the coins.
