@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.37.0';
+const APP_VERSION='1.38.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -17,6 +17,7 @@ const CFG={
   // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1)
   hpMul:w=>(1+(w-1)/10)**4, dmgMul:w=>(1+(w-1)/10)**3,
   wtMul:w=>(1+(w-1)/50)**.75,  // weight grows too (×2.4 by wave 100, ×10 by 1000, ×53 by 10000), so knockback, Shockwave and Gravity Well move high-wave enemies less
+  hitRamp:1.03,  // each attack an enemy makes does this much more than its previous one (×1.34 by the 10th hit, ×18 by the 100th), so enemies can't linger forever
   healCd:5,  // an enemy can be healed at most once every this many game seconds
   finalWave:10000,  // reaching this wave stops all spawning; destroying every enemy left clears the tier (the run ends as a win)
   enemyCap:5000,  // most enemies on the field at once (each type also has its own cap, ET cap); spawns past it are skipped

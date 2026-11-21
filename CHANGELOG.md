@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.38.0 — 2026-11-21
+- **Enemies hit harder the longer they live:** every hit or shot an enemy lands does **3% more** than its previous one (×1.34 by its 10th attack, ×18 by its 100th). Enemies parked at the spire, or kept alive by Healers or a stalled fight, get dangerous fast, so kill them quickly.
+
 ## 1.37.0 — 2026-11-21
 - **Frost Field medals reworked:** destroying every enemy shot made Ranged enemies harmless, so:
   - **Gold** is now *frozen enemies take double brittle damage* (was Platinum).
