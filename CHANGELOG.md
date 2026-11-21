@@ -5,6 +5,8 @@
 - **🏆 Milestones:** 30 per tier, from wave 10 to wave 10,000 (most of them in the first 1,000 waves). The first time you reach one on a tier, you get coins, alloy and chips, plus shards from tier 2. Later milestones pay more, and the final one pays 5× extra. See **Records → Milestones**.
 - **New difficulty curve:** enemies get tougher quickly at first and more gently later (polynomial instead of a fixed % per wave), so a stronger spire keeps pushing further instead of hitting a sudden wall. The wave info shows how much tougher the next wave is.
 - **Enemies get heavier:** weight now grows with the wave too (×2.4 by wave 100, ×10 by wave 1,000, ×53 by wave 10,000), so knockback, Shockwave and Gravity Well push high-wave enemies around much less. A strong spire can no longer keep a crowd at bay forever with knockback alone.
+- **Higher tiers bring heavier, faster enemies:** each tier up multiplies enemy weight by 1.6 and speed by 1.08 (×10 weight and ×1.47 speed at tier 6), on top of health and attack.
+- **Push power keeps up:** Shockwave **Force** and Gravity Well **Pull** now have 100 levels that each add 4% (×50 by the last level), and **Knockback force** grows 4% per Workshop level, capped at 5,000 m instead of 120 m. Heavier enemies need these pushed further, which is part of moving up a tier. Your current levels convert so nothing gets weaker.
 - **Gentler wave sizes:** waves still grow every 10 waves, but by less and less: 29 enemies at wave 100, 70 at wave 1,000, 200 at wave 10,000.
 - **Enemy limit:** at most 5,000 enemies on the field, and each type has its own limit (e.g. 1,700 Basic, 200 Healers, 25 Bosses). A spawn whose type is full becomes another type, and nothing spawns while the field is full.
 

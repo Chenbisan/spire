@@ -1,6 +1,6 @@
 // Spire — Ultimate weapons: run-time behaviour, effects, the Ultimates tab and manual fire buttons. Data in config.js.
 const ultLv=(k,t)=>(save.ults[k]||{})[t]||0, ultOwned=k=>!!save.ults[k];
-function ultVal(u,tr,l){const t=u.t.find(x=>x.k===tr);return+(t.base+t.per*Math.min(l,t.lv)).toFixed(3)}
+function ultVal(u,tr,l){const t=u.t.find(x=>x.k===tr),n=Math.min(l,t.lv);return+(t.mul?t.base*(1+t.mul)**n:t.base+t.per*n).toFixed(3)}
 const uv=(k,tr)=>ultVal(UK[k],tr,ultLv(k,tr));
 const trackMax=(k,t)=>ultLv(k,t.k)>=t.lv;
 // status: 0 none, 1 Silver (silver pair maxed), 2 Gold (3 maxed incl. the pair), 3 Platinum (all 4)
@@ -13,6 +13,9 @@ if((save.ultV||1)<2){for(const k in save.ults){const u=UK[k],o=ULT_OLD_LV[k];if(
   for(const t of u.t){const l=save.ults[k][t.k];if(l&&o[t.k])save.ults[k][t.k]=Math.min(t.lv,Math.round(l/o[t.k]*t.lv))}
   for(const tk of Object.keys(save.ults[k]))if(!u.t.some(t=>t.k===tk)){let back=0;for(let i=0;i<save.ults[k][tk];i++)back+=Math.ceil(10*1.6**i);delete save.ults[k][tk];if(back){save.chips+=back;save.refund=(save.refund||0)+back}}}
   save.ultV=2;persist()}
+// 1.25: Shockwave Force and Gravity Well Pull grow by % per level (100 levels); convert old levels to the same value
+if(save.ultV<3){const conv=(k,tk,old)=>{const l=(save.ults[k]||{})[tk];if(!l)return;const t=UK[k].t.find(x=>x.k===tk);save.ults[k][tk]=Math.min(t.lv,Math.round(Math.log(old(l)/t.base)/Math.log(1+t.mul)))};
+  conv('shock','force',l=>40+1.6*l);conv('grav','pull',l=>70+2*l);save.ultV=3;persist()}
 const ultFx=[]; // render-only effects (real time)
 function ultInit(){run.ult={};run.frostR=0;run.frostCap=0;for(const u of ULTS)run.ult[u.k]={cd:u.passive?0:uv(u.k,'cd')*.5,act:0,x:0,y:0,ang:0,after:0,tick:0}}
 const inRange=()=>enemies.filter(e=>!e.dead&&e.dist<=run.s.range+e.d.sz);

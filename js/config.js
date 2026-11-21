@@ -11,7 +11,7 @@ const CFG={
   towerR:14, bulletSpd:420, ebSpd:120,
   tierUnlockWave:25,                       // reach this wave to unlock the next tier
   tier:t=>({hp:4**(t-1),dmg:3**(t-1),coin:2.2**(t-1),  // coin: the tier coin multiplier, exponential so higher tiers pay off
-           shard:t<2?0:1.5**(t-2)}),
+           shard:t<2?0:1.5**(t-2),wt:1.6**(t-1),spd:1.08**(t-1)}),  // wt/spd: enemies are heavier (×10 at tier 6) and faster (×1.47 at tier 6) on higher tiers
   // enemy growth is polynomial, not exponential: a spire's power grows like a power of what it earns (exponential prices
   // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1)
   hpMul:w=>(1+(w-1)/10)**4, dmgMul:w=>(1+(w-1)/10)**3,
@@ -59,7 +59,7 @@ const ST=[
  {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.5,c:[20,1.2],w:[40,1.28],p:1},
  {k:'lifesteal',g:'Defense',n:'Lifesteal (of damage dealt)',base:0,ra:.002,wa:.001,max:.2,c:[20,1.2],w:[40,1.28],p:1},
  {k:'kbChance',g:'Defense',n:'Knockback chance',base:0,ra:.01,wa:.005,max:.8,c:[12,1.16],w:[25,1.25],p:1},
- {k:'kbForce',g:'Defense',n:'Knockback force',base:10,ra:1,wa:.8,max:120,c:[12,1.16],w:[25,1.22],u:' m'},
+ {k:'kbForce',g:'Defense',n:'Knockback force (÷ enemy weight)',base:10,mul:1,ra:.05,wm:1.04,max:5000,c:[12,1.16],w:[25,1.22],u:' m'}, // grows by % so it can keep up with heavier high-wave and high-tier enemies
  {k:'cashBonus',g:'Utility',n:'Cash per kill',base:1,ra:.05,wa:.04,c:[10,1.15],w:[20,1.2],x:1},
  {k:'waveCash',g:'Utility',n:'Cash interest',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
  {k:'coinBonus',g:'Utility',n:'Coins per kill',base:1,ra:.03,wa:.05,c:[15,1.17],w:[25,1.2],x:1},
@@ -135,7 +135,7 @@ const MODS=[
 const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.map(m=>[m.k,m]));
 // ================= Ultimate weapons =================
 // Bought and upgraded with chips (shared with Equipment). Every owned ultimate is active; each fires on its cooldown,
-// automatically or (per ultimate) when you tap its button. 4 upgrade tracks each: value = base + per × level, up to lv levels (40-100 small steps).
+// automatically or (per ultimate) when you tap its button. 4 upgrade tracks each: value = base + per × level (or base × (1 + mul)^level for strength tracks that must keep up with enemy weight), up to lv levels (40-100 small steps).
 // Status: Silver = both silverT tracks maxed (for timed ones that's duration + cooldown, which makes them permanent),
 // Gold = any 3 tracks maxed (including the Silver pair), Platinum = all 4. Each adds the bonus in sb / gb / pb.
 // Each level costs ULT.cost(level, track levels): the price follows how far along the track you are (not the raw level),
@@ -159,12 +159,12 @@ const ULTS=[
   silverT:['slow','rate'], sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'enemy shots that enter the field are destroyed', pb:'frozen enemies take double brittle damage'},
  {k:'shock',n:'Shockwave',col:'gold',d:'A blast shoves enemies around the spire outward (heavier ones move less) and stuns them.',
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
-  t:[{k:'force',n:'Force',base:40,per:1.6,lv:50,f:v=>(+v.toFixed(1))+' m'},{k:'stun',n:'Stun',base:1,per:.05,lv:60,f:S1},
+  t:[{k:'force',n:'Force',base:40,mul:.04,lv:100,f:v=>fmt(v)+' m (÷ weight)'},{k:'stun',n:'Stun',base:1,per:.05,lv:60,f:S1},
      {k:'radius',n:'Radius',base:.6,per:.008,lv:50,f:v=>PC(v)+' of range'},{k:'cd',n:'Cooldown',base:90,per:-1.4,lv:50,f:S1}],
   silverT:['stun','cd'], sb:'stunned enemies take +25% damage', gb:'the blast also deals 20× spire damage', pb:'an aftershock repeats the blast 1 s later'},
  {k:'grav',n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it.',timed:1,
   icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',
-  t:[{k:'radius',n:'Radius',base:50,per:1.2,lv:50,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,per:2,lv:50,f:v=>v+' m/s'},
+  t:[{k:'radius',n:'Radius',base:50,per:1.2,lv:50,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,mul:.04,lv:100,f:v=>fmt(v)+' m/s (÷ weight)'},
      {k:'dur',n:'Duration',base:10,per:1,lv:50,f:S1},{k:'cd',n:'Cooldown',base:300,per:-4,lv:60,f:S1}],
   silverT:['dur','cd'], sb:'always on (hops to the biggest cluster every 5 s), and enemies inside take +20% damage', gb:'deals 2× spire damage per second to everything inside', pb:'enemies inside are held: they can\'t move or attack'},
  {k:'laser',n:'Laser',col:'hot',d:'Charges up, then fires a beam toward your target that burns every enemy along it.',timed:1,
