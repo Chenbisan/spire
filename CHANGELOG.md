@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.24.1 — 2026-11-21
+- **Faster drawing:** enemies are now pre-drawn once per zoom level (per type and health step) and stamped onto the arena each frame, instead of being traced shape by shape. They look the same; big crowds paint much faster.
+
 ## 1.24.0 — 2026-11-21
 - **🎯 Target priority has its own window:** tap **Target** under the arena (next to the speed buttons). Drag enemy types above **Closest** to have the spire shoot them first, in order (ranks 1, 2, 3…); everything below Closest is shot closest-first. You can also focus a row and use ↑ / ↓. Your old Priority order carries over. Settings has a shortcut to the same window.
 - **No more enemy health bars:** an enemy's health now shows in its fill. It's solid at full health and empties to just an outline as it's worn down (in four steps). Cheaper to draw, and easier to read in a crowd.

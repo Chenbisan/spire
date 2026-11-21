@@ -2,7 +2,17 @@
 // ================= render =================
 const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
 let C={},A=1;const IX=o=>o.px+(o.x-o.px)*A,IY=o=>o.py+(o.y-o.py)*A;
-function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','barrier','bolt','alloy','shard']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}}
+let SPR={},sprKey='',colorVer=0;
+function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','barrier','bolt','alloy','shard']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}colorVer++;}
+// ---- enemy sprites: each type × health band (× facing, for types that turn) is pre-drawn once per zoom level, then stamped ----
+const SPR_ROT=16;
+function sprite(t,b,rot){const k=t+b+'_'+rot;let s=SPR[k];if(s)return s;
+  const d=ET[t],P=SHAPES[d.sh],sc=sprSc,half=Math.ceil((d.sz*1.4+2)*sc)+1,cv2=document.createElement('canvas');cv2.width=cv2.height=half*2;
+  const g=cv2.getContext('2d'),col=C[d.c],r=rot*Math.PI*2/SPR_ROT,c=Math.cos(r)*d.sz,n=Math.sin(r)*d.sz;
+  g.setTransform(sc,0,0,sc,half,half);g.beginPath();g.moveTo(P[0][0]*c-P[0][1]*n,P[0][0]*n+P[0][1]*c);for(let i=1;i<P.length;i++)g.lineTo(P[i][0]*c-P[i][1]*n,P[i][0]*n+P[i][1]*c);g.closePath();
+  g.fillStyle=col;g.globalAlpha=CFG.hpFill[b];g.fill();g.globalAlpha=1;g.strokeStyle=col;g.lineWidth=2;g.lineJoin='round';g.stroke();
+  return SPR[k]={cv:cv2,half}}
+let sprSc=1;
 readColors();
 new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
@@ -49,11 +59,13 @@ function draw(){
     // bodies: the fill shows health (solid at full, emptying to just the outline), in 4 bands, batched per type and band;
     // then one outline path per type (later types draw on top, boss last). No per-enemy health bars.
     ctx.lineWidth=2;ctx.lineJoin='round';const HF=CFG.hpFill,band=e=>{const f=e.hp/e.mhp;return f>.75?0:f>.5?1:f>.25?2:3};
-    // one pass: each enemy's shape is traced once into its type × health-band path, then each path is filled and outlined
-    const PB={};for(const t of TYPES)PB[t]=[null,null,null,null];
-    for(const e of enemies){if(e.dead||e.age<CFG.fadeIn)continue;const row=PB[e.t],b=band(e);shape(e,row[b]||(row[b]=new Path2D()))}
-    for(const t of TYPES){const col=C[ET[t].c],row=PB[t];ctx.fillStyle=col;ctx.strokeStyle=col;
-      for(let b=0;b<4;b++)if(row[b]){ctx.globalAlpha=HF[b];ctx.fill(row[b])}ctx.globalAlpha=1;for(let b=0;b<4;b++)if(row[b])ctx.stroke(row[b])}
+    // stamp pre-drawn sprites (rebuilt when the zoom or theme changes); the spinning boss is still drawn as a path
+    {const q=Math.round(Math.log2(sc)*8),key=q+'|'+colorVer;if(key!==sprKey){sprKey=key;SPR={};sprSc=2**(q/8)} // scale in ~9% steps so the smooth zoom doesn't redraw sprites every frame
+      for(const t of TYPES){const d=ET[t];
+        if(d.rot==='spin'){const col=C[d.c];ctx.fillStyle=col;ctx.strokeStyle=col;for(const e of enemies)if(e.t===t&&!e.dead&&e.age>=CFG.fadeIn){ctx.beginPath();shape(e);ctx.globalAlpha=HF[band(e)];ctx.fill();ctx.globalAlpha=1;ctx.stroke()}continue}
+        for(const e of enemies){if(e.t!==t||e.dead||e.age<CFG.fadeIn)continue;const x=IX(e),y=IY(e);
+          const rot=d.rot==='face'?((Math.round(Math.atan2(-y,-x)/(Math.PI*2)*SPR_ROT)%SPR_ROT)+SPR_ROT)%SPR_ROT:0,sp=sprite(t,band(e),rot),h=sp.half/sprSc;
+          ctx.drawImage(sp.cv,x-h,y-h,h*2,h*2)}}}
     for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=HF[band(e)]*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
     const clean=cleanFx();
