@@ -1,5 +1,11 @@
 # What's new in Spire
 
+## 1.34.0 — 2026-11-21
+- **Ultimate upgrades hit harder:** each upgrade now has **100 levels** (5 per tier) instead of 400, so every level does 4× as much: proc chance +0.5 points a level instead of +0.125, damage upgrades about +25% a level early on instead of +6%. Each level costs more to match (a tier's band costs about 65% more than before).
+- Percentages on ultimate upgrades show a decimal, so every level visibly changes.
+- Medals scale with the shorter tracks: **Silver at 40, Gold at 120, Platinum at 240** total levels (of 400).
+- Your levels convert so every ultimate stays at least as strong as before.
+
 ## 1.33.0 — 2026-11-21
 - **⚡ Ultimates rebuilt for the long game:** every upgrade now has **400 levels**, in bands of 20 (one per tier, 20 tiers for now). A band costs about what farming its tier earns in chips, so your ultimates grow with the tier you farm instead of maxing out early.
   - Strength upgrades (Chain Lightning and Laser damage, Shockwave Force, Gravity Well Pull) keep growing band after band to keep up with each tier's tougher, heavier enemies.

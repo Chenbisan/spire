@@ -26,6 +26,8 @@ if(save.ultV<4){const O=ULT_V3;
     if(t.pow)nl=Math.ceil(ULT.band*((v/t.base)**(1/t.pow)-1)-1e-9);else nl=Math.ceil((v-t.base)/(t.end-t.base)*t.lv-1e-9);
     save.ults[k][t.k]=Math.max(0,Math.min(t.lv,nl))}}
   save.ultV=4;persist()}
+// 1.34: 400 levels per track became 100 (5 per tier band); level n now equals old level 4n, so round up
+if(save.ultV<5){for(const k in save.ults)for(const tk in save.ults[k])save.ults[k][tk]=Math.min(ULT.levels,Math.ceil(save.ults[k][tk]/4));save.ultV=5;persist()}
 const ultFx=[]; // render-only effects (real time)
 function ultInit(){run.ult={};run.frostR=0;run.frostCap=0;for(const u of ULTS)run.ult[u.k]={cd:u.passive?0:uv(u.k,'cd')*.5,act:0,x:0,y:0,ang:0,after:0,tick:0}}
 const inRange=()=>enemies.filter(e=>!e.dead&&e.dist<=run.s.range+e.d.sz);
