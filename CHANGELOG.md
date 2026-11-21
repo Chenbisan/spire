@@ -1,5 +1,14 @@
 # What's new in Spire
 
+## 1.40.0 — 2026-11-21
+- **🌀 Gravity Well reworked:**
+  - **No more always-on at Silver.** Its cooldown now starts when a well opens, so Duration and Cooldown matter: once Duration matches Cooldown (both 60 s at max) there's always a well up.
+  - **Up to 3 wells at once,** each on a different cluster of enemies.
+  - **Silver, Collapse:** when a well ends, it yanks every enemy within twice its radius towards its centre.
+  - **Gold, Siphon:** every enemy that dies inside a well adds 0.5 s to it, up to double its duration, so wells overlap and a 2nd or 3rd can open.
+  - **Platinum, Heavy core:** enemies inside a well count as 50% heavier: Shockwave shakes them harder and knockback can't push them back out.
+  - The old Silver (+20% damage inside), Gold (2× spire damage per second) and Platinum (enemies held in place) are gone.
+
 ## 1.39.0 — 2026-11-21
 - **Shockwave reworked into a utility ultimate:**
   - The blast is now a **ring that travels out from the spire** to its radius, catching each enemy as it passes.

@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.39.0';
+const APP_VERSION='1.40.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -150,7 +150,7 @@ const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.ma
 //     × √(100 / lv), so each level is a big step and the price climbs fast (ultCost in ults.js).
 // cost: each ultimate's price multiplier (unlock and every level). The more impactful ones cost more, so choosing what to save for matters.
 // Medals come from how complete an ultimate is (average progress across its 4 tracks, ULT.medals: 10% / 30% / 60%).
-const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, gravMove:5, laserAim:3, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02, bossWt:.1, shaken:5, ringTime:.5, crush:1, spreadR:25};  // Shockwave: bossWt, bosses count this share of their weight; shaken, seconds the shake lasts; ringTime, game seconds the ring takes to reach its radius; crush, Silver's extra multiplier for an enemy that couldn't move at all; spreadR, how far Gold's Aftershock spreads the shake (m); frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
+const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, laserAim:3, maxWells:3, collapse:1.5, siphon:.5, heavy:1.5, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02, bossWt:.1, shaken:5, ringTime:.5, crush:1, spreadR:25};  // Gravity Well: maxWells open at once; collapse, Silver's yank = this many seconds of pull; siphon, Gold's seconds added per kill inside; heavy, Platinum's weight multiplier inside. Shockwave: bossWt, bosses count this share of their weight; shaken, seconds the shake lasts; ringTime, game seconds the ring takes to reach its radius; crush, Silver's extra multiplier for an enemy that couldn't move at all; spreadR, how far Gold's Aftershock spreads the shake (m); frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
 ULT.cost=l=>Math.ceil(ULT.c0*(1+l/ULT.band)**1.5);
 const PC1=v=>(v*100).toFixed(1).replace(/\.0$/,'')+'%'; // ultimate percentages keep a decimal so every level shows its gain
 // track levels before the 1.23 rework (old saves are converted proportionally, keeping each track's value)
@@ -173,12 +173,12 @@ const ULTS=[
   t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:18,n:'Shake multiplier',base:.5,end:5,f:v=>`×${+v.toFixed(2)} × enemy weight damage taken`},
      {k:'radius',lv:8,n:'Radius',base:.6,end:1,f:v=>PC1(v)+' of range'},{k:'cd',lv:15,n:'Cooldown',base:90,end:15,f:S1}],  // 5 s steps, fastest 15 s
   sb:'Crush: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn\'t move at all', gb:'Aftershock: when a shaken enemy dies, the shake spreads to enemies within 25 m for the time it had left', pb:'Echo: a second ring follows 1 s later'},
- {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it.',timed:1,
+ {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it. Its cooldown starts when it opens, so once Duration matches Cooldown there\'s always a well up. Up to 3 can be open at once, each on a different cluster.',timed:1,
   icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',
   t:[{k:'radius',lv:10,n:'Radius',base:50,end:150,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,pow:2,f:v=>fmt(v)+' m/s (÷ weight)'},
      {k:'dur',lv:10,n:'Duration',base:10,end:60,f:S1},{k:'cd',lv:12,n:'Cooldown',base:300,end:60,f:S1}],
-  sb:'always on (hops to the biggest cluster every 5 s), and enemies inside take +20% damage', gb:'deals 2× spire damage per second to everything inside', pb:'enemies inside are held: they can\'t move or attack'},
- {k:'laser',cost:1.5,n:'Laser',col:'hot',d:'Charges up, then fires a beam toward your target that burns every enemy along it.',timed:1,
+  sb:'Collapse: when a well ends, it yanks every enemy within twice its radius towards its centre', gb:'Siphon: every enemy that dies inside a well adds 0.5 s to it (up to double its duration), so wells can overlap', pb:'Heavy core: enemies inside a well count as 50% heavier, so Shockwave shakes them harder and knockback can\'t push them back out'},
+ {k:'laser',cost:1.5,n:'Laser',col:'hot',d:'Charges up, then fires a beam toward your target that burns every enemy along it.',timed:1,perm:1,
   icon:'<circle cx="5" cy="12" r="2.5"/><path d="M8 12h14"/><path d="M8 9.5l3 1M8 14.5l3-1"/>',
   t:[{k:'dmg',n:'Damage',base:3,pow:1.2,f:v=>`×${fmt(v)} spire damage /s`},{k:'width',lv:12,n:'Width',base:10,end:40,f:v=>(+v.toFixed(1))+' m'},
      {k:'dur',lv:12,n:'Duration',base:3,end:15,f:S1},{k:'cd',lv:12,n:'Charge time',base:60,end:12,f:S1}],

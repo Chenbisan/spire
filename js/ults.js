@@ -11,7 +11,7 @@ const ultCost=(t,l)=>Math.ceil((t.lv>=ULT.levels?ULT.cost(l):ULT.cost(Math.floor
 const ultUnlock=u=>Math.ceil(ULT.unlock*u.cost); // ... times the ultimate's own price multiplier
 // status: 0 none, 1 Silver, 2 Gold, 3 Platinum, from how complete the ultimate is (ULT.medals)
 function ultStatus(k){if(!ultOwned(k))return 0;const p=ultProg(k)+1e-9;let s=0;for(const m of ULT.medals)if(p>=m)s++;return s}
-const ultPerm=k=>UK[k].timed&&ultStatus(k)>=1; // timed ultimates at Silver are always on
+const ultPerm=k=>UK[k].perm&&ultStatus(k)>=1; // ultimates marked perm (Laser) are always on at Silver
 const ultManual=k=>!!save.set.ultMan[k]&&!ultPerm(k)&&!UK[k].passive;
 // 1.23: tracks went from 4-20 levels to 40-100; convert old levels proportionally so every track keeps its value
 // the track layout used from 1.23 to 1.32 ([base, per level, levels, % growth]); old saves convert through it
@@ -44,27 +44,46 @@ const inRange=()=>enemies.filter(e=>!e.dead&&e.dist<=run.s.range+e.d.sz);
 function ultDmgMult(e){const R=run,S=R&&R.ultSt;if(!S)return 1;let m=1;
   if(e.fs&&R.brittle)m*=1+e.fs*R.brittle*(e.frzT>0&&S.frost>=2?2:1); // Frost Field brittle: more damage per frost stack (doubled while frozen at Gold)
   if(e.shakenAt!=null&&R.time-e.shakenAt<ULT.shaken)m*=e.shakeM; // Shockwave: shaken enemies take × (multiplier × weight)
-  const g=R.ult.grav;if(g&&g.act>0&&S.grav>=1&&(e.x-g.x)**2+(e.y-g.y)**2<=uv('grav','radius')**2)m*=1.2;
   return m}
 function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u of ULTS)R.ultSt[u.k]=ultStatus(u.k);const S=R.ultSt;
   R.chainP=ultOwned('chain')?uv('chain','chance'):0; // read on every bullet hit
   frostTick(dt,S.frost||0);shockRings(dt,S.shock||0);
   for(const u of ULTS){if(!ultOwned(u.k)||u.passive)continue;const st=R.ult[u.k];
-    if(ultPerm(u.k)){ // always on; the well and the laser re-aim every few seconds
-      const mover=u.k==='grav'||u.k==='laser';if(mover)st.mv=(st.mv||0)-dt;
-      if(st.act<=0||(mover&&st.mv<=0)){st.cd=0;st.act=0;if(fireUlt(u.k,tgt))st.mv=u.k==='laser'?ULT.laserAim:ULT.gravMove}st.act=Math.max(st.act,1)}
+    if(u.k==='grav'){gravTick(dt,st,S.grav||0);continue} // its own rules: several wells, cooldown from cast
+    if(ultPerm(u.k)){ // always on; the laser re-aims every few seconds
+      st.mv=(st.mv||0)-dt;
+      if(st.act<=0||st.mv<=0){st.cd=0;st.act=0;if(fireUlt(u.k,tgt))st.mv=ULT.laserAim}st.act=Math.max(st.act,1)}
     if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true); // Platinum (Echo): a second ring
     if(st.act>0){st.act-=dt;
       // damage over time lands in dotHz chunks (same total damage, far fewer hits to process); movement stays per step
       const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
-      if(u.k==='grav'){const rad=uv('grav','radius'),r2=rad*rad,pull=uv('grav','pull'),dmg=S.grav>=2&&dotT?R.s.damage*2*dotT:0,hold=S.grav>=3;
-        forNear(st.x,st.y,rad,e=>{const dx=st.x-e.x,dy=st.y-e.y,d2=dx*dx+dy*dy;if(d2>r2)return;
-          if(d2>=1){const d=Math.sqrt(d2);walk(e,dx/d,dy/d,Math.min(d,pull*dt/e.wt))} // pulled in, but no closer than the crowd allows
-          if(hold)e.stunT=Math.max(e.stunT,dt*2);if(dmg)damage(e,dmg,0,false,1)})}
       if(u.k==='laser'&&dotT){const w=uv('laser','width')/2,dmg=R.s.damage*uv('laser','dmg')*(S.laser>=2?1.5:1)*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang),both=S.laser>=3,fl=S.laser>=1?3:1;
         for(const e of enemies){if(e.dead)continue;if(!both&&e.x*cx+e.y*cy<=0)continue;if(Math.abs(e.x*cy-e.y*cx)<=w+e.d.sz)damage(e,dmg,0,false,fl)}}}
     else if(st.cd>0)st.cd-=dt;
     if(st.cd<=0&&st.act<=0&&!ultManual(u.k)&&tgt)fireUlt(u.k,tgt)}}
+// Gravity Well: each well opens on the biggest cluster not already inside a well and pulls enemies within its radius in (pull ÷
+// weight, never through the crowd). The cooldown counts from when a well opens, so Duration ≥ Cooldown keeps one up for good;
+// up to ULT.maxWells at once. Silver: a well that ends collapses, yanking everything within 2× its radius in. Gold: kills inside
+// add ULT.siphon s (up to 2× its duration). Platinum: enemies inside are ULT.heavy × as heavy (wtOf).
+function gravTick(dt,st,S){const R=run,W=R.wells||(R.wells=[]),rad=uv('grav','radius'),r2=rad*rad,pull=uv('grav','pull');
+  for(let i=W.length-1;i>=0;i--){const w=W[i];w.act-=dt;
+    forNear(w.x,w.y,rad,e=>{const dx=w.x-e.x,dy=w.y-e.y,d2=dx*dx+dy*dy;if(d2>r2)return;if(S>=3)e.heavyAt=R.time;
+      if(d2>=1){const d=Math.sqrt(d2);walk(e,dx/d,dy/d,Math.min(d,pull*dt/e.wt))}}); // pulled in, but no closer than the crowd allows
+    if(w.act<=0){if(S>=1)gravCollapse(w,rad,pull);W.splice(i,1)}}
+  if(st.cd>0)st.cd-=dt;st.act=0;
+  if(st.cd<=0&&!ultManual('grav'))openWell(st)}
+function openWell(st){const R=run,W=R.wells||(R.wells=[]);if(W.length>=ULT.maxWells||R.over)return false;
+  const rad=uv('grav','radius'),r2=rad*rad,inWell=e=>W.some(w=>(e.x-w.x)**2+(e.y-w.y)**2<=r2);
+  const near=inRange().filter(e=>!inWell(e));if(!near.length)return false;const m=Math.min(near.length,ULT.gravSample);let best=near[0],bc=-1;
+  // up to gravSample candidates (all of them in small crowds), each counting its neighbours through the grid
+  for(let i=0;i<m;i++){const a=m<near.length?near[Math.floor(Math.random()*near.length)]:near[i];let c=0;forNear(a.x,a.y,rad,b=>{if((a.x-b.x)**2+(a.y-b.y)**2<=r2)c++});if(c>bc){bc=c;best=a}}
+  const dur=uv('grav','dur');W.push({x:best.x,y:best.y,act:dur,max:dur*2});st.cd=uv('grav','cd');save.stats.ultUses++;return true}
+function gravCollapse(w,rad,pull){const R2=(2*rad)**2;forNear(w.x,w.y,2*rad,e=>{const dx=w.x-e.x,dy=w.y-e.y,d2=dx*dx+dy*dy;if(d2>R2||d2<1)return;
+  const d=Math.sqrt(d2);walk(e,dx/d,dy/d,Math.min(d,pull*ULT.collapse/e.wt));e.px=e.x;e.py=e.y;e.rest=0});ultFx.push({k:'collapse',x:w.x,y:w.y,r:2*rad,at:performance.now()})}
+// Gold (Siphon): a kill inside a well keeps it open longer
+function gravSiphon(e){const W=run.wells;if(!W)return;const r2=uv('grav','radius')**2;for(const w of W)if((e.x-w.x)**2+(e.y-w.y)**2<=r2){w.act=Math.min(w.max,w.act+ULT.siphon);break}}
+// how heavy an enemy counts for being pushed or shaken: Gravity Well Platinum makes those inside a well heavier
+const wtOf=e=>e.wt*(run&&run.ultSt&&run.ultSt.grav>=3&&e.heavyAt!=null&&run.time-e.heavyAt<.25?ULT.heavy:1);
 // Frost Field: always on. Every 1/rate s, enemies touching the field gain a frost stack. Stacks never wear off and have
 // no limit; slow is stacks × ULT.frostPer up to the Max slow track (95% at most), brittle adds damage taken per stack.
 function frostTick(dt,st){const R=run;if(!ultOwned('frost')){R.frostR=R.frostCap=R.brittle=0;return}
@@ -79,7 +98,7 @@ function frostTick(dt,st){const R=run;if(!ultOwned('frost')){R.frostR=R.frostCap
 // never through the crowd) and shaken for ULT.shaken s: it takes damage × (multiplier × weight) from everything. No damage of its own.
 let ringId=0;
 // how hard enemy e is shaken: the multiplier × its weight (bosses count bossWt of theirs), never below 1
-const shakeOf=e=>Math.max(1,uv('shock','dmg')*(e.d.r===3?e.wt*ULT.bossWt:e.wt));
+const shakeOf=e=>Math.max(1,uv('shock','dmg')*(e.d.r===3?wtOf(e)*ULT.bossWt:wtOf(e)));
 // Gold (Aftershock): a shaken enemy that dies passes its shake to enemies within spreadR for the time it had left,
 // at each one's own strength (a stronger or longer shake already on them is kept)
 function shakeSpread(e){const R=run,r2=ULT.spreadR**2;forNear(e.x,e.y,ULT.spreadR,o=>{if(o===e||(o.x-e.x)**2+(o.y-e.y)**2>r2)return;
@@ -89,7 +108,7 @@ function shockBlast(after){const R=run;(R.rings||(R.rings=[])).push({id:++ringId
 function shockRings(dt,st){const R=run;if(!R.rings||!R.rings.length)return;const f=uv('shock','force'),lim=spawnMax();
   for(let i=R.rings.length-1;i>=0;i--){const g=R.rings[i],r0=g.r;g.r=Math.min(g.rad,g.r+g.rad/ULT.ringTime*dt);
     const hit=enemies.filter(e=>!e.dead&&e.ring!==g.id&&e.dist-e.d.sz<=g.r&&e.dist+e.d.sz>=r0-1).sort((a,b)=>b.dist-a.dist);
-    for(const e of hit){e.ring=g.id;const d=Math.hypot(e.x,e.y)||1,m=Math.min(f/e.wt,lim-d);let moved=m;
+    for(const e of hit){e.ring=g.id;const d=Math.hypot(e.x,e.y)||1,m=Math.min(f/wtOf(e),lim-d);let moved=m;
       if(m>0){moved=walk(e,e.x/d,e.y/d,m);e.px=e.x;e.py=e.y;e.rest=0}
       const blocked=m>0?Math.max(0,1-moved/m):0;
       e.shakeM=shakeOf(e)*(st>=1?1+blocked*ULT.crush:1);e.shakenAt=R.time} // Silver (Crush): pinned enemies are shaken harder
@@ -113,21 +132,18 @@ function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),nf=uv('
     for(const o of chainNear){if(hitN>=ULT.chainMax)break;o.cz=stamp;hitN++;if(segs)segs.push([e.x,e.y,o.x,o.y,Math.random()-.5,Math.random()-.5,dp]);chainQ.push(o);chainV.push(v*mul);chainD.push(dp+1)}}
   if(fx)ultFx.push({k:'chain',x:e0.x,y:e0.y,segs,at:performance.now()})}
 function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[k].passive||st.cd>0||st.act>0||R.over)return false;
+  if(k==='grav')return openWell(st);
   const near=inRange();if(!near.length)return false;tgt=tgt&&!tgt.dead?tgt:near.sort((a,b)=>a.dist-b.dist)[0];
   st.cd=uv(k,'cd');save.stats.ultUses++;const S=R.ultSt||{},now=performance.now();
   if(k==='shock'){shockBlast(false);if(S.shock>=3)st.after=ULT.aftershock}
   else if(k==='laser'){st.ang=Math.atan2(tgt.y,tgt.x);st.act=uv('laser','dur')}
-  else if(k==='grav'){const rad=uv('grav','radius'),r2=rad*rad,m=Math.min(near.length,ULT.gravSample);let best=near[0],bc=-1;
-    // up to gravSample candidates (all of them in small crowds), each counting its neighbours through the grid
-    for(let i=0;i<m;i++){const a=m<near.length?near[Math.floor(Math.random()*near.length)]:near[i];let c=0;forNear(a.x,a.y,rad,b=>{if((a.x-b.x)**2+(a.y-b.y)**2<=r2)c++});if(c>bc){bc=c;best=a}}
-    st.x=best.x;st.y=best.y;st.act=uv('grav','dur')}
   return true}
 // ---- drawing (called from draw()) ----
 function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.now(),dpr=W/(stage.clientWidth||W);
   if(R.frostR){ctx.fillStyle=C.alloy;ctx.globalAlpha=.08;ctx.beginPath();ctx.arc(0,0,R.frostR,0,6.283);ctx.fill();ctx.globalAlpha=.55;ctx.strokeStyle=C.alloy;ctx.lineWidth=2*dpr/sc;ctx.stroke();ctx.globalAlpha=1}
-  const g=R.ult.grav;if(g&&g.act>0&&ultOwned('grav')){const r=uv('grav','radius'),a0=now/300;ctx.strokeStyle=C.shard;ctx.lineWidth=2*dpr/sc;
-    for(let i=0;i<3;i++){ctx.globalAlpha=.25+.2*i;ctx.beginPath();ctx.arc(g.x,g.y,r*(1-i*.3),a0+i,a0+i+4);ctx.stroke()}
-    ctx.globalAlpha=.12;ctx.fillStyle=C.shard;ctx.beginPath();ctx.arc(g.x,g.y,r,0,6.283);ctx.fill();ctx.globalAlpha=1}
+  if(R.wells&&R.wells.length&&ultOwned('grav')){const r=uv('grav','radius'),a0=now/300;ctx.strokeStyle=C.shard;ctx.lineWidth=2*dpr/sc;
+    for(const g of R.wells){for(let i=0;i<3;i++){ctx.globalAlpha=.25+.2*i;ctx.beginPath();ctx.arc(g.x,g.y,r*(1-i*.3),a0+i,a0+i+4);ctx.stroke()}
+      ctx.globalAlpha=.12;ctx.fillStyle=C.shard;ctx.beginPath();ctx.arc(g.x,g.y,r,0,6.283);ctx.fill()}ctx.globalAlpha=1}
   const L=R.ult.laser;if(L&&ultOwned('laser')){const len=spawnMax()*1.5,w=uv('laser','width');
     if(L.act>0){const cx=Math.cos(L.ang)*len,cy=Math.sin(L.ang)*len,fl=.85+.15*Math.sin(now/40),x0=(R.ultSt&&R.ultSt.laser>=3)?-cx:0,y0=(R.ultSt&&R.ultSt.laser>=3)?-cy:0;
       ctx.lineCap='round';ctx.strokeStyle=C.hot;ctx.globalAlpha=.25*fl;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(cx,cy);ctx.stroke();
@@ -139,6 +155,7 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     if(f.k==='chain'){if(i<ultFx.length-CFG.boltsDrawn)continue; // only the newest bolts; one path each
       ctx.strokeStyle=C.bolt;ctx.globalAlpha=1-k;ctx.fillStyle=C.bolt;ctx.beginPath();ctx.arc(f.x,f.y,5*dpr/sc,0,6.283);ctx.fill();
       ctx.lineWidth=2*dpr/sc;ctx.beginPath();for(const [x0,y0,x1,y1,jx,jy] of f.segs){const L=Math.hypot(x1-x0,y1-y0)*.35;ctx.moveTo(x0,y0);ctx.lineTo((x0+x1)/2+jx*L,(y0+y1)/2+jy*L);ctx.lineTo(x1,y1)}ctx.stroke()}
+    else if(f.k==='collapse'){ctx.strokeStyle=C.shard;ctx.lineWidth=3*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1-k),0,6.283);ctx.stroke()}
     else if(f.k==='shock'){ctx.strokeStyle=C.gold;ctx.lineWidth=(f.after?2.5:4)*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(0,0,CFG.towerR+k*f.r,0,6.283);ctx.stroke()}}
   ctx.globalAlpha=1;
   // frozen enemies (Frost Field Silver) get a solid icy ring
