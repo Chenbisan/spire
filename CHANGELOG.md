@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.29.0 — 2026-11-21
+- **Tiers unlock much later:** the next tier now unlocks at **wave 5,000** (half way to a tier's final wave) instead of wave 25, so each tier is a long climb and pushing deep is how you earn: higher waves spawn more enemies, more of them are tanks and elites, and every kill pays more. Tiers you've already unlocked stay unlocked.
+
 ## 1.28.0 — 2026-11-21
 - **🏁 Every tier has a finish line:** **wave 10,000** is the last. Once you reach it nothing more spawns, and you clear the tier by **destroying every enemy left** on the field (the top bar counts them down). Holding the crowd off isn't enough. The run ends as a win, and cleared tiers are marked in your records.
 - **🏆 Milestones:** 30 per tier, from wave 10 to wave 10,000 (most of them in the first 1,000 waves). The first time you reach one on a tier, you get coins, alloy and chips, plus shards from tier 2. Later milestones pay more, and the final one, paid for clearing the tier, pays 5× extra. See **Records → Milestones**.

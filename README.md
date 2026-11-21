@@ -31,7 +31,7 @@ python -m http.server 8000
 - **Chips** drop from bosses and buy **Equipment**: items that add a mechanic rather than plain stats (Second Wind, Wave Rush), equipped into slots and levelled to 5 stars. Plain stat boosts come from upgrades instead.
 - **Alloy** drops from elites and buys **Modules**: one per slot (Cannon, Armor, Core, Generator), 2 choices each, levelled to 40. Every 10 levels a module ranks up (Common → Rare → Epic → Legendary), boosting its special effect.
 - Both are bought directly (no random draws) and can be swapped mid-run.
-- **Tiers:** reaching wave 25 unlocks the next tier, which has tougher enemies and more coins.
+- **Tiers:** reaching wave 5,000 (`CFG.tierUnlockWave`) unlocks the next tier, which has tougher enemies and more coins.
 - **Final wave and milestones:** reaching wave 10,000 (`CFG.finalWave`) stops spawning; destroying every enemy left clears the tier. 30 milestones per tier (`MILESTONES`, rewards from `msReward`) pay coins, alloy, chips and shards the first time each wave is reached; Records → Milestones lists them.
 - **Enemy growth** is polynomial (`CFG.hpMul` / `dmgMul`, and weight via `wtMul`), and the field holds at most 5,000 enemies (`CFG.enemyCap`, plus a `cap` per type in `ET`).
 - **Records:** the clock button (top right) has a Lifetime stats sheet (earnings, combat, upgrades, per-tier bests) and a Battle history that lists your last 30 runs: tier, wave, coins, coins per hour, shards, kills and run time, with best waves and runs you ended early marked.
