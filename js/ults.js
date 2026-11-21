@@ -40,7 +40,7 @@ function ultInit(){run.ult={};run.frostR=0;run.frostCap=0;for(const u of ULTS)ru
 const inRange=()=>enemies.filter(e=>!e.dead&&e.dist<=run.s.range+e.d.sz);
 // extra damage enemies take from Silver ultimates
 function ultDmgMult(e){const R=run,S=R&&R.ultSt;if(!S)return 1;let m=1;
-  if(e.fs&&R.brittle)m*=1+e.fs*R.brittle*(e.frzT>0&&S.frost>=3?2:1); // Frost Field brittle: more damage per frost stack (doubled while frozen at Platinum)
+  if(e.fs&&R.brittle)m*=1+e.fs*R.brittle*(e.frzT>0&&S.frost>=2?2:1); // Frost Field brittle: more damage per frost stack (doubled while frozen at Gold)
   if(e.stunT>0&&S.shock>=1)m*=1.25;
   const g=R.ult.grav;if(g&&g.act>0&&S.grav>=1&&(e.x-g.x)**2+(e.y-g.y)**2<=uv('grav','radius')**2)m*=1.2;
   return m}
@@ -71,7 +71,8 @@ function frostTick(dt,st){const R=run;if(!ultOwned('frost')){R.frostR=R.frostCap
   if(F.tick>=1/uv('frost','rate')){F.tick=0;const r=R.frostR;
     for(const e of enemies){if(e.dead||e.dist>r+e.d.sz)continue;e.fs++;
       if(st>=1&&!e.frz1&&e.fs>=maxSt){e.frz1=true;e.frzT=ULT.freeze}}} // Silver: freeze the first time it reaches max slow
-  if(st>=2){const r2=R.frostR**2;for(let i=ebs.length-1;i>=0;i--){const b=ebs[i];if(b.x*b.x+b.y*b.y<=r2){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b)}}}} // Gold: shots melt in the field
+  // Platinum: each step an enemy shot spends inside the field it may melt, ULT.melt chance per 10 m travelled
+  if(st>=3){const r2=R.frostR**2,p=1-(1-ULT.melt)**(CFG.ebSpd*dt/10);for(let i=ebs.length-1;i>=0;i--){const b=ebs[i];if(b.x*b.x+b.y*b.y<=r2&&Math.random()<p){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b)}}}}
 function shockBlast(after){const R=run,S=R.ultSt||{},f=uv('shock','force'),sn=uv('shock','stun'),lim=spawnMax(),rad=R.s.range*uv('shock','radius'),bd=S.shock>=2?R.s.damage*20:0;
   // outermost first, so each one has room to be pushed back into; nobody is shoved through the crowd behind it
   const hit=enemies.filter(e=>!e.dead&&e.dist<=rad+e.d.sz).sort((a,b)=>b.dist-a.dist);

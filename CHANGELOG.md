@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.37.0 — 2026-11-21
+- **Frost Field medals reworked:** destroying every enemy shot made Ranged enemies harmless, so:
+  - **Gold** is now *frozen enemies take double brittle damage* (was Platinum).
+  - **Platinum** is now *enemy shots inside the field have a 2% chance to melt for every 10 m they travel* (was Gold, where every shot was destroyed). A shot crossing 100 m of field melts about 18% of the time.
+
 ## 1.36.0 — 2026-11-21
 - **Stronger ultimates cost more:** each ultimate now has its own price, for unlocking and for every level. **Chain Lightning** and **Laser** ×1.5, **Frost Field** ×1.25, **Gravity Well** ×1, **Shockwave** ×0.75. Save up for a big one, or spread your chips across cheaper ones to push higher sooner. Each ultimate shows its price multiplier when you open it.
 

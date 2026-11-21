@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.36.0';
+const APP_VERSION='1.37.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -149,7 +149,7 @@ const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.ma
 //     × √(100 / lv), so each level is a big step and the price climbs fast (ultCost in ults.js).
 // cost: each ultimate's price multiplier (unlock and every level). The more impactful ones cost more, so choosing what to save for matters.
 // Medals come from how complete an ultimate is (average progress across its 4 tracks, ULT.medals: 10% / 30% / 60%).
-const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, gravMove:5, laserAim:3, aftershock:1, gravSample:64, frostPer:.05, freeze:5};  // frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s)
+const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, gravMove:5, laserAim:3, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02};  // frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
 ULT.cost=l=>Math.ceil(ULT.c0*(1+l/ULT.band)**1.5);
 const PC1=v=>(v*100).toFixed(1).replace(/\.0$/,'')+'%'; // ultimate percentages keep a decimal so every level shows its gain
 // track levels before the 1.23 rework (old saves are converted proportionally, keeping each track's value)
@@ -166,7 +166,7 @@ const ULTS=[
   icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
   t:[{k:'slow',lv:13,n:'Max slow',base:.3,end:.95,f:v=>PC1(v)+` (${Math.ceil(v/ULT.frostPer-1e-9)} stacks)`},{k:'rate',lv:14,n:'Tick rate',base:.5,end:4,f:v=>(+v.toFixed(2))+' ticks/s'},
      {k:'radius',lv:14,n:'Radius',base:.6,end:2,f:v=>PC1(v)+' of range'},{k:'brittle',lv:18,n:'Brittle',base:.002,end:.02,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
-  sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'enemy shots that enter the field are destroyed', pb:'frozen enemies take double brittle damage'},
+  sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'frozen enemies take double brittle damage', pb:'enemy shots inside the field have a 2% chance to melt for every 10 m they travel'},
  {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:'A blast shoves enemies around the spire outward (heavier ones move less) and stuns them.',
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
   t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'stun',lv:12,n:'Stun',base:1,end:4,f:S1},
