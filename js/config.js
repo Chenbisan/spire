@@ -171,7 +171,7 @@ const ULTS=[
  {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:'A ring bursts out from the spire, shoving enemies outward (heavier ones move less) and shaking them for 5 s: a shaken enemy takes damage × (the multiplier × its weight) from everything, so the heavier the enemy, the more it takes. The answer to Tanks that shrug off knockback. Bosses resist: only 10% of their weight counts.',
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
   t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:18,n:'Shake multiplier',base:.5,end:5,f:v=>`×${+v.toFixed(2)} × enemy weight damage taken`},
-     {k:'radius',lv:8,n:'Radius',base:.6,end:1,f:v=>PC1(v)+' of range'},{k:'cd',lv:14,n:'Cooldown',base:90,end:20,f:S1}],
+     {k:'radius',lv:8,n:'Radius',base:.6,end:1,f:v=>PC1(v)+' of range'},{k:'cd',lv:15,n:'Cooldown',base:90,end:15,f:S1}],  // 5 s steps, fastest 15 s
   sb:'Crush: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn\'t move at all', gb:'Aftershock: when a shaken enemy dies, the shake spreads to enemies within 25 m for the time it had left', pb:'Echo: a second ring follows 1 s later'},
  {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it.',timed:1,
   icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',

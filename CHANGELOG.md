@@ -4,6 +4,7 @@
 - **Shockwave reworked into a utility ultimate:**
   - The blast is now a **ring that travels out from the spire** to its radius, catching each enemy as it passes.
   - It no longer stuns. Every enemy the ring reaches is **shaken for 5 s**: it takes damage × (the **Shake multiplier** × its weight) from everything. A ×3 multiplier on a weight-30 enemy means it takes 90× damage from your shots and ultimates. Tanks that shrug off knockback are exactly what it's for. **Bosses resist:** only 10% of a boss's weight counts.
+  - Cooldown now goes down to **15 s** (was 20 s), in 15 steps of 5 s.
   - The Stun upgrade is replaced by the **Shake multiplier** (×0.5 → ×5 in 18 steps); chips you spent on Stun are refunded.
   - New medals: **Silver, Crush**: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn't move at all · **Gold, Aftershock**: when a shaken enemy dies, the shake spreads to enemies within 25 m for the time it had left, so kills snowball · **Platinum, Echo**: a second ring follows 1 s later (the old aftershock).
 
