@@ -1,21 +1,31 @@
 // Spire — Ultimate weapons: run-time behaviour, effects, the Ultimates tab and manual fire buttons. Data in config.js.
 const ultLv=(k,t)=>(save.ults[k]||{})[t]||0, ultOwned=k=>!!save.ults[k];
-function ultVal(u,tr,l){const t=u.t.find(x=>x.k===tr),n=Math.min(l,t.lv);return+(t.mul?t.base*(1+t.mul)**n:t.base+t.per*n).toFixed(3)}
+// strength tracks grow base × (1 + level/band)^pow; the rest move evenly from base to end over all levels
+const trackVal=(t,l)=>{const n=Math.min(l,t.lv);return t.pow?t.base*(1+n/ULT.band)**t.pow:t.base+(t.end-t.base)*n/t.lv};
+function ultVal(u,tr,l){return+trackVal(u.t.find(x=>x.k===tr),l).toFixed(4)}
 const uv=(k,tr)=>ultVal(UK[k],tr,ultLv(k,tr));
-const trackMax=(k,t)=>ultLv(k,t.k)>=t.lv;
-// status: 0 none, 1 Silver (silver pair maxed), 2 Gold (3 maxed incl. the pair), 3 Platinum (all 4)
-function ultStatus(k){const u=UK[k];if(!ultOwned(k))return 0;const n=u.t.filter(t=>trackMax(k,t)).length;
-  if(!u.silverT.every(tk=>trackMax(k,u.t.find(t=>t.k===tk))))return 0;return n>=4?3:n>=3?2:1}
+// status: 0 none, 1 Silver, 2 Gold, 3 Platinum, from the total levels across the ultimate's 4 tracks (ULT.medals)
+function ultStatus(k){if(!ultOwned(k))return 0;const n=UK[k].t.reduce((a,t)=>a+ultLv(k,t.k),0);let s=0;for(const m of ULT.medals)if(n>=m)s++;return s}
 const ultPerm=k=>UK[k].timed&&ultStatus(k)>=1; // timed ultimates at Silver are always on
 const ultManual=k=>!!save.set.ultMan[k]&&!ultPerm(k)&&!UK[k].passive;
 // 1.23: tracks went from 4-20 levels to 40-100; convert old levels proportionally so every track keeps its value
+// the track layout used from 1.23 to 1.32 ([base, per level, levels, % growth]); old saves convert through it
+const ULT_V3={chain:{chance:[.1,.01,50],jumps:[2,.1,40],mult:[.4,.01,50],dmg:[2,.2,100]},frost:{slow:[.3,.013,50],rate:[.5,.07,50],radius:[.6,.028,50],brittle:[.002,.00018,100]},
+    shock:{force:[40,0,100,.04],stun:[1,.05,60],radius:[.6,.008,50],cd:[90,-1.4,50]},grav:{radius:[50,1.2,50],pull:[70,0,100,.04],dur:[10,1,50],cd:[300,-4,60]},laser:{dmg:[3,.3,100],width:[10,.4,50],dur:[3,.2,60],cd:[60,-.8,60]}};
 if((save.ultV||1)<2){for(const k in save.ults){const u=UK[k],o=ULT_OLD_LV[k];if(!u||!o)continue;
-  for(const t of u.t){const l=save.ults[k][t.k];if(l&&o[t.k])save.ults[k][t.k]=Math.min(t.lv,Math.round(l/o[t.k]*t.lv))}
+  for(const t of u.t){const l=save.ults[k][t.k];if(l&&o[t.k])save.ults[k][t.k]=Math.min((ULT_V3[k][t.k]||[0,0,t.lv])[2],Math.round(l/o[t.k]*((ULT_V3[k][t.k]||[0,0,t.lv])[2])))}
   for(const tk of Object.keys(save.ults[k]))if(!u.t.some(t=>t.k===tk)){let back=0;for(let i=0;i<save.ults[k][tk];i++)back+=Math.ceil(10*1.6**i);delete save.ults[k][tk];if(back){save.chips+=back;save.refund=(save.refund||0)+back}}}
   save.ultV=2;persist()}
 // 1.25: Shockwave Force and Gravity Well Pull grow by % per level (100 levels); convert old levels to the same value
-if(save.ultV<3){const conv=(k,tk,old)=>{const l=(save.ults[k]||{})[tk];if(!l)return;const t=UK[k].t.find(x=>x.k===tk);save.ults[k][tk]=Math.min(t.lv,Math.round(Math.log(old(l)/t.base)/Math.log(1+t.mul)))};
+if(save.ultV<3){const conv=(k,tk,old)=>{const l=(save.ults[k]||{})[tk];if(!l)return;const o=ULT_V3[k][tk];save.ults[k][tk]=Math.min(o[2],Math.round(Math.log(old(l)/o[0])/Math.log(1+o[3])))};
   conv('shock','force',l=>40+1.6*l);conv('grav','pull',l=>70+2*l);save.ultV=3;persist()}
+// 1.33: every track has 400 levels in tier bands; convert each level to the first new level that's at least as strong
+if(save.ultV<4){const O=ULT_V3;
+  for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k],o=O[k]&&O[k][t.k];if(!l||!o)continue;
+    const n=Math.min(l,o[2]),v=o[3]?o[0]*(1+o[3])**n:o[0]+o[1]*n;let nl=0;
+    if(t.pow)nl=Math.ceil(ULT.band*((v/t.base)**(1/t.pow)-1)-1e-9);else nl=Math.ceil((v-t.base)/(t.end-t.base)*t.lv-1e-9);
+    save.ults[k][t.k]=Math.max(0,Math.min(t.lv,nl))}}
+  save.ultV=4;persist()}
 const ultFx=[]; // render-only effects (real time)
 function ultInit(){run.ult={};run.frostR=0;run.frostCap=0;for(const u of ULTS)run.ult[u.k]={cd:u.passive?0:uv(u.k,'cd')*.5,act:0,x:0,y:0,ang:0,after:0,tick:0}}
 const inRange=()=>enemies.filter(e=>!e.dead&&e.dist<=run.s.range+e.d.sz);
@@ -117,7 +127,7 @@ const ultIcon=u=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke
 let ultOpen=null;
 // levels to buy on a track with the ×1 / ×10 / Max selector, and their total cost (Max: as many as you can afford)
 function ultBuyPlan(k,t){const l=ultLv(k,t.k),lim=ui.mult==='Max'?t.lv:ui.mult;let n=0,c=0;
-  while(n<lim&&l+n<t.lv){const nc=ULT.cost(l+n,t.lv);if(ui.mult==='Max'&&n>0&&c+nc>save.chips)break;c+=nc;n++}return{n,c}}
+  while(n<lim&&l+n<t.lv){const nc=ULT.cost(l+n);if(ui.mult==='Max'&&n>0&&c+nc>save.chips)break;c+=nc;n++}return{n,c}}
 const ultDone=k=>UK[k].t.reduce((a,t)=>a+ultLv(k,t.k),0),ultTotal=k=>UK[k].t.reduce((a,t)=>a+t.lv,0);
 function ultsHtml(){
   if(!ultOpen||!ultOwned(ultOpen))ultOpen=(ULTS.find(u=>ultOwned(u.k))||{}).k||null;
@@ -126,15 +136,15 @@ function ultsHtml(){
     h+=`<div class="urow${open?' open':''}${own?'':' locked'}" style="--c:var(--${u.col})">`;
     h+=`<button class="uhead" ${own?`data-uopen="${u.k}" aria-expanded="${open}"`:'tabindex="-1"'}>${ultIcon(u)}<span class="un"><b>${u.n}</b> ${medal(u.k)}<i class="uprog"><i style="transform:scaleX(${done/tot})"></i></i></span><span class="ul">${own?`${Math.round(done/tot*100)}%`:''}</span></button>`;
     if(!own)h+=`<button class="buy chip ubuy" data-ubuy="${u.k}" ${save.chips>=ULT.unlock?'':'disabled'}>Unlock ${fmt(ULT.unlock)}</button>`;
-    if(open){const stt=ultStatus(u.k),pair=u.silverT.map(tk=>u.t.find(t=>t.k===tk).n).join(' + ');
-      h+=`<div class="ubody"><p class="note">${u.d}</p><div class="ustat"><span class="medal s${stt>=1?' on':''}">Silver</span><span>${pair} maxed: <b>${u.sb}</b></span><span class="medal g${stt>=2?' on':''}">Gold</span><span>Any 3 maxed: <b>${u.gb}</b></span><span class="medal p${stt>=3?' on':''}">Platinum</span><span>All 4 maxed: <b>${u.pb}</b></span></div>`;
+    if(open){const stt=ultStatus(u.k),M=ULT.medals,lvl=n=>`${fmt(Math.min(done,n))}/${fmt(n)} levels`;
+      h+=`<div class="ubody"><p class="note">${u.d}</p><div class="ustat"><span class="medal s${stt>=1?' on':''}">Silver</span><span>${lvl(M[0])}: <b>${u.sb}</b></span><span class="medal g${stt>=2?' on':''}">Gold</span><span>${lvl(M[1])}: <b>${u.gb}</b></span><span class="medal p${stt>=3?' on':''}">Platinum</span><span>${lvl(M[2])}: <b>${u.pb}</b></span></div>`;
       for(const t of u.t){const l=ultLv(u.k,t.k),mx=l>=t.lv,cur=ultVal(u,t.k,l),{n,c}=mx?{n:0,c:0}:ultBuyPlan(u.k,t),nx=ultVal(u,t.k,l+n);
-        h+=`<div class="utr"><div><b>${u.silverT.includes(t.k)?'★ ':''}${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${l/t.lv})"></i></i><span class="v">Lv ${l}/${t.lv}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
+        h+=`<div class="utr"><div><b>${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${l/t.lv})"></i></i><span class="v">Lv ${l}/${t.lv}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
       h+=respecBtn('ult:'+u.k,'Refund upgrades');
       h+=u.aura?'<p class="note" style="margin:4px 0 0">Always on, no cooldown.</p>':u.passive?'<p class="note" style="margin:4px 0 0">Triggers on your shots, no cooldown.</p>':ultPerm(u.k)?'<p class="note" style="margin:4px 0 0">Always on.</p>':`<div class="subs" style="margin:6px 0 0"><button data-umode="${u.k}" data-v="auto" class="${ultManual(u.k)?'':'on'}">Auto</button><button data-umode="${u.k}" data-v="man" class="${ultManual(u.k)?'on':''}">Manual</button></div>`;
       h+='</div>'}
     h+='</div>'}
-  return h+'</div><p class="note" style="margin-top:8px">Bought with <b class="chip">chips</b> (shared with Equipment). Every ultimate you own is active. Max the 2 ★ upgrades for <b>Silver</b>, any 3 for <b>Gold</b>, all 4 for <b>Platinum</b>; each adds a bonus.</p>'}
+  return h+`</div><p class="note" style="margin-top:8px">Bought with <b class="chip">chips</b> (shared with Equipment). Every ultimate you own is active. Its medals come from the total levels across its 4 upgrades: <b>Silver</b> at ${ULT.medals[0]}, <b>Gold</b> at ${ULT.medals[1]}, <b>Platinum</b> at ${ULT.medals[2]}; each adds a bonus. Upgrades come in bands of ${ULT.band} levels, one per tier, priced for what that tier earns.</p>`}
 $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const d=b.dataset;
   if(d.uopen){ultOpen=ultOpen===d.uopen?'':d.uopen;loSig='';refreshLoadout();return}
   if(d.ubuy){if(save.chips<ULT.unlock)return;save.chips-=ULT.unlock;save.stats.chipsSpent=(save.stats.chipsSpent||0)+ULT.unlock;save.ults[d.ubuy]={};ultOpen=d.ubuy;if(run&&run.ult&&!UK[d.ubuy].passive)run.ult[d.ubuy].cd=uv(d.ubuy,'cd')*.5}

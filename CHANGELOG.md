@@ -1,5 +1,13 @@
 # What's new in Spire
 
+## 1.33.0 — 2026-11-21
+- **⚡ Ultimates rebuilt for the long game:** every upgrade now has **400 levels**, in bands of 20 (one per tier, 20 tiers for now). A band costs about what farming its tier earns in chips, so your ultimates grow with the tier you farm instead of maxing out early.
+  - Strength upgrades (Chain Lightning and Laser damage, Shockwave Force, Gravity Well Pull) keep growing band after band to keep up with each tier's tougher, heavier enemies.
+  - Other upgrades (chances, slow, radius, durations, cooldowns) move evenly towards their final value over all 400 levels.
+  - **Medals no longer need maxed upgrades:** they come from the total levels across an ultimate's 4 upgrades: **Silver at 160, Gold at 480, Platinum at 960** (of 1,600).
+  - Your current levels convert so every ultimate is exactly as strong as before.
+- **Tier scaling that lasts to tier 20 and beyond:** tier multipliers now grow as powers of the tier instead of multiplying every tier. Enemy health tier^3.5 (×11 on tier 2, ×128 on tier 4, ×36k on tier 20), attack tier³, weight tier^1.2, speed +3% per tier, chip and alloy drops tier^1.5, shards (tier − 1)^1.5.
+
 ## 1.32.0 — 2026-11-21
 - **Next tier at wave 2,500** (was 5,000). Farming a lower tier to get stronger, then pushing a higher one, is part of the game.
 - **Higher tiers pay much more, sooner:** the tier coin multiplier is now tier³ instead of ×2.2 per tier: ×8 coins on tier 2 (was ×2.2), ×27 on tier 3 (×4.8), ×125 on tier 5 (×23), ×1,000 on tier 10. It keeps growing without running away exponentially, so it still makes sense at tier 20 and beyond.
