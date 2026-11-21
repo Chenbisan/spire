@@ -2,7 +2,8 @@
 
 ## 1.31.0 — 2026-11-21
 - **Healers reworked:** a big pack of Healers could keep a crowd alive forever. Now:
-  - They heal a **flat amount**, half of the Healer's own max health, instead of 10% of the target's. Tanks and bosses with huge health pools barely notice a heal.
+  - They pulse **every 15 s** (was every second) and reach **25 m** (was 70 m).
+  - Each pulse heals a **flat amount**, half of the Healer's own max health, instead of 10% of the target's, and **never more than a quarter** of the target's max health. Tanks and bosses with huge health pools barely notice a heal.
   - Each enemy can be healed **at most once every 5 s**, however many Healers are around.
   - Healers **can't heal each other** (or themselves).
 
