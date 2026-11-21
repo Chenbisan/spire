@@ -5,7 +5,7 @@
   - The blast is now a **ring that travels out from the spire** to its radius, catching each enemy as it passes.
   - It no longer stuns. Every enemy the ring reaches is **shaken for 5 s**: it takes damage × (the **Shake multiplier** × its weight) from everything. A ×3 multiplier on a weight-30 enemy means it takes 90× damage from your shots and ultimates. Tanks that shrug off knockback are exactly what it's for. **Bosses resist:** only 10% of a boss's weight counts.
   - The Stun upgrade is replaced by the **Shake multiplier** (×0.5 → ×5 in 18 steps); chips you spent on Stun are refunded.
-  - New medals: **Silver, Crush**: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn't move at all · **Gold, Momentum**: every shaken enemy that dies takes 0.5 s off the cooldown · **Platinum**: an aftershock repeats the blast 1 s later (unchanged).
+  - New medals: **Silver, Crush**: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn't move at all · **Gold, Aftershock**: when a shaken enemy dies, the shake spreads to enemies within 25 m for the time it had left, so kills snowball · **Platinum, Echo**: a second ring follows 1 s later (the old aftershock).
 
 ## 1.38.0 — 2026-11-21
 - **Enemies hit harder the longer they live:** every hit or shot an enemy lands does **3% more** than its previous one (×1.34 by its 10th attack, ×18 by its 100th). Enemies parked at the spire, or kept alive by Healers or a stalled fight, get dangerous fast, so kill them quickly.

@@ -53,7 +53,7 @@ function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u 
     if(ultPerm(u.k)){ // always on; the well and the laser re-aim every few seconds
       const mover=u.k==='grav'||u.k==='laser';if(mover)st.mv=(st.mv||0)-dt;
       if(st.act<=0||(mover&&st.mv<=0)){st.cd=0;st.act=0;if(fireUlt(u.k,tgt))st.mv=u.k==='laser'?ULT.laserAim:ULT.gravMove}st.act=Math.max(st.act,1)}
-    if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true); // Platinum aftershock
+    if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true); // Platinum (Echo): a second ring
     if(st.act>0){st.act-=dt;
       // damage over time lands in dotHz chunks (same total damage, far fewer hits to process); movement stays per step
       const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
@@ -78,14 +78,21 @@ function frostTick(dt,st){const R=run;if(!ultOwned('frost')){R.frostR=R.frostCap
 // Shockwave: a ring travels out from the spire to its radius in ULT.ringTime. Each enemy it reaches is shoved outward (force ÷ weight,
 // never through the crowd) and shaken for ULT.shaken s: it takes damage × (multiplier × weight) from everything. No damage of its own.
 let ringId=0;
+// how hard enemy e is shaken: the multiplier × its weight (bosses count bossWt of theirs), never below 1
+const shakeOf=e=>Math.max(1,uv('shock','dmg')*(e.d.r===3?e.wt*ULT.bossWt:e.wt));
+// Gold (Aftershock): a shaken enemy that dies passes its shake to enemies within spreadR for the time it had left,
+// at each one's own strength (a stronger or longer shake already on them is kept)
+function shakeSpread(e){const R=run,r2=ULT.spreadR**2;forNear(e.x,e.y,ULT.spreadR,o=>{if(o===e||(o.x-e.x)**2+(o.y-e.y)**2>r2)return;
+  const active=o.shakenAt!=null&&R.time-o.shakenAt<ULT.shaken;if(active&&o.shakenAt>=e.shakenAt)return;
+  o.shakeM=Math.max(active?o.shakeM:1,shakeOf(o));o.shakenAt=e.shakenAt})}
 function shockBlast(after){const R=run;(R.rings||(R.rings=[])).push({id:++ringId,r:0,rad:R.s.range*uv('shock','radius'),after})}
-function shockRings(dt,st){const R=run;if(!R.rings||!R.rings.length)return;const f=uv('shock','force'),mul=uv('shock','dmg'),lim=spawnMax();
+function shockRings(dt,st){const R=run;if(!R.rings||!R.rings.length)return;const f=uv('shock','force'),lim=spawnMax();
   for(let i=R.rings.length-1;i>=0;i--){const g=R.rings[i],r0=g.r;g.r=Math.min(g.rad,g.r+g.rad/ULT.ringTime*dt);
     const hit=enemies.filter(e=>!e.dead&&e.ring!==g.id&&e.dist-e.d.sz<=g.r&&e.dist+e.d.sz>=r0-1).sort((a,b)=>b.dist-a.dist);
     for(const e of hit){e.ring=g.id;const d=Math.hypot(e.x,e.y)||1,m=Math.min(f/e.wt,lim-d);let moved=m;
       if(m>0){moved=walk(e,e.x/d,e.y/d,m);e.px=e.x;e.py=e.y;e.rest=0}
-      const blocked=m>0?Math.max(0,1-moved/m):0,w=e.d.r===3?e.wt*ULT.bossWt:e.wt; // bosses resist
-      e.shakeM=Math.max(1,mul*w)*(st>=1?1+blocked*ULT.crush:1);e.shakenAt=R.time} // Silver (Crush): pinned enemies are shaken harder
+      const blocked=m>0?Math.max(0,1-moved/m):0;
+      e.shakeM=shakeOf(e)*(st>=1?1+blocked*ULT.crush:1);e.shakenAt=R.time} // Silver (Crush): pinned enemies are shaken harder
     if(g.r>=g.rad)R.rings.splice(i,1)}}
 // Chain Lightning: sparked by a bullet hit on e. Each enemy struck has the proc chance to split into `jumps` new bolts to
 // nearby unhit enemies (within ULT.chainJump m), each doing `mult` × the previous bolt's damage. Capped for performance.

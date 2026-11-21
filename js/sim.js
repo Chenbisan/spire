@@ -70,7 +70,7 @@ function nextWave(){
 }
 function kill(e){
   const R=run;e.dead=true;typeN[e.t]--;aliveN--;R.kills++;save.kills++;
-  if(R.ultSt&&R.ultSt.shock>=2&&e.shakenAt!=null&&R.time-e.shakenAt<ULT.shaken&&R.ult&&R.ult.shock)R.ult.shock.cd=Math.max(0,R.ult.shock.cd-ULT.momentum); // Shockwave Gold (Momentum)
+  if(R.ultSt&&R.ultSt.shock>=2&&e.shakenAt!=null&&R.time-e.shakenAt<ULT.shaken)shakeSpread(e); // Shockwave Gold (Aftershock)
   const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave),st=save.stats;R.cash+=c;R.cashEarned+=c;st.cash+=c;if(e.d.r===2)st.elite++;else if(e.d.r===3)st.boss++;
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
   const db=1+R.fx.drop;
