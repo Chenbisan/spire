@@ -150,7 +150,7 @@ const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.ma
 //     × √(100 / lv), so each level is a big step and the price climbs fast (ultCost in ults.js).
 // cost: each ultimate's price multiplier (unlock and every level). The more impactful ones cost more, so choosing what to save for matters.
 // Medals come from how complete an ultimate is (average progress across its 4 tracks, ULT.medals: 10% / 30% / 60%).
-const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, gravMove:5, laserAim:3, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02, dazed:3, bossWt:.1};  // dazed: Shockwave Silver, seconds enemies hit by the blast take extra damage; bossWt: bosses count this share of their weight for Shockwave damage; frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
+const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, gravMove:5, laserAim:3, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02, bossWt:.1, shaken:5, ringTime:.5, crush:1, momentum:.5};  // Shockwave: bossWt, bosses count this share of their weight; shaken, seconds the shake lasts; ringTime, game seconds the ring takes to reach its radius; crush, Silver's extra multiplier for an enemy that couldn't move at all; momentum, Gold's cooldown cut per shaken kill; frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
 ULT.cost=l=>Math.ceil(ULT.c0*(1+l/ULT.band)**1.5);
 const PC1=v=>(v*100).toFixed(1).replace(/\.0$/,'')+'%'; // ultimate percentages keep a decimal so every level shows its gain
 // track levels before the 1.23 rework (old saves are converted proportionally, keeping each track's value)
@@ -168,11 +168,11 @@ const ULTS=[
   t:[{k:'slow',lv:13,n:'Max slow',base:.3,end:.95,f:v=>PC1(v)+` (${Math.ceil(v/ULT.frostPer-1e-9)} stacks)`},{k:'rate',lv:14,n:'Tick rate',base:.5,end:4,f:v=>(+v.toFixed(2))+' ticks/s'},
      {k:'radius',lv:14,n:'Radius',base:.6,end:2,f:v=>PC1(v)+' of range'},{k:'brittle',lv:18,n:'Brittle',base:.002,end:.02,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
   sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'frozen enemies take double brittle damage', pb:'enemy shots inside the field have a 2% chance to melt for every 10 m they travel'},
- {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:'A blast shoves enemies around the spire outward (heavier ones move less) and hits them for spire damage × its multiplier × the enemy\'s weight, so the heavier the enemy, the harder it hits. The answer to Tanks that shrug off knockback (bosses resist it: only 10% of their weight counts).',
+ {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:'A ring bursts out from the spire, shoving enemies outward (heavier ones move less) and shaking them for 5 s: a shaken enemy takes damage × (the multiplier × its weight) from everything, so the heavier the enemy, the more it takes. The answer to Tanks that shrug off knockback. Bosses resist: only 10% of their weight counts.',
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
-  t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:18,n:'Damage multiplier',base:.5,end:5,f:v=>`×${+v.toFixed(2)} spire damage × enemy weight`},
+  t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:18,n:'Shake multiplier',base:.5,end:5,f:v=>`×${+v.toFixed(2)} × enemy weight damage taken`},
      {k:'radius',lv:8,n:'Radius',base:.6,end:1,f:v=>PC1(v)+' of range'},{k:'cd',lv:14,n:'Cooldown',base:90,end:20,f:S1}],
-  sb:'enemies hit by the blast take +25% damage from everything for 3 s', gb:'+50% blast damage', pb:'an aftershock repeats the blast 1 s later'},
+  sb:'Crush: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn\'t move at all', gb:'Momentum: every shaken enemy that dies takes 0.5 s off the cooldown', pb:'an aftershock repeats the blast 1 s later'},
  {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it.',timed:1,
   icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',
   t:[{k:'radius',lv:10,n:'Radius',base:50,end:150,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,pow:2,f:v=>fmt(v)+' m/s (÷ weight)'},

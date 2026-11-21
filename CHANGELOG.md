@@ -1,9 +1,11 @@
 # What's new in Spire
 
 ## 1.39.0 — 2026-11-21
-- **Shockwave hits heavy enemies hardest:** the blast no longer stuns. Its Stun upgrade is replaced by a **Damage multiplier** (×0.5 → ×5 in 18 steps): every enemy caught in the blast takes spire damage × the multiplier × **its weight**. A ×3 multiplier on a weight-30 enemy deals 90× spire damage. Tanks that shrug off knockback are exactly what it's for. **Bosses resist it:** only 10% of a boss's weight counts.
-  - New medals (the old ones needed stun): **Silver**, enemies hit by the blast take +25% damage from everything for 3 s · **Gold**, +50% blast damage · **Platinum**, an aftershock repeats the blast 1 s later (unchanged).
-  - Chips you spent on Stun are refunded.
+- **Shockwave reworked into a utility ultimate:**
+  - The blast is now a **ring that travels out from the spire** to its radius, catching each enemy as it passes.
+  - It no longer stuns. Every enemy the ring reaches is **shaken for 5 s**: it takes damage × (the **Shake multiplier** × its weight) from everything. A ×3 multiplier on a weight-30 enemy means it takes 90× damage from your shots and ultimates. Tanks that shrug off knockback are exactly what it's for. **Bosses resist:** only 10% of a boss's weight counts.
+  - The Stun upgrade is replaced by the **Shake multiplier** (×0.5 → ×5 in 18 steps); chips you spent on Stun are refunded.
+  - New medals: **Silver, Crush**: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn't move at all · **Gold, Momentum**: every shaken enemy that dies takes 0.5 s off the cooldown · **Platinum**: an aftershock repeats the blast 1 s later (unchanged).
 
 ## 1.38.0 — 2026-11-21
 - **Enemies hit harder the longer they live:** every hit or shot an enemy lands does **3% more** than its previous one (×1.34 by its 10th attack, ×18 by its 100th). Enemies parked at the spire, or kept alive by Healers or a stalled fight, get dangerous fast, so kill them quickly.

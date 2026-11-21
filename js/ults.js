@@ -43,17 +43,17 @@ const inRange=()=>enemies.filter(e=>!e.dead&&e.dist<=run.s.range+e.d.sz);
 // extra damage enemies take from Silver ultimates
 function ultDmgMult(e){const R=run,S=R&&R.ultSt;if(!S)return 1;let m=1;
   if(e.fs&&R.brittle)m*=1+e.fs*R.brittle*(e.frzT>0&&S.frost>=2?2:1); // Frost Field brittle: more damage per frost stack (doubled while frozen at Gold)
-  if(S.shock>=1&&e.dazeAt!=null&&R.time-e.dazeAt<ULT.dazed)m*=1.25; // Shockwave Silver: dazed by the blast
+  if(e.shakenAt!=null&&R.time-e.shakenAt<ULT.shaken)m*=e.shakeM; // Shockwave: shaken enemies take × (multiplier × weight)
   const g=R.ult.grav;if(g&&g.act>0&&S.grav>=1&&(e.x-g.x)**2+(e.y-g.y)**2<=uv('grav','radius')**2)m*=1.2;
   return m}
 function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u of ULTS)R.ultSt[u.k]=ultStatus(u.k);const S=R.ultSt;
   R.chainP=ultOwned('chain')?uv('chain','chance'):0; // read on every bullet hit
-  frostTick(dt,S.frost||0);
+  frostTick(dt,S.frost||0);shockRings(dt,S.shock||0);
   for(const u of ULTS){if(!ultOwned(u.k)||u.passive)continue;const st=R.ult[u.k];
     if(ultPerm(u.k)){ // always on; the well and the laser re-aim every few seconds
       const mover=u.k==='grav'||u.k==='laser';if(mover)st.mv=(st.mv||0)-dt;
       if(st.act<=0||(mover&&st.mv<=0)){st.cd=0;st.act=0;if(fireUlt(u.k,tgt))st.mv=u.k==='laser'?ULT.laserAim:ULT.gravMove}st.act=Math.max(st.act,1)}
-    if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true);
+    if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true); // Platinum aftershock
     if(st.act>0){st.act-=dt;
       // damage over time lands in dotHz chunks (same total damage, far fewer hits to process); movement stays per step
       const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
@@ -75,13 +75,18 @@ function frostTick(dt,st){const R=run;if(!ultOwned('frost')){R.frostR=R.frostCap
       if(st>=1&&!e.frz1&&e.fs>=maxSt){e.frz1=true;e.frzT=ULT.freeze}}} // Silver: freeze the first time it reaches max slow
   // Platinum: each step an enemy shot spends inside the field it may melt, ULT.melt chance per 10 m travelled
   if(st>=3){const r2=R.frostR**2,p=1-(1-ULT.melt)**(CFG.ebSpd*dt/10);for(let i=ebs.length-1;i>=0;i--){const b=ebs[i];if(b.x*b.x+b.y*b.y<=r2&&Math.random()<p){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b)}}}}
-// the blast's damage: spire damage × the multiplier × the enemy's weight (heavier enemies take more), +50% at Gold
-function shockBlast(after){const R=run,S=R.ultSt||{},f=uv('shock','force'),lim=spawnMax(),rad=R.s.range*uv('shock','radius'),bd=R.s.damage*uv('shock','dmg')*(S.shock>=2?1.5:1);
-  // outermost first, so each one has room to be pushed back into; nobody is shoved through the crowd behind it
-  const hit=enemies.filter(e=>!e.dead&&e.dist<=rad+e.d.sz).sort((a,b)=>b.dist-a.dist);
-  for(const e of hit){const d=Math.hypot(e.x,e.y)||1,m=Math.min(f/e.wt,lim-d);
-    if(m>0){walk(e,e.x/d,e.y/d,m);e.px=e.x;e.py=e.y;e.rest=0}if(!e.dead){e.dazeAt=R.time;damage(e,bd*(e.d.r===3?Math.max(1,e.wt*ULT.bossWt):e.wt),0)}} // bosses resist: the weight bonus is only bossWt as effective
-  ultFx.push({k:'shock',at:performance.now(),r:rad,after})}
+// Shockwave: a ring travels out from the spire to its radius in ULT.ringTime. Each enemy it reaches is shoved outward (force ÷ weight,
+// never through the crowd) and shaken for ULT.shaken s: it takes damage × (multiplier × weight) from everything. No damage of its own.
+let ringId=0;
+function shockBlast(after){const R=run;(R.rings||(R.rings=[])).push({id:++ringId,r:0,rad:R.s.range*uv('shock','radius'),after})}
+function shockRings(dt,st){const R=run;if(!R.rings||!R.rings.length)return;const f=uv('shock','force'),mul=uv('shock','dmg'),lim=spawnMax();
+  for(let i=R.rings.length-1;i>=0;i--){const g=R.rings[i],r0=g.r;g.r=Math.min(g.rad,g.r+g.rad/ULT.ringTime*dt);
+    const hit=enemies.filter(e=>!e.dead&&e.ring!==g.id&&e.dist-e.d.sz<=g.r&&e.dist+e.d.sz>=r0-1).sort((a,b)=>b.dist-a.dist);
+    for(const e of hit){e.ring=g.id;const d=Math.hypot(e.x,e.y)||1,m=Math.min(f/e.wt,lim-d);let moved=m;
+      if(m>0){moved=walk(e,e.x/d,e.y/d,m);e.px=e.x;e.py=e.y;e.rest=0}
+      const blocked=m>0?Math.max(0,1-moved/m):0,w=e.d.r===3?e.wt*ULT.bossWt:e.wt; // bosses resist
+      e.shakeM=Math.max(1,mul*w)*(st>=1?1+blocked*ULT.crush:1);e.shakenAt=R.time} // Silver (Crush): pinned enemies are shaken harder
+    if(g.r>=g.rad)R.rings.splice(i,1)}}
 // Chain Lightning: sparked by a bullet hit on e. Each enemy struck has the proc chance to split into `jumps` new bolts to
 // nearby unhit enemies (within ULT.chainJump m), each doing `mult` × the previous bolt's damage. Capped for performance.
 let chainStamp=0;const chainQ=[],chainV=[],chainD=[],chainNear=[],chainNd=[];
@@ -121,6 +126,8 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
       ctx.lineCap='round';ctx.strokeStyle=C.hot;ctx.globalAlpha=.25*fl;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(cx,cy);ctx.stroke();
       ctx.globalAlpha=.9*fl;ctx.lineWidth=Math.max(2*dpr/sc,w*.25);ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt'}
     else if(L.cd<1.5){const k=1-Math.max(0,L.cd)/1.5;ctx.fillStyle=C.hot;ctx.globalAlpha=.15+.5*k;ctx.beginPath();ctx.arc(0,0,CFG.towerR+4+8*k,0,6.283);ctx.fill();ctx.globalAlpha=1}} // charging glow
+  if(R.rings)for(const g of R.rings){ctx.strokeStyle=C.gold;ctx.lineWidth=(g.after?2.5:4)*dpr/sc;ctx.globalAlpha=.85*(1-g.r/g.rad)+.15;ctx.beginPath();ctx.arc(0,0,CFG.towerR+g.r,0,6.283);ctx.stroke()}
+  ctx.globalAlpha=1;
   for(let i=ultFx.length-1;i>=0;i--){const f=ultFx[i],k=(now-f.at)/(f.k==='chain'?260:450);if(k>=1){ultFx.splice(i,1);continue}
     if(f.k==='chain'){if(i<ultFx.length-CFG.boltsDrawn)continue; // only the newest bolts; one path each
       ctx.strokeStyle=C.bolt;ctx.globalAlpha=1-k;ctx.fillStyle=C.bolt;ctx.beginPath();ctx.arc(f.x,f.y,5*dpr/sc,0,6.283);ctx.fill();
