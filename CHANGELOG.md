@@ -1,5 +1,13 @@
 # What's new in Spire
 
+## 1.27.0 — 2026-11-21
+- **Waves have a break:** each wave now spawns its enemies over **15 s**, followed by a **15 s break** to clear the field before the next one (30 s per wave in all). The wave bar dims during the break.
+- **Fewer enemies, tougher mix:** waves start at 10 enemies and add **3 more every 10 waves** (instead of one or two more every wave). Higher waves bring more Tanks and elites instead: by wave 100 there are no Basic enemies left, and elites make up about 40% of a wave.
+- **Better rewards:** each kill pays twice the cash and about 3.5× the coins it used to, growing faster with the wave, and wave cash is up 50%. Since elites pay more and drop alloy, pushing to higher waves pays off much more.
+- **Bosses hit less hard:** boss health 250 → 150 and attack 12 → 6 (before wave and tier scaling), so the first bosses are no longer a wall for a new spire.
+
+## 1.23.1 — 2026-11-20
+
 ## 1.26.0 — 2026-11-21
 - **Enemies no longer pile on top of each other.** They always keep at least 90% of their combined size apart: an enemy walking into a crowd stops at the wall, or slides sideways into a gap if there is one, instead of pushing into the pack.
 - Gravity Well, Shockwave and knockback move enemies only as far as the crowd lets them, so they can't shove enemies through each other either. Shockwave pushes the outermost enemies first, so each one has room to be pushed back.

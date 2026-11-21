@@ -14,6 +14,7 @@ function bars(){
   const on=!!run&&!run.over&&run.barMax>0,down=on&&run.barT>0,br=!on?0:down?1-run.barT/Math.max(1e-9,run.s.barrierRegen):Math.max(0,Math.min(1,run.bar/run.barMax));
   $('barW').hidden=!on;$('barTrack').classList.toggle('down',down);if(Math.abs(br-lastBar)>1e-4){lastBar=br;barBar.style.transform=`scaleX(${Math.max(0,Math.min(1,br))})`}
   if(Math.abs(wv-lastWv)>1e-4){lastWv=wv;waveBar.style.transform=`scaleX(${wv})`}
+  waveBar.parentNode.classList.toggle('brk',!!run&&!run.over&&run.waveT>=run.spawnLen); // break between waves
 }
 // ================= UI =================
 $('verTag').textContent='v'+APP_VERSION;$('verTag').href=CHANGELOG_URL;
@@ -224,7 +225,7 @@ function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=l
   const cnt=CFG.spawnCount(w)+(boss?1:0);
   return tabs+`<table class="etab"><thead><tr><th>Enemy</th><th title="Chance per spawn">%</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed, m/s">» m/s</th><th title="Coins dropped, with your coin bonus">Coins</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
   <div class="grid2 winfo">
-    <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s</small></div>
+    <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s (spawning for the first ${live?+run.spawnLen.toFixed(1):CFG.spawnLen} s)</small></div>
     <div><span>Spawned this wave</span><b id="wiSpawned">${live?run.spawned:0}</b> <small>of ${cnt}</small></div>
     <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b></div>
     <div><span>Next boss</span><b>${boss?'this wave':'wave '+nextBoss}</b></div>
@@ -246,7 +247,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   return`<div class="help">
   <p>Your spire sits in the middle and fires at the closest enemy in range on its own. Enemies come in from every side. The run ends when the spire's health hits 0.</p>
   <h3>Runs and waves</h3><ul>
-  <li>A new wave starts every ${CFG.waveLen} s of game time, with more enemies each time. A boss comes every ${CFG.bossEvery} waves.</li>
+  <li>A new wave starts every ${CFG.waveLen} s of game time: enemies spawn for the first ${CFG.spawnLen} s, then there's a break to clear the field. Every ${CFG.bossEvery} waves brings a boss and 3 more enemies per wave, and higher waves bring more tanks and elites (which pay more coins and drop alloy).</li>
   <li>Each wave, enemies get ${pct(CFG.hpGrow)} more health and ${pct(CFG.dmgGrow)} more damage.</li>
   <li>Reach wave ${CFG.tierUnlockWave} to unlock the next tier. Each tier up multiplies enemy health by ${t2.hp}, damage by ${t2.dmg} and coins by ${t2.coin}.</li></ul>
   <h3>Currencies</h3><ul>

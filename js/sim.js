@@ -22,7 +22,7 @@ function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(con
   const F=loadoutFx();for(const k in F.mul)run.s[k]*=F.mul[k];for(const k in F.add)run.s[k]+=F.add[k];
   for(const s of ST){if(s.max!=null)run.s[s.k]=Math.min(run.s[s.k],s.max);if(s.min!=null)run.s[s.k]=Math.max(run.s[s.k],s.min)}
   run.s.bounceRange=Math.min(run.s.bounceRange,run.s.range*SK.bounceRange.maxOfRange);
-  run.fx=F;run.waveLen=CFG.waveLen*(1-F.rush);
+  run.fx=F;run.waveLen=CFG.waveLen*(1-F.rush);run.spawnLen=CFG.spawnLen*(1-F.rush);
   const oldBar=run.barMax||0;run.barMax=run.s.health*run.s.barrier;run.bar=run.barT>0?0:Math.min(run.barMax,(run.bar||0)+Math.max(0,run.barMax-oldBar)); // upgrades add their extra right away (not while it's recharging)
   if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
 // ================= state =================
@@ -42,8 +42,9 @@ function newRun(tier){
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
 function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpGrow**(w-1)*tm.hp,atk:d.dmg*CFG.dmgGrow**(w-1)*tm.dmg,spd:d.spd,weight:d.weight,coins:d.coin*tm.coin*CFG.killCoin(w)}}
 // chance each type is picked for a regular spawn on wave w (mirrors pickType; Basic takes what's left)
-function spawnChance(w){const o={};let left=1;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;const p=Math.min(left,d.freq);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
-function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;acc+=d.freq;if(r<acc)return t}return'basic'}
+const typeFreq=(d,w)=>!d.freq||w<d.from?0:Math.min(d.fmax||d.freq,d.freq+(d.fg||0)*(w-d.from));
+function spawnChance(w){const o={};let left=1;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;const p=Math.min(left,f);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
+function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;acc+=f;if(r<acc)return t}return'basic'}
 function spawn(t,x,y){
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
@@ -136,7 +137,7 @@ function multiPicks(tgt,pr,k){
 let GEN_STEP=0;
 function update(dt){GEN_STEP++;
   const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;save.stats.time+=dt;R.waveT+=dt;R.spawnT+=dt;
-  const cnt=CFG.spawnCount(R.wave),iv=R.waveLen*.9/cnt;
+  const cnt=CFG.spawnCount(R.wave),iv=R.spawnLen/cnt; // all of a wave spawns in its first spawnLen s; the rest is a break
   while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
   if(R.waveT>=R.waveLen)nextWave();
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
