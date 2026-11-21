@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.36.0 — 2026-11-21
+- **Stronger ultimates cost more:** each ultimate now has its own price, for unlocking and for every level. **Chain Lightning** and **Laser** ×1.5, **Frost Field** ×1.25, **Gravity Well** ×1, **Shockwave** ×0.75. Save up for a big one, or spread your chips across cheaper ones to push higher sooner. Each ultimate shows its price multiplier when you open it.
+
 ## 1.35.0 — 2026-11-21
 - **Ultimate upgrades come in natural steps:** capped stats no longer share the same long track. Each has a handful of big steps, and the price climbs fast:
   - Max slow 30% → 95% in 13 steps of 5% · Proc chance and Bounce multiplier in 5% steps · Bounce targets +0.5 a step · Tick rate +0.25/s · Frost radius +10% of range · Brittle +0.1% per stack.

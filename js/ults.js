@@ -7,7 +7,8 @@ const uv=(k,tr)=>ultVal(UK[k],tr,ultLv(k,tr));
 // how complete an ultimate is: the average progress of its 4 tracks (0 to 1)
 const ultProg=k=>UK[k].t.reduce((a,t)=>a+Math.min(1,ultLv(k,t.k)/t.lv),0)/UK[k].t.length;
 // a level's price: the 100-level price at the same point in the tier bands, × √(100/lv) for short tracks
-const ultCost=(t,l)=>t.lv>=ULT.levels?ULT.cost(l):Math.ceil(ULT.cost(Math.floor(l*ULT.levels/t.lv))*Math.sqrt(ULT.levels/t.lv));
+const ultCost=(t,l)=>Math.ceil((t.lv>=ULT.levels?ULT.cost(l):ULT.cost(Math.floor(l*ULT.levels/t.lv))*Math.sqrt(ULT.levels/t.lv))*(t.cm||1));
+const ultUnlock=u=>Math.ceil(ULT.unlock*u.cost); // ... times the ultimate's own price multiplier
 // status: 0 none, 1 Silver, 2 Gold, 3 Platinum, from how complete the ultimate is (ULT.medals)
 function ultStatus(k){if(!ultOwned(k))return 0;const p=ultProg(k)+1e-9;let s=0;for(const m of ULT.medals)if(p>=m)s++;return s}
 const ultPerm=k=>UK[k].timed&&ultStatus(k)>=1; // timed ultimates at Silver are always on
@@ -143,9 +144,9 @@ function ultsHtml(){
   for(const u of ULTS){const own=ultOwned(u.k),open=own&&ultOpen===u.k,done=own?ultDone(u.k):0,tot=ultTotal(u.k);
     h+=`<div class="urow${open?' open':''}${own?'':' locked'}" style="--c:var(--${u.col})">`;
     h+=`<button class="uhead" ${own?`data-uopen="${u.k}" aria-expanded="${open}"`:'tabindex="-1"'}>${ultIcon(u)}<span class="un"><b>${u.n}</b> ${medal(u.k)}<i class="uprog"><i style="transform:scaleX(${own?ultProg(u.k):0})"></i></i></span><span class="ul">${own?`${Math.round(ultProg(u.k)*100)}%`:''}</span></button>`;
-    if(!own)h+=`<button class="buy chip ubuy" data-ubuy="${u.k}" ${save.chips>=ULT.unlock?'':'disabled'}>Unlock ${fmt(ULT.unlock)}</button>`;
+    if(!own)h+=`<button class="buy chip ubuy" data-ubuy="${u.k}" ${save.chips>=ultUnlock(u)?'':'disabled'}>Unlock ${fmt(ultUnlock(u))}</button>`;
     if(open){const stt=ultStatus(u.k),M=ULT.medals,pr=ultProg(u.k),lvl=m=>`${Math.min(Math.round(m*100),Math.floor(pr*100))}/${Math.round(m*100)}% complete`;
-      h+=`<div class="ubody"><p class="note">${u.d}</p><div class="ustat"><span class="medal s${stt>=1?' on':''}">Silver</span><span>${lvl(M[0])}: <b>${u.sb}</b></span><span class="medal g${stt>=2?' on':''}">Gold</span><span>${lvl(M[1])}: <b>${u.gb}</b></span><span class="medal p${stt>=3?' on':''}">Platinum</span><span>${lvl(M[2])}: <b>${u.pb}</b></span></div>`;
+      h+=`<div class="ubody"><p class="note">${u.d} <b>Prices ×${u.cost}</b>${u.cost>1?' (one of the stronger ultimates)':u.cost<1?' (one of the cheaper ultimates)':''}.</p><div class="ustat"><span class="medal s${stt>=1?' on':''}">Silver</span><span>${lvl(M[0])}: <b>${u.sb}</b></span><span class="medal g${stt>=2?' on':''}">Gold</span><span>${lvl(M[1])}: <b>${u.gb}</b></span><span class="medal p${stt>=3?' on':''}">Platinum</span><span>${lvl(M[2])}: <b>${u.pb}</b></span></div>`;
       for(const t of u.t){const l=ultLv(u.k,t.k),mx=l>=t.lv,cur=ultVal(u,t.k,l),{n,c}=mx?{n:0,c:0}:ultBuyPlan(u.k,t),nx=ultVal(u,t.k,l+n);
         h+=`<div class="utr"><div><b>${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${l/t.lv})"></i></i><span class="v">Lv ${l}/${t.lv}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
       h+=respecBtn('ult:'+u.k,'Refund upgrades');
@@ -155,7 +156,7 @@ function ultsHtml(){
   return h+`</div><p class="note" style="margin-top:8px">Bought with <b class="chip">chips</b> (shared with Equipment). Every ultimate you own is active. Its medals come from how complete it is (the average of its 4 upgrades): <b>Silver</b> at ${Math.round(ULT.medals[0]*100)}%, <b>Gold</b> at ${Math.round(ULT.medals[1]*100)}%, <b>Platinum</b> at ${Math.round(ULT.medals[2]*100)}%; each adds a bonus. Strength upgrades have ${ULT.levels} levels (${ULT.band} per tier); the others have a few big steps that get expensive fast.</p>`}
 $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const d=b.dataset;
   if(d.uopen){ultOpen=ultOpen===d.uopen?'':d.uopen;loSig='';refreshLoadout();return}
-  if(d.ubuy){if(save.chips<ULT.unlock)return;save.chips-=ULT.unlock;save.stats.chipsSpent=(save.stats.chipsSpent||0)+ULT.unlock;save.ults[d.ubuy]={};ultOpen=d.ubuy;if(run&&run.ult&&!UK[d.ubuy].passive)run.ult[d.ubuy].cd=uv(d.ubuy,'cd')*.5}
+  if(d.ubuy){const uc=ultUnlock(UK[d.ubuy]);if(save.chips<uc)return;save.chips-=uc;save.stats.chipsSpent=(save.stats.chipsSpent||0)+uc;save.ults[d.ubuy]={};ultOpen=d.ubuy;if(run&&run.ult&&!UK[d.ubuy].passive)run.ult[d.ubuy].cd=uv(d.ubuy,'cd')*.5}
   else if(d.uup){const t=UK[d.uup].t.find(x=>x.k===d.t),{n,c}=ultBuyPlan(d.uup,t);if(!n||save.chips<c)return;const before=ultStatus(d.uup);
     save.chips-=c;save.stats.chipsSpent=(save.stats.chipsSpent||0)+c;save.ults[d.uup][d.t]=ultLv(d.uup,d.t)+n;const after=ultStatus(d.uup);if(after>before)toast(`${UK[d.uup].n} reached ${MEDALS[after]}!`)}
   else if(d.umode){save.set.ultMan[d.umode]=d.v==='man'}
