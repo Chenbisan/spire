@@ -57,7 +57,7 @@ function spawn(t,x,y){
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.wt=d.weight*CFG.wtMul(R.wave)*R.tm.wt;e.spd=d.spd*R.tm.spd;e.mhp=e.hp=d.hp*CFG.hpMul(R.wave)*R.tm.hp;e.dmg=d.dmg*CFG.dmgMul(R.wave)*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
   e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.hn=0;e.healAt=-1e9;e.ht=d.heal?Math.random()*d.healEvery:0;e.rest=0;e.pend=0;e.gi=-1;e.fs=0;e.frz1=false;e.frzT=0;
-  enemies.push(e);
+  e.sg=0;enemies.push(e);return e;
 }
 function nextWave(){
   const R=run;R.wave++;milestones();R.waveT=R.spawnT=R.spawned=0;
@@ -68,6 +68,9 @@ function nextWave(){
   if((save.best[R.tier]||0)<R.wave)save.best[R.tier]=R.wave;
   if(R.wave>=CFG.tierUnlockWave&&R.tier===save.tierMax){save.tierMax++;persist();toast(`Tier ${save.tierMax} unlocked`)}
 }
+// a smaller Splitter's type data: smaller, and half the coins and cash per split (cached per generation)
+const splitDefs={};
+function splitDef(g){return splitDefs[g]||(splitDefs[g]=Object.assign({},ET.splitter,{sz:ET.splitter.sz*CFG.splitSz**g,cash:ET.splitter.cash/2**g,coin:ET.splitter.coin/2**g}))}
 function kill(e){
   const R=run;e.dead=true;typeN[e.t]--;aliveN--;R.kills++;save.kills++;
   if(R.ultSt&&R.ultSt.shock>=2&&e.shakenAt!=null&&R.time-e.shakenAt<ULT.shaken)shakeSpread(e); // Shockwave Gold (Aftershock)
@@ -76,8 +79,10 @@ function kill(e){
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
   const db=1+R.fx.drop;
   if(e.d.r===3){const v=DROPS.chips(R.wave,R.tier)*db;save.chips+=v;R.chips+=v;st.chips+=v}
-  else if(e.d.r===2){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
-  if(e.d.split)for(let i=0;i<e.d.split;i++)spawn('fast',e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
+  else if(e.d.r===2&&!e.sg){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
+  // Splitters: split into `split` smaller Splitters with half the health, `splits` times over
+  if(e.d.split&&e.sg<e.d.splits){const d=splitDef(e.sg+1);for(let i=0;i<e.d.split;i++){const c=spawn(e.t,e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
+    if(c){c.sg=e.sg+1;c.d=d;c.mhp=c.hp=e.mhp/2;c.wt=e.wt*CFG.splitSz;c.age=CFG.fadeIn}}}
   for(let i=0;i<(cleanFx()?1:4)&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
 }
 function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over time), 2 = ignores shields

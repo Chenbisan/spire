@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.41.0 — 2026-11-21
+- **Splitters split into Splitters:** when one dies it breaks into **2 smaller Splitters with half its health**, and each of those splits once more into 2 with half again (7 in all), instead of 3 Fast enemies. Each split is smaller and pays half the coins and cash, and only the first one drops alloy. Chain Lightning is the answer.
+
 ## 1.40.0 — 2026-11-21
 - **🌀 Gravity Well reworked:**
   - **No more always-on at Silver.** Its cooldown now starts when a well opens, so Duration and Cooldown matter: once Duration matches Cooldown (both 60 s at max) there's always a well up.

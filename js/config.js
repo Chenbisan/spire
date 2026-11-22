@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.40.0';
+const APP_VERSION='1.41.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -18,6 +18,7 @@ const CFG={
   hpMul:w=>(1+(w-1)/10)**4, dmgMul:w=>(1+(w-1)/10)**3,
   wtMul:w=>(1+(w-1)/50)**.75,  // weight grows too (×2.4 by wave 100, ×10 by 1000, ×53 by 10000), so knockback, Shockwave and Gravity Well move high-wave enemies less
   hitRamp:1.03,  // each attack an enemy makes does this much more than its previous one (×1.34 by the 10th hit, ×18 by the 100th), so enemies can't linger forever
+  splitSz:.75,  // each smaller Splitter is this much the size of its parent
   healCd:5,  // an enemy can be healed at most once every this many game seconds
   finalWave:10000,  // reaching this wave stops all spawning; destroying every enemy left clears the tier (the run ends as a win)
   enemyCap:5000,  // most enemies on the field at once (each type also has its own cap, ET cap); spawns past it are skipped
@@ -103,7 +104,7 @@ const ET={
  tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:8,freq:.08,fg:.003,fmax:.25,bar:1,cap:800},
  shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:2,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:15,freq:.03,fg:.002,fmax:.15,bar:1,shield:3,cap:400},
  healer:{n:'Healer',r:2,d:'Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:1,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:18,freq:.03,fg:.0012,fmax:.1,bar:1,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
- splitter:{n:'Splitter',r:2,d:'Breaks into 3 Fast enemies when it dies.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,freq:.03,fg:.002,fmax:.15,bar:1,split:3,cap:400},
+ splitter:{n:'Splitter',r:2,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Smaller ones pay less and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:20,freq:.03,fg:.002,fmax:.15,bar:1,split:2,splits:2,cap:400},
  boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',bar:1,cap:25}
 };
 const TYPES=Object.keys(ET);
