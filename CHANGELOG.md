@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.44.0 — 2026-11-21
+- **⚡ New elite, Charger** (from wave 22): **immovable**, so knockback, Shockwave, Gravity Well and crowds can't move it (Shockwave still shakes it). It walks into your range, **charges up for 3 s** (a ring fills around it), then **rams the spire for 10× its attack** and keeps hitting from there. Kill it while it charges.
+- **Healers no longer attack:** they stop 50 m from the spire and sit there healing, so they can't die to Thorns.
+- **Shielded** enemies hit a little softer (1.3 instead of 2).
+
 ## 1.43.0 — 2026-11-21
 - **🚀 New ultimate, Missiles:** fires a missile that homes in on the enemy with the **least health** and hits harder the more of its health is missing. Everything within the blast radius takes the same damage. Built for finishing off the wounded.
   - Upgrades: **Missile damage** (100 levels, 5 per tier), **Cooldown** (15 → 3 s), **Blast radius** (20 → 70 m) and **Low-health bonus** (up to +100% → +500% damage on a target at 0% health).

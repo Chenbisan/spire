@@ -71,7 +71,7 @@ function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u 
 // add ULT.siphon s (up to 2× its duration). Platinum: enemies inside are ULT.heavy × as heavy (wtOf).
 function gravTick(dt,st,S){const R=run,W=R.wells||(R.wells=[]),rad=uv('grav','radius'),r2=rad*rad,pull=uv('grav','pull');
   for(let i=W.length-1;i>=0;i--){const w=W[i];w.act-=dt;
-    forNear(w.x,w.y,rad,e=>{const dx=w.x-e.x,dy=w.y-e.y,d2=dx*dx+dy*dy;if(d2>r2)return;if(S>=3)e.heavyAt=R.time;
+    forNear(w.x,w.y,rad,e=>{const dx=w.x-e.x,dy=w.y-e.y,d2=dx*dx+dy*dy;if(d2>r2)return;if(S>=3)e.heavyAt=R.time;if(e.d.immov)return;
       if(d2>=1){const d=Math.sqrt(d2);walk(e,dx/d,dy/d,Math.min(d,pull*dt/e.wt))}}); // pulled in, but no closer than the crowd allows
     if(w.act<=0){if(S>=1)gravCollapse(w,rad,pull);W.splice(i,1)}}
   if(st.cd>0)st.cd-=dt;st.act=0;
@@ -82,7 +82,7 @@ function openWell(st){const R=run,W=R.wells||(R.wells=[]);if(W.length>=ULT.maxWe
   // up to gravSample candidates (all of them in small crowds), each counting its neighbours through the grid
   for(let i=0;i<m;i++){const a=m<near.length?near[Math.floor(Math.random()*near.length)]:near[i];let c=0;forNear(a.x,a.y,rad,b=>{if((a.x-b.x)**2+(a.y-b.y)**2<=r2)c++});if(c>bc){bc=c;best=a}}
   const dur=uv('grav','dur');W.push({x:best.x,y:best.y,act:dur,max:dur*2});st.cd=uv('grav','cd');save.stats.ultUses++;return true}
-function gravCollapse(w,rad,pull){const R2=(2*rad)**2;forNear(w.x,w.y,2*rad,e=>{const dx=w.x-e.x,dy=w.y-e.y,d2=dx*dx+dy*dy;if(d2>R2||d2<1)return;
+function gravCollapse(w,rad,pull){const R2=(2*rad)**2;forNear(w.x,w.y,2*rad,e=>{const dx=w.x-e.x,dy=w.y-e.y,d2=dx*dx+dy*dy;if(d2>R2||d2<1||e.d.immov)return;
   const d=Math.sqrt(d2);walk(e,dx/d,dy/d,Math.min(d,pull*ULT.collapse/e.wt));e.px=e.x;e.py=e.y;e.rest=0});ultFx.push({k:'collapse',x:w.x,y:w.y,r:2*rad,at:performance.now()})}
 // Gold (Siphon): a kill inside a well keeps it open longer
 function gravSiphon(e){const W=run.wells;if(!W)return;const r2=uv('grav','radius')**2;for(const w of W)if((e.x-w.x)**2+(e.y-w.y)**2<=r2){w.act=Math.min(w.max,w.act+ULT.siphon);break}}
@@ -112,7 +112,7 @@ function shockBlast(after){const R=run;(R.rings||(R.rings=[])).push({id:++ringId
 function shockRings(dt,st){const R=run;if(!R.rings||!R.rings.length)return;const f=uv('shock','force'),lim=spawnMax();
   for(let i=R.rings.length-1;i>=0;i--){const g=R.rings[i],r0=g.r;g.r=Math.min(g.rad,g.r+g.rad/ULT.ringTime*dt);
     const hit=enemies.filter(e=>!e.dead&&e.ring!==g.id&&e.dist-e.d.sz<=g.r&&e.dist+e.d.sz>=r0-1).sort((a,b)=>b.dist-a.dist);
-    for(const e of hit){e.ring=g.id;const d=Math.hypot(e.x,e.y)||1,m=Math.min(f/wtOf(e),lim-d);let moved=m;
+    for(const e of hit){e.ring=g.id;const d=Math.hypot(e.x,e.y)||1,m=e.d.immov?0:Math.min(f/wtOf(e),lim-d); // immovable: shaken but not pushedlet moved=m;
       if(m>0){moved=walk(e,e.x/d,e.y/d,m);e.px=e.x;e.py=e.y;e.rest=0}
       const blocked=m>0?Math.max(0,1-moved/m):0;
       e.shakeM=shakeOf(e)*(st>=1?1+blocked*ULT.crush:1);e.shakenAt=R.time} // Silver (Crush): pinned enemies are shaken harder
@@ -189,6 +189,8 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     else if(f.k==='collapse'){ctx.strokeStyle=C.shard;ctx.lineWidth=3*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1-k),0,6.283);ctx.stroke()}
     else if(f.k==='shock'){ctx.strokeStyle=C.gold;ctx.lineWidth=(f.after?2.5:4)*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(0,0,CFG.towerR+k*f.r,0,6.283);ctx.stroke()}}
   ctx.globalAlpha=1;
+  // Chargers winding up: a ring fills as the charge builds, so you can see the ram coming
+  ctx.strokeStyle=C.e9;ctx.lineWidth=2.5*dpr/sc;for(const e of enemies)if(!e.dead&&e.d.charge&&e.cs===1){const x=IX(e),y=IY(e),r=e.d.sz*1.8,k=Math.min(1,e.ct/e.d.charge);ctx.globalAlpha=.4+.6*k;ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+6.283*k);ctx.stroke()}ctx.globalAlpha=1;
   // frozen enemies (Frost Field Silver) get a solid icy ring
   ctx.strokeStyle=C.alloy;ctx.lineWidth=2.5*dpr/sc;ctx.beginPath();for(const e of enemies)if(!e.dead&&e.frzT>0){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();
   // stunned enemies get a gold dashed ring
