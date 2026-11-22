@@ -85,7 +85,10 @@ function kill(e){
     if(c){c.sg=e.sg+1;c.d=d;c.mhp=c.hp=e.mhp/2;c.wt=e.wt*CFG.splitSz;c.age=CFG.fadeIn}}}
   for(let i=0;i<(cleanFx()?1:4)&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
 }
-function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over time), 2 = ignores shields
+function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over time), 2 = ignores shields, 4 = can't be redirected
+  // guarded by a Protector (this step's link, or last step's: Thorns lands before this step's links are made): the Protector
+  // takes protectShare of it instead, with its own damage modifiers
+  if(e.guard&&e.guardStep>=GEN_STEP-1&&!e.guard.dead&&!(f&4)){const g=e.guard;g.hitAt=performance.now();return damage(g,v*CFG.protectShare,crit,thorn,f|4)}
   v*=ultDmgMult(e); // silver ultimates make enemies take more damage
   const blocked=e.shield>0&&!(f&2),st=save.stats;
   let a=0;if(blocked){e.shield--;st.blocked++}else{a=Math.min(v,Math.max(0,e.hp));e.hp-=v;st.dmg+=a;if(thorn)st.thorn+=a}
@@ -193,6 +196,10 @@ function update(dt){GEN_STEP++;
     if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}
   }
   separate();
+  // Protectors guard everyone within protectR (not other Protectors); the nearest one wins
+  if(typeN.protector)for(const p of enemies){if(p.dead||!p.d.protect)continue;const r2=CFG.protectR**2;
+    forNear(p.x,p.y,CFG.protectR,o=>{if(o.d.protect)return;const d2=(o.x-p.x)**2+(o.y-p.y)**2;if(d2>r2)return;
+      if(o.guardStep===GEN_STEP&&o.guard&&(o.x-o.guard.x)**2+(o.y-o.guard.y)**2<=d2)return;o.guard=p;o.guardStep=GEN_STEP})}
   // healers pulse every healEvery s and heal a flat amount (a share of their own max health, so huge pools like bosses barely notice),
   // capped at healMax of the target's max health; each enemy at most once every CFG.healCd s, and healers never heal each other
   for(const h of healers){const r2=h.d.healR**2,amt=h.mhp*h.d.heal,cap=h.d.healMax,now=R.time;forNear(h.x,h.y,h.d.healR,o=>{if(o.d.heal||now-o.healAt<CFG.healCd-.01||(o.noHealAt!=null&&now-o.noHealAt<ULT.noHeal)||o.hp>=o.mhp||(o.x-h.x)**2+(o.y-h.y)**2>r2)return;o.healAt=now;o.hp=Math.min(o.mhp,o.hp+Math.min(amt,o.mhp*cap))})} // never more than healMax of the target's max health

@@ -151,7 +151,7 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     M.splice(i,1);missileHit(m,t,S)}}
 function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
   const hitE=(o,f)=>{const v=S>=3?dmg*ULT.mStack**(o.mh||0):dmg;o.mh=(o.mh||0)+1;damage(o,v,0,false,f)}; // Platinum: each earlier missile hit on this enemy multiplies the damage
-  if(S>=2&&t.d.r!==3&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,2); // Gold (Execute)
+  if(S>=2&&t.d.r!==3&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,6); // Gold (Execute): straight through any Protector
   else hitE(t,0);
   forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)hitE(o,1)}); // collateral: the same damage to everything in the blast
   if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5})} // Silver (Cluster)
@@ -189,6 +189,8 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     else if(f.k==='collapse'){ctx.strokeStyle=C.shard;ctx.lineWidth=3*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1-k),0,6.283);ctx.stroke()}
     else if(f.k==='shock'){ctx.strokeStyle=C.gold;ctx.lineWidth=(f.after?2.5:4)*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(0,0,CFG.towerR+k*f.r,0,6.283);ctx.stroke()}}
   ctx.globalAlpha=1;
+  // Protectors: a faint ring shows the area they guard
+  ctx.strokeStyle=C.e10;ctx.lineWidth=1.5*dpr/sc;ctx.globalAlpha=.3;ctx.beginPath();for(const e of enemies)if(!e.dead&&e.d.protect&&e.age>=CFG.fadeIn){const x=IX(e),y=IY(e);ctx.moveTo(x+CFG.protectR,y);ctx.arc(x,y,CFG.protectR,0,6.283)}ctx.stroke();ctx.globalAlpha=1;
   // Chargers winding up: a ring fills as the charge builds, so you can see the ram coming
   ctx.strokeStyle=C.e9;ctx.lineWidth=2.5*dpr/sc;for(const e of enemies)if(!e.dead&&e.d.charge&&e.cs===1){const x=IX(e),y=IY(e),r=e.d.sz*1.8,k=Math.min(1,e.ct/e.d.charge);ctx.globalAlpha=.4+.6*k;ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+6.283*k);ctx.stroke()}ctx.globalAlpha=1;
   // frozen enemies (Frost Field Silver) get a solid icy ring

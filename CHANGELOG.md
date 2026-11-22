@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.45.0 — 2026-11-21
+- **🛡 New elite, Protector** (from wave 25): guards its friends. Damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half of it. A faint ring shows the area it guards. Protectors don't guard each other, and Missiles' Execute still goes straight through. Kill it first to get at the rest.
+
 ## 1.44.0 — 2026-11-21
 - **⚡ New elite, Charger** (from wave 22): **immovable**, so knockback, Shockwave, Gravity Well and crowds can't move it (Shockwave still shakes it). It walks into your range, **charges up for 3 s** (a ring fills around it), then **rams the spire for 10× its attack** and keeps hitting from there. Kill it while it charges.
 - **Healers no longer attack:** they stop 50 m from the spire and sit there healing, so they can't die to Thorns.
