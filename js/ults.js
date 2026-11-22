@@ -11,8 +11,7 @@ const ultCost=(t,l)=>Math.ceil((t.lv>=ULT.levels?ULT.cost(l):ULT.cost(Math.floor
 const ultUnlock=u=>Math.ceil(ULT.unlock*u.cost); // ... times the ultimate's own price multiplier
 // status: 0 none, 1 Silver, 2 Gold, 3 Platinum, from how complete the ultimate is (ULT.medals)
 function ultStatus(k){if(!ultOwned(k))return 0;const p=ultProg(k)+1e-9;let s=0;for(const m of ULT.medals)if(p>=m)s++;return s}
-const ultPerm=k=>UK[k].perm&&ultStatus(k)>=1; // ultimates marked perm are always on at Silver (none right now)
-const ultManual=k=>!!save.set.ultMan[k]&&!ultPerm(k)&&!UK[k].passive;
+const ultManual=k=>!!save.set.ultMan[k]&&!UK[k].passive;
 // 1.23: tracks went from 4-20 levels to 40-100; convert old levels proportionally so every track keeps its value
 // the track layout used from 1.23 to 1.32 ([base, per level, levels, % growth]); old saves convert through it
 const ULT_V3={chain:{chance:[.1,.01,50],jumps:[2,.1,40],mult:[.4,.01,50],dmg:[2,.2,100]},frost:{slow:[.3,.013,50],rate:[.5,.07,50],radius:[.6,.028,50],brittle:[.002,.00018,100]},
@@ -50,14 +49,12 @@ function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u 
   frostTick(dt,S.frost||0);shockRings(dt,S.shock||0);missileTick(dt,S.missile||0);firebombTick(dt,S.firebomb||0);
   for(const u of ULTS){if(!ultOwned(u.k)||u.passive)continue;const st=R.ult[u.k];
     if(u.k==='grav'){gravTick(dt,st,S.grav||0);continue} // its own rules: several wells, cooldown from cast
-    if(ultPerm(u.k)){ // always on; the laser re-aims every few seconds
-      if(st.act<=0){st.cd=0;fireUlt(u.k,tgt)}st.act=Math.max(st.act,1)}
     if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true); // Platinum (Echo): a second ring
     if(st.act>0){st.act-=dt;
       // damage over time lands in dotHz chunks (same total damage, far fewer hits to process); movement stays per step
       const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
       if(u.k==='laser'){const L=S.laser||0;
-        if(L>=1){const t=biggest();if(t){let da=Math.atan2(t.y,t.x)-st.ang;da=Math.atan2(Math.sin(da),Math.cos(da));const turn=(L>=3?ULT.laserTurnFast:ULT.laserTurn)*dt;st.ang+=Math.max(-turn,Math.min(turn,da))}} // Silver: tracking
+        if(L>=1){if(dotT||!st.big||st.big.dead)st.big=biggest();const t=st.big;if(t){let da=Math.atan2(t.y,t.x)-st.ang;da=Math.atan2(Math.sin(da),Math.cos(da));const turn=(L>=3?ULT.laserTurnFast:ULT.laserTurn)*dt;st.ang+=Math.max(-turn,Math.min(turn,da))}} // Silver: tracking
         if(dotT){const w=uv('laser','width')/2,dmg=R.s.damage*uv('laser','dmg')*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang);
           for(const e of enemies){if(e.dead||e.x*cx+e.y*cy<=0||Math.abs(e.x*cy-e.y*cx)>w+e.d.sz)continue;
             if(L>=2)e.noHealAt=R.time; // Gold (Cauterize)
@@ -216,16 +213,15 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     else if(f.k==='collapse'){ctx.strokeStyle=C.shard;ctx.lineWidth=3*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1-k),0,6.283);ctx.stroke()}
     else if(f.k==='shock'){ctx.strokeStyle=C.gold;ctx.lineWidth=(f.after?2.5:4)*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(0,0,CFG.towerR+k*f.r,0,6.283);ctx.stroke()}}
   ctx.globalAlpha=1;
-  // Protectors: a faint ring shows the area they guard
-  ctx.strokeStyle=C.e10;ctx.lineWidth=1.5*dpr/sc;ctx.globalAlpha=.3;ctx.beginPath();for(const e of enemies)if(!e.dead&&e.d.protect&&e.age>=CFG.fadeIn){const x=IX(e),y=IY(e);ctx.moveTo(x+CFG.protectR,y);ctx.arc(x,y,CFG.protectR,0,6.283)}ctx.stroke();ctx.globalAlpha=1;
-  // Chargers winding up: a ring fills as the charge builds, so you can see the ram coming
-  ctx.strokeStyle=C.e9;ctx.lineWidth=2.5*dpr/sc;for(const e of enemies)if(!e.dead&&e.d.charge&&e.cs===1){const x=IX(e),y=IY(e),r=e.d.sz*1.8,k=Math.min(1,e.ct/e.d.charge);ctx.globalAlpha=.4+.6*k;ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+6.283*k);ctx.stroke()}ctx.globalAlpha=1;
-  // frozen enemies (Frost Field Silver) get a solid icy ring
-  ctx.strokeStyle=C.alloy;ctx.lineWidth=2.5*dpr/sc;ctx.beginPath();for(const e of enemies)if(!e.dead&&e.frzT>0){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();
-  // stunned enemies get a gold dashed ring
-  ctx.strokeStyle=C.gold;ctx.lineWidth=1.5*dpr/sc;ctx.setLineDash([3*dpr/sc,3*dpr/sc]);ctx.beginPath();
-  for(const e of enemies)if(!e.dead&&e.stunT>0){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();ctx.setLineDash([]);
+  // per-enemy markers: one pass sorts out who needs which, then each kind is drawn as one batch
+  const PR=MK_P,CH=MK_C,FZ=MK_F,SN=MK_S;PR.length=CH.length=FZ.length=SN.length=0;
+  for(const e of enemies){if(e.dead)continue;if(e.d.protect&&e.age>=CFG.fadeIn)PR.push(e);if(e.d.charge&&e.cs===1)CH.push(e);if(e.frzT>0)FZ.push(e);else if(e.stunT>0)SN.push(e)}
+  if(PR.length){ctx.strokeStyle=C.e10;ctx.lineWidth=1.5*dpr/sc;ctx.globalAlpha=.3;ctx.beginPath();for(const e of PR){const x=IX(e),y=IY(e);ctx.moveTo(x+CFG.protectR,y);ctx.arc(x,y,CFG.protectR,0,6.283)}ctx.stroke();ctx.globalAlpha=1} // Protectors' guard area
+  if(CH.length){ctx.strokeStyle=C.e9;ctx.lineWidth=2.5*dpr/sc;for(const e of CH){const x=IX(e),y=IY(e),r=e.d.sz*1.8,k=Math.min(1,e.ct/e.d.charge);ctx.globalAlpha=.4+.6*k;ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+6.283*k);ctx.stroke()}ctx.globalAlpha=1} // Chargers winding up
+  if(FZ.length){ctx.strokeStyle=C.alloy;ctx.lineWidth=2.5*dpr/sc;ctx.beginPath();for(const e of FZ){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke()} // frozen (Frost Field Silver)
+  if(SN.length){ctx.strokeStyle=C.gold;ctx.lineWidth=1.5*dpr/sc;ctx.setLineDash([3*dpr/sc,3*dpr/sc]);ctx.beginPath();for(const e of SN){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();ctx.setLineDash([])} // stunned
 }
+const MK_P=[],MK_C=[],MK_F=[],MK_S=[];
 // ---- Ultimates tab: one compact row per ultimate; tap a row to open it (one open at a time) ----
 const MCLS=['','s','g','p'];
 const medal=k=>{const s=ultStatus(k);return s?`<span class="medal ${MCLS[s]} on">${MEDALS[s]}</span>`:''};
@@ -247,7 +243,7 @@ function ultsHtml(){
       for(const t of u.t){const l=ultLv(u.k,t.k),mx=l>=t.lv,cur=ultVal(u,t.k,l),{n,c}=mx?{n:0,c:0}:ultBuyPlan(u.k,t),nx=ultVal(u,t.k,l+n);
         h+=`<div class="utr"><div><b>${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${l/t.lv})"></i></i><span class="v">Lv ${l}/${t.lv}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
       h+=respecBtn('ult:'+u.k,'Refund upgrades');
-      h+=u.aura?'<p class="note" style="margin:4px 0 0">Always on, no cooldown.</p>':u.passive?'<p class="note" style="margin:4px 0 0">Triggers on your shots, no cooldown.</p>':ultPerm(u.k)?'<p class="note" style="margin:4px 0 0">Always on.</p>':`<div class="subs" style="margin:6px 0 0"><button data-umode="${u.k}" data-v="auto" class="${ultManual(u.k)?'':'on'}">Auto</button><button data-umode="${u.k}" data-v="man" class="${ultManual(u.k)?'on':''}">Manual</button></div>`;
+      h+=u.aura?'<p class="note" style="margin:4px 0 0">Always on, no cooldown.</p>':u.passive?'<p class="note" style="margin:4px 0 0">Triggers on your shots, no cooldown.</p>':`<div class="subs" style="margin:6px 0 0"><button data-umode="${u.k}" data-v="auto" class="${ultManual(u.k)?'':'on'}">Auto</button><button data-umode="${u.k}" data-v="man" class="${ultManual(u.k)?'on':''}">Manual</button></div>`;
       h+='</div>'}
     h+='</div>'}
   return h+`</div><p class="note" style="margin-top:8px">Bought with <b class="chip">chips</b> (shared with Equipment). Every ultimate you own is active. Its medals come from how complete it is (the average of its 4 upgrades): <b>Silver</b> at ${Math.round(ULT.medals[0]*100)}%, <b>Gold</b> at ${Math.round(ULT.medals[1]*100)}%, <b>Platinum</b> at ${Math.round(ULT.medals[2]*100)}%; each adds a bonus. Strength upgrades have ${ULT.levels} levels (${ULT.band} per tier); the others have a few big steps that get expensive fast.</p>`}

@@ -89,9 +89,9 @@ function kill(e){
   for(let i=0;i<(cleanFx()?1:4)&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
 }
 function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over time), 2 = ignores shields, 4 = can't be redirected
-  // guarded by a Protector (this step's link, or last step's: Thorns lands before this step's links are made): the Protector
+  // guarded by a Protector (links are refreshed every CFG.guardEvery steps): the Protector
   // takes protectShare of it instead, with its own damage modifiers
-  if(e.guard&&e.guardStep>=GEN_STEP-1&&!e.guard.dead&&!(f&4)){const g=e.guard;g.hitAt=performance.now();return damage(g,v*CFG.protectShare,crit,thorn,f|4)}
+  if(e.guard&&e.guardStep>=GEN_STEP-CFG.guardEvery&&!e.guard.dead&&!(f&4)){const g=e.guard;g.hitAt=performance.now();return damage(g,v*CFG.protectShare,crit,thorn,f|4)}
   v*=ultDmgMult(e); // silver ultimates make enemies take more damage
   const blocked=e.shield>0&&!(f&2),st=save.stats;
   let a=0;if(blocked){e.shield--;st.blocked++}else{a=Math.min(v,Math.max(0,e.hp));e.hp-=v;st.dmg+=a;if(thorn)st.thorn+=a}
@@ -152,6 +152,10 @@ function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:
   tgt.shotAt=performance.now(); // render-only: targeting beam
   b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
   b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
+// one step of walking towards the spire, up to `stop`: small moves are saved up until they reach walkMin, and an enemy that
+// managed under a quarter of its move (the crowd ahead leaves no room) rests restSteps before checking again
+function advance(e,dist,stop,m0){e.pend+=m0;if(e.rest>0){e.rest--;return}if(e.pend<CFG.walkMin&&e.pend<dist-stop)return;
+  const m=Math.min(e.pend,dist-stop);e.pend=0;if(walk(e,-e.x/dist,-e.y/dist,m)<m*.25)e.rest=CFG.restSteps}
 // where an enemy stops walking: at the spire, or at a fixed distance (stop) and/or a share of your range (stopPct), whichever is closer
 function stopOf(d,range){const touch=CFG.towerR+d.sz;if(!d.stop&&!d.stopPct)return touch;let r=d.stop||Infinity;if(d.stopPct)r=Math.min(r,range*d.stopPct);return Math.max(touch,r)}
 // multishot's extra targets: the best k in range after the main target (same order as targeting). Picked once per step
@@ -189,11 +193,11 @@ function update(dt){GEN_STEP++;
     // Charger: walks in until it's chargeAt of the way inside your range, charges for d.charge s, then rams the spire for
     // d.ram × its attack and stays there attacking like anyone else (cs: 0 walking in, 1 charging, 2 ramming, 3 at the spire)
     else if(d.charge&&e.cs<3){const hit=tr+d.sz;
-      if(e.cs===0){if(dist>Math.max(hit,s.range*CFG.chargeAt))walk(e,-e.x/dist,-e.y/dist,Math.min(sp*dt,dist-hit));else{e.cs=1;e.ct=0}}
+      if(e.cs===0){const at=Math.max(hit,s.range*CFG.chargeAt);if(dist>at)advance(e,dist,at,sp*dt);else{e.cs=1;e.ct=0}}
       else if(e.cs===1){if((e.ct+=dt)>=d.charge)e.cs=2}
       else{const m=Math.min(d.ramSpd*dt,dist-hit);e.x-=e.x/dist*m;e.y-=e.y/dist*m; // rams straight through the crowd
         if(dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e);if(R.over)return}}}
-    else if(dist>stop){e.pend+=sp*dt;if(e.rest>0)e.rest--;else if(e.pend>=CFG.walkMin||e.pend>=dist-stop){const m=Math.min(e.pend,dist-stop);e.pend=0;if(walk(e,-e.x/dist,-e.y/dist,m)<1e-3)e.rest=CFG.restSteps}} // stops (or slides aside) when the crowd ahead leaves no room; a fully blocked enemy rests a few steps before checking again; slow movers step every few frames once they've built up walkMin metres
+    else if(dist>stop)advance(e,dist,stop,sp*dt) // walks in, resting while the crowd ahead leaves it little room
     else{e.atk+=dt;
       if(!d.dmg){} // Healers never attack
       else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;ebs.push(b)}}
@@ -203,7 +207,7 @@ function update(dt){GEN_STEP++;
   }
   separate();
   // Protectors guard everyone within protectR (not other Protectors); the nearest one wins
-  if(typeN.protector)for(const p of enemies){if(p.dead||!p.d.protect)continue;const r2=CFG.protectR**2;
+  if(typeN.protector&&GEN_STEP%CFG.guardEvery===0)for(const p of enemies){if(p.dead||!p.d.protect)continue;const r2=CFG.protectR**2;
     forNear(p.x,p.y,CFG.protectR,o=>{if(o.d.protect)return;const d2=(o.x-p.x)**2+(o.y-p.y)**2;if(d2>r2)return;
       if(o.guardStep===GEN_STEP&&o.guard&&(o.x-o.guard.x)**2+(o.y-o.guard.y)**2<=d2)return;o.guard=p;o.guardStep=GEN_STEP})}
   // healers pulse every healEvery s and heal a flat amount (a share of their own max health, so huge pools like bosses barely notice),

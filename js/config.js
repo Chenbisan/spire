@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.48.0';
+const APP_VERSION='1.48.1';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -20,6 +20,7 @@ const CFG={
   hitRamp:1.03,  // each attack an enemy makes does this much more than its previous one (×1.34 by the 10th hit, ×18 by the 100th), so enemies can't linger forever
   protectR:40, protectShare:.5,  // Protectors: radius they guard (m) and the share of redirected damage they take
   fromPow:1.2, rampTo:3,  // enemy types arrive at ET from ÷ tier^fromPow, and their spawn chance builds up until wave rampTo × that
+  guardEvery:3,  // Protectors' guard links are refreshed every this many steps
   chargeAt:.9,  // a Charger stops to charge once it's this far inside your range (share of range)
   splitSz:.75,  // each smaller Splitter is this much the size of its parent
   healCd:5,  // an enemy can be healed at most once every this many game seconds
@@ -102,18 +103,18 @@ const SHAPES={
 const RANKS=['','Normal','Elite','Boss'];
 // r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
 // cap: most of this type on the field at once · from: first wave on tier 1 (sooner on higher tiers: from ÷ tier^CFG.fromPow) · freq: spawn chance
-// when it arrives, growing to fmax by CFG.rampTo × its arrival wave (higher waves bring more tanks and elites; fg is unused) · weight: resists being pushed (crowds now, knockback later) · bar: (unused; health shows as fill) · n/d: shown in Help
+// when it arrives, growing to fmax by CFG.rampTo × its arrival wave (higher waves bring more tanks and elites) · weight: resists being pushed (crowds now, knockback later) · n/d: shown in Help
 const ET={
  basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1',cap:1700},
  fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:10,freq:.15,cap:1000},
- ranged:{n:'Ranged',r:1,d:'Stops at 90% of your range, just inside your reach, and fires a shot at the spire every 2 s.',hp:3.5,dmg:2.04,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:100,freq:.08,fg:.002,fmax:0.12,stopPct:.9,shoot:1,cap:500},
- tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:40,freq:.08,fg:.003,fmax:0.2,bar:1,cap:800},
- shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,freq:.03,fg:.002,fmax:0.12,bar:1,shield:3,cap:400},
- healer:{n:'Healer',r:2,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,freq:.03,fg:.0012,fmax:0.08,bar:1,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
- splitter:{n:'Splitter',r:2,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Smaller ones pay less and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,freq:.03,fg:.002,fmax:0.12,bar:1,split:2,splits:2,cap:400},
- charger:{n:'Charger',r:2,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,freq:.03,fg:.0015,fmax:0.1,immov:1,charge:3,ram:10,ramSpd:160,cap:300},
- protector:{n:'Protector',r:2,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,coin:5,sh:'crest',c:'e10',from:1800,freq:.03,fg:.0012,fmax:0.08,protect:1,cap:200},
- boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',bar:1,cap:25}
+ ranged:{n:'Ranged',r:1,d:'Stops at 90% of your range, just inside your reach, and fires a shot at the spire every 2 s.',hp:3.5,dmg:2.04,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:100,freq:.08,fmax:0.12,stopPct:.9,shoot:1,cap:500},
+ tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:40,freq:.08,fmax:0.2,cap:800},
+ shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,freq:.03,fmax:0.12,shield:3,cap:400},
+ healer:{n:'Healer',r:2,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,freq:.03,fmax:0.08,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
+ splitter:{n:'Splitter',r:2,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Smaller ones pay less and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,freq:.03,fmax:0.12,split:2,splits:2,cap:400},
+ charger:{n:'Charger',r:2,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,freq:.03,fmax:0.1,immov:1,charge:3,ram:10,ramSpd:160,cap:300},
+ protector:{n:'Protector',r:2,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,coin:5,sh:'crest',c:'e10',from:1800,freq:.03,fmax:0.08,protect:1,cap:200},
+ boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',cap:25}
 };
 const TYPES=Object.keys(ET);
 // ================= Cards and Modules =================
@@ -182,12 +183,12 @@ const ULTS=[
   t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:18,n:'Shake multiplier',base:.5,end:5,f:v=>`×${+v.toFixed(2)} × enemy weight damage taken`},
      {k:'radius',lv:8,n:'Radius',base:.6,end:1,f:v=>PC1(v)+' of range'},{k:'cd',lv:15,n:'Cooldown',base:90,end:15,f:S1}],  // 5 s steps, fastest 15 s
   sb:'Crush: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn\'t move at all', gb:'Aftershock: when a shaken enemy dies, the shake spreads to enemies within 25 m for the time it had left', pb:'Echo: a second ring follows 1 s later'},
- {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it. Its cooldown starts when it opens, so once Duration matches Cooldown there\'s always a well up. Up to 3 can be open at once, each on a different cluster.',timed:1,
+ {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it. Its cooldown starts when it opens, so once Duration matches Cooldown there\'s always a well up. Up to 3 can be open at once, each on a different cluster.',
   icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',
   t:[{k:'radius',lv:10,n:'Radius',base:50,end:150,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,pow:2,f:v=>fmt(v)+' m/s (÷ weight)'},
      {k:'dur',lv:10,n:'Duration',base:10,end:60,f:S1},{k:'cd',lv:12,n:'Cooldown',base:300,end:60,f:S1}],
   sb:'Collapse: when a well ends, it yanks every enemy within twice its radius towards its centre', gb:'Siphon: every enemy that dies inside a well adds 0.5 s to it (up to double its duration), so wells can overlap', pb:'Heavy core: enemies inside a well count as 50% heavier, so Shockwave shakes them harder and knockback can\'t push them back out'},
- {k:'laser',cost:1.5,n:'Laser',col:'hot',d:'Charges up, then fires a beam at the enemy with the most health (the biggest number, not the biggest share) and burns every enemy along it. Built for bosses.',timed:1,
+ {k:'laser',cost:1.5,n:'Laser',col:'hot',d:'Charges up, then fires a beam at the enemy with the most health (the biggest number, not the biggest share) and burns every enemy along it. Built for bosses.',
   icon:'<circle cx="5" cy="12" r="2.5"/><path d="M8 12h14"/><path d="M8 9.5l3 1M8 14.5l3-1"/>',
   t:[{k:'dmg',n:'Damage',base:3,pow:1.2,f:v=>`×${fmt(v)} spire damage /s`},{k:'width',lv:12,n:'Width',base:10,end:40,f:v=>(+v.toFixed(1))+' m'},
      {k:'dur',lv:12,n:'Duration',base:3,end:15,f:S1},{k:'cd',lv:12,n:'Charge time',base:60,end:12,f:S1}],
