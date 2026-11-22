@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.48.2 — 2026-11-21
+- **Chargers ignore the crowd:** they walk and ram straight through other enemies, and nothing bumps into them, so every ram reaches the spire. (1.48.1's shoving is gone.) Every other enemy still keeps its distance.
+
 ## 1.48.1 — 2026-11-21
 - **Smoother with big crowds:** with 3,500 enemies and every ultimate the game now runs almost twice as fast (game speeds up to about 23× hold steady, was about 12×), and about a third faster with 2,000 enemies. Enemies stuck behind the crowd wait instead of re-checking for room every frame, Chargers walk in the same efficient way as everyone else, Protectors refresh who they guard a few times a second instead of every frame, and the Laser looks for its target 10 times a second.
 - **Chargers shove the crowd aside:** a ramming Charger now pushes enemies in its way out to the sides instead of ploughing through them. If the crowd is too packed to give way, or another Charger is in the way, the ram stops there and the Charger walks in on foot without its ram hit. Enemies no longer end up overlapping around Chargers.

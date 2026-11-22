@@ -152,15 +152,6 @@ function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:
   tgt.shotAt=performance.now(); // render-only: targeting beam
   b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
   b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
-// a ramming Charger shoves every movable enemy it would overlap sideways out of its path (away from the ram line), just enough
-// to clear it and never through the crowd beside them (walk). Returns false if anything won't give way (another Charger, or an
-// enemy with no room to move): the ram is stopped there.
-function ramShove(e,ux,uy){const g=CFG.sepGap,reach=(e.d.sz+MAX_SZ)*g;let ok=true;
-  forNear(e.x,e.y,reach,o=>{if(o===e||!ok)return;if(o.d.immov){const D=(e.d.sz+o.d.sz)*g;if((o.x-e.x)**2+(o.y-e.y)**2<D*D)ok=false;return}const D=(e.d.sz+o.d.sz)*g,rx=o.x-e.x,ry=o.y-e.y;if(rx*rx+ry*ry>=D*D)return;
-    const al=rx*ux+ry*uy;let px=rx-al*ux,py=ry-al*uy,pl=Math.hypot(px,py);
-    if(pl<1e-3){px=-uy;py=ux;if(Math.random()<.5){px=-px;py=-py}pl=1} // dead centre: pick a side
-    walk(o,px/pl,py/pl,Math.sqrt(D*D-al*al)-Math.hypot(rx-al*ux,ry-al*uy)+.01);o.rest=0;
-    if((o.x-e.x)**2+(o.y-e.y)**2<(D*.97)**2)ok=false});return ok}
 // one step of walking towards the spire, up to `stop`: small moves are saved up until they reach walkMin, and an enemy that
 // managed under a quarter of its move (the crowd ahead leaves no room) rests restSteps before checking again
 function advance(e,dist,stop,m0){e.pend+=m0;if(e.rest>0){e.rest--;return}if(e.pend<CFG.walkMin&&e.pend<dist-stop)return;
@@ -204,10 +195,8 @@ function update(dt){GEN_STEP++;
     else if(d.charge&&e.cs<3){const hit=tr+d.sz;
       if(e.cs===0){const at=Math.max(hit,s.range*CFG.chargeAt);if(dist>at)advance(e,dist,at,sp*dt);else{e.cs=1;e.ct=0}}
       else if(e.cs===1){if((e.ct+=dt)>=d.charge)e.cs=2}
-      else{const m=Math.min(d.ramSpd*dt,dist-hit),x0=e.x,y0=e.y;e.x-=e.x/dist*m;e.y-=e.y/dist*m;
-        if(!ramShove(e,-e.x/dist,-e.y/dist)){e.x=x0;e.y=y0;e.cs=3;e.atk=0} // something won't give way: the ram stops here and it fights on foot
-        if(enemies[e.gi]===e){SX[e.gi]=e.x;SY[e.gi]=e.y}
-        if(e.cs===2&&dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e);if(R.over)return}}}
+      else{const m=Math.min(d.ramSpd*dt,dist-hit);e.x-=e.x/dist*m;e.y-=e.y/dist*m; // rams straight through the crowd (Chargers ignore collision)
+        if(dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e);if(R.over)return}}}
     else if(dist>stop)advance(e,dist,stop,sp*dt) // walks in, resting while the crowd ahead leaves it little room
     else{e.atk+=dt;
       if(!d.dmg){} // Healers never attack
@@ -264,13 +253,14 @@ function sepBuild(){
   const N=Math.ceil(2*(spawnMax()+60)/SEPC);if(N!==SEPN){SEPN=N;SEPO=SEPC*N/2;sepHead=new Int32Array(N*N)} // grid grows with the arena
   sepHead.fill(-1);sepBuilt=true;
   // flat copies of position/size/weight (much faster to read than enemy objects); walk() keeps SX/SY in step with moves
-  for(let i=0;i<n;i++){const e=enemies[i];e.gi=i;SX[i]=e.x;SY[i]=e.y;SS[i]=e.dead?-1:e.d.sz;SW[i]=e.d.immov?e.wt*CFG.immovSep:e.wt; // immovable enemies (Chargers) are very heavy in the crowd, so they barely budge but overlaps still clear
+  // ghosts (Chargers) get size -1: they ignore collision and nobody checks against them
+  for(let i=0;i<n;i++){const e=enemies[i];e.gi=i;SX[i]=e.x;SY[i]=e.y;SS[i]=e.dead||e.d.ghost?-1:e.d.sz;SW[i]=e.wt;
     const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i;if(e.d.sz>BIG_SZ)bigs.push(i)}}
 // move e up to m along the unit vector (ux,uy), stopping where it would come closer than the allowed distance to
 // anyone ahead of it; if blocked, it slides along the blocker with the rest of the step. Long moves (Shockwave,
 // knockback) go in cell-sized chunks so they stop at the crowd too. Returns how far it actually moved.
 function walk(e,ux,uy,m){
-  if(!sepBuilt||enemies[e.gi]!==e){e.x+=ux*m;e.y+=uy*m;return m} // not in this step's grid (just spawned): moves freely
+  if(!sepBuilt||enemies[e.gi]!==e||e.d.ghost){e.x+=ux*m;e.y+=uy*m;return m} // not in this step's grid, or ignores collision: moves freely // not in this step's grid (just spawned): moves freely
   let moved=0;while(m>1e-9){const c=Math.min(m,SEPC*.5),d=walk1(e,ux,uy,c);moved+=d;m-=c;if(d<c*.5)break}return moved}
 function walk1(e,ux,uy,m){
   const i=e.gi,x0=e.x,y0=e.y;let t=clampT(i,x0,y0,ux,uy,m),x=x0+ux*t,y=y0+uy*t;

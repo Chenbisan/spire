@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.48.1';
+const APP_VERSION='1.48.2';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -21,7 +21,6 @@ const CFG={
   protectR:40, protectShare:.5,  // Protectors: radius they guard (m) and the share of redirected damage they take
   fromPow:1.2, rampTo:3,  // enemy types arrive at ET from ÷ tier^fromPow, and their spawn chance builds up until wave rampTo × that
   guardEvery:3,  // Protectors' guard links are refreshed every this many steps
-  immovSep:50,  // for crowd spacing only, an immovable enemy counts as this many times its weight (pushes, pulls and knockback still can't move it)
   chargeAt:.9,  // a Charger stops to charge once it's this far inside your range (share of range)
   splitSz:.75,  // each smaller Splitter is this much the size of its parent
   healCd:5,  // an enemy can be healed at most once every this many game seconds
@@ -102,7 +101,7 @@ const SHAPES={
  hexagon:regPoly(6,1),
 };
 const RANKS=['','Normal','Elite','Boss'];
-// r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
+// ghost: ignores collision (walks through others, and others through it) · r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
 // cap: most of this type on the field at once · from: first wave on tier 1 (sooner on higher tiers: from ÷ tier^CFG.fromPow) · freq: spawn chance
 // when it arrives, growing to fmax by CFG.rampTo × its arrival wave (higher waves bring more tanks and elites) · weight: resists being pushed (crowds now, knockback later) · n/d: shown in Help
 const ET={
@@ -113,7 +112,7 @@ const ET={
  shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,freq:.03,fmax:0.12,shield:3,cap:400},
  healer:{n:'Healer',r:2,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,freq:.03,fmax:0.08,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
  splitter:{n:'Splitter',r:2,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Smaller ones pay less and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,freq:.03,fmax:0.12,split:2,splits:2,cap:400},
- charger:{n:'Charger',r:2,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, shoving enemies in its way aside, and keeps hitting from there. A crowd too packed to give way (or another Charger) stops the ram, and it walks in on foot instead.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,freq:.03,fmax:0.1,immov:1,charge:3,ram:10,ramSpd:160,cap:300},
+ charger:{n:'Charger',r:2,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there. It ignores the crowd: it walks and rams straight through other enemies.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,freq:.03,fmax:0.1,immov:1,ghost:1,charge:3,ram:10,ramSpd:160,cap:300},
  protector:{n:'Protector',r:2,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,coin:5,sh:'crest',c:'e10',from:1800,freq:.03,fmax:0.08,protect:1,cap:200},
  boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',cap:25}
 };

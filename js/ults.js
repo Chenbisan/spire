@@ -109,7 +109,7 @@ function shockBlast(after){const R=run;(R.rings||(R.rings=[])).push({id:++ringId
 function shockRings(dt,st){const R=run;if(!R.rings||!R.rings.length)return;const f=uv('shock','force'),lim=spawnMax();
   for(let i=R.rings.length-1;i>=0;i--){const g=R.rings[i],r0=g.r;g.r=Math.min(g.rad,g.r+g.rad/ULT.ringTime*dt);
     const hit=enemies.filter(e=>!e.dead&&e.ring!==g.id&&e.dist-e.d.sz<=g.r&&e.dist+e.d.sz>=r0-1).sort((a,b)=>b.dist-a.dist);
-    for(const e of hit){e.ring=g.id;const d=Math.hypot(e.x,e.y)||1,m=e.d.immov?0:Math.min(f/wtOf(e),lim-d); // immovable: shaken but not pushedlet moved=m;
+    for(const e of hit){e.ring=g.id;const d=Math.hypot(e.x,e.y)||1,m=e.d.immov?0:Math.min(f/wtOf(e),lim-d);let moved=m; // (immovable: shaken but not pushed)
       if(m>0){moved=walk(e,e.x/d,e.y/d,m);e.px=e.x;e.py=e.y;e.rest=0}
       const blocked=m>0?Math.max(0,1-moved/m):0;
       e.shakeM=shakeOf(e)*(st>=1?1+blocked*ULT.crush:1);e.shakenAt=R.time} // Silver (Crush): pinned enemies are shaken harder
