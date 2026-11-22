@@ -1,9 +1,9 @@
 # What's new in Spire
 
 ## 1.48.0 — 2026-11-21
-- **💥 New ultimate, Mortar:** lobs a shell at the enemy that has **stood still the longest**: Ranged enemies, parked Healers, charging Chargers, or a crowd held up at the spire. The shell arcs over and lands where its target stood, and everything in the blast takes full damage.
-  - Upgrades: **Shell damage** (100 levels, 5 per tier), **Blast radius** (15 → 60 m), **Cooldown** (12 → 2 s) and **Shells per volley** (1 → 4, each at the next stillest enemy).
-  - Medals: **Silver, Scorched earth**, each blast leaves burning ground for 3 s · **Gold, Bunker buster**, double damage to enemies that have stood still for 5 s or more · **Platinum, Barrage**, a second volley follows 0.5 s later.
+- **🔥 New ultimate, Firebomb:** lobs a firebomb at the enemy that has **stood still the longest**. Where it lands it leaves a **flaming carpet**, and anything standing on it burns harder the longer it stays: +25% damage for every second on it, reset when it steps off. It punishes Ranged enemies, parked Healers, charging Chargers and crowds held up at the spire.
+  - Upgrades: **Fire damage** (100 levels, 5 per tier), **Carpet radius** (15 → 50 m), **Cooldown** (12 → 2 s) and **Carpet duration** (4 → 12 s).
+  - Medals: **Silver, Spreading flames**, an enemy that dies on the carpet sets the ground where it fell alight · **Gold, Searing**, burning builds up twice as fast · **Platinum, Carpet bombing**, 2 firebombs per launch.
 
 ## 1.47.0 — 2026-11-21
 - **A fresh spire starts with 30 m of range** (was 110 m), on a smaller field: the view starts at 100 m across and enemies spawn about 110 m out (was 320 m and 335 m). The view still zooms out as your range grows. Range upgrades matter a lot more now.
