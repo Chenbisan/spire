@@ -47,7 +47,7 @@ function ultDmgMult(e){const R=run,S=R&&R.ultSt;if(!S)return 1;let m=1;
   return m}
 function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u of ULTS)R.ultSt[u.k]=ultStatus(u.k);const S=R.ultSt;
   R.chainP=ultOwned('chain')?uv('chain','chance'):0; // read on every bullet hit
-  frostTick(dt,S.frost||0);shockRings(dt,S.shock||0);
+  frostTick(dt,S.frost||0);shockRings(dt,S.shock||0);missileTick(dt,S.missile||0);
   for(const u of ULTS){if(!ultOwned(u.k)||u.passive)continue;const st=R.ult[u.k];
     if(u.k==='grav'){gravTick(dt,st,S.grav||0);continue} // its own rules: several wells, cooldown from cast
     if(ultPerm(u.k)){ // always on; the laser re-aims every few seconds
@@ -135,13 +135,34 @@ function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),nf=uv('
       while(i>0&&chainNd[i-1]>d){chainNear[i]=chainNear[i-1];chainNd[i]=chainNd[i-1];i--}chainNear[i]=o;chainNd[i]=d});
     for(const o of chainNear){if(hitN>=ULT.chainMax)break;o.cz=stamp;hitN++;if(segs)segs.push([e.x,e.y,o.x,o.y,Math.random()-.5,Math.random()-.5,dp]);chainQ.push(o);chainV.push(v*mul);chainD.push(dp+1)}}
   if(fx)ultFx.push({k:'chain',x:e0.x,y:e0.y,segs,at:performance.now()})}
+// Missiles: each homes in on the enemy with the least health (retargeting if it dies first). On impact it deals spire damage ×
+// Missile damage × (1 + Low-health bonus × the share of health the target is missing) to the target and the same to everything
+// within the blast radius. Silver: 2 bomblets at the next weakest nearby, 50% damage. Gold: non-boss targets under 15% die
+// outright. Platinum: 3 missiles per launch.
+function weakest(n,skip,x,y,r){const out=[];for(const e of enemies){if(e.dead||e.age<CFG.fadeIn||(skip&&skip.has(e)))continue;
+    if(r!=null&&(e.x-x)**2+(e.y-y)**2>r*r)continue;
+    if(out.length<n||e.hp<out[out.length-1].hp){out.push(e);out.sort((a,b)=>a.hp-b.hp);if(out.length>n)out.pop()}}return out}
+function launchMissiles(S){const R=run,M=R.missiles||(R.missiles=[]);for(const t of weakest(S>=3?ULT.salvo:1))M.push({x:0,y:0,px:0,py:0,t,g:t.gen,m:1})}
+function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;const step=ULT.missileSpd*dt;
+  for(let i=M.length-1;i>=0;i--){const m=M[i];m.px=m.x;m.py=m.y;let t=m.t;
+    if(t.dead||t.gen!==m.g){t=weakest(1)[0];if(!t){M.splice(i,1);continue}m.t=t;m.g=t.gen} // its target died: find the next weakest
+    const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);
+    if(d>step+t.d.sz){m.x+=dx/d*step;m.y+=dy/d*step;continue}
+    M.splice(i,1);missileHit(m,t,S)}}
+function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
+  if(S>=2&&t.d.r!==3&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,2); // Gold (Execute)
+  else damage(t,dmg,0);
+  forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)damage(o,dmg,0,false,1)}); // collateral: the same damage to everything in the blast
+  if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5})} // Silver (Cluster)
+  if(ultFx.length<80)ultFx.push({k:'boom',x:t.x,y:t.y,r:rad*(m.m<1?.6:1),at:performance.now()})}
 // the living enemy with the most health (absolute, not %): Laser's target
 function biggest(){let b=null,h=-1;for(const e of enemies)if(!e.dead&&e.age>=CFG.fadeIn&&e.hp>h){h=e.hp;b=e}return b}
 function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[k].passive||st.cd>0||st.act>0||R.over)return false;
   if(k==='grav')return openWell(st);
   const near=inRange();if(!near.length)return false;tgt=tgt&&!tgt.dead?tgt:near.sort((a,b)=>a.dist-b.dist)[0];
   st.cd=uv(k,'cd');save.stats.ultUses++;const S=R.ultSt||{},now=performance.now();
-  if(k==='shock'){shockBlast(false);if(S.shock>=3)st.after=ULT.aftershock}
+  if(k==='missile')launchMissiles(S.missile||0);
+  else if(k==='shock'){shockBlast(false);if(S.shock>=3)st.after=ULT.aftershock}
   else if(k==='laser'){const t=biggest()||tgt;st.ang=Math.atan2(t.y,t.x);st.act=uv('laser','dur')} // aims at the enemy with the most health
   return true}
 // ---- drawing (called from draw()) ----
@@ -155,12 +176,15 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
       ctx.lineCap='round';ctx.strokeStyle=C.hot;ctx.globalAlpha=.25*fl;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(cx,cy);ctx.stroke();
       ctx.globalAlpha=.9*fl;ctx.lineWidth=Math.max(2*dpr/sc,w*.25);ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt'}
     else if(L.cd<1.5){const k=1-Math.max(0,L.cd)/1.5;ctx.fillStyle=C.hot;ctx.globalAlpha=.15+.5*k;ctx.beginPath();ctx.arc(0,0,CFG.towerR+4+8*k,0,6.283);ctx.fill();ctx.globalAlpha=1}} // charging glow
+  if(R.missiles&&R.missiles.length){ctx.strokeStyle=C.chip;ctx.fillStyle=C.chip;ctx.lineCap='round';
+    for(const m of R.missiles){const x=IX(m),y=IY(m),s=(m.m<1?2.5:4)*dpr/sc;ctx.globalAlpha=.5;ctx.lineWidth=s;ctx.beginPath();ctx.moveTo(m.px,m.py);ctx.lineTo(x,y);ctx.stroke();ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,s,0,6.283);ctx.fill()}ctx.lineCap='butt'}
   if(R.rings)for(const g of R.rings){ctx.strokeStyle=C.gold;ctx.lineWidth=(g.after?2.5:4)*dpr/sc;ctx.globalAlpha=.85*(1-g.r/g.rad)+.15;ctx.beginPath();ctx.arc(0,0,CFG.towerR+g.r,0,6.283);ctx.stroke()}
   ctx.globalAlpha=1;
   for(let i=ultFx.length-1;i>=0;i--){const f=ultFx[i],k=(now-f.at)/(f.k==='chain'?260:450);if(k>=1){ultFx.splice(i,1);continue}
     if(f.k==='chain'){if(i<ultFx.length-CFG.boltsDrawn)continue; // only the newest bolts; one path each
       ctx.strokeStyle=C.bolt;ctx.globalAlpha=1-k;ctx.fillStyle=C.bolt;ctx.beginPath();ctx.arc(f.x,f.y,5*dpr/sc,0,6.283);ctx.fill();
       ctx.lineWidth=2*dpr/sc;ctx.beginPath();for(const [x0,y0,x1,y1,jx,jy] of f.segs){const L=Math.hypot(x1-x0,y1-y0)*.35;ctx.moveTo(x0,y0);ctx.lineTo((x0+x1)/2+jx*L,(y0+y1)/2+jy*L);ctx.lineTo(x1,y1)}ctx.stroke()}
+    else if(f.k==='boom'){ctx.fillStyle=C.chip;ctx.globalAlpha=(1-k)*.35;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(.4+.6*k),0,6.283);ctx.fill();ctx.strokeStyle=C.chip;ctx.lineWidth=2*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.stroke()}
     else if(f.k==='collapse'){ctx.strokeStyle=C.shard;ctx.lineWidth=3*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1-k),0,6.283);ctx.stroke()}
     else if(f.k==='shock'){ctx.strokeStyle=C.gold;ctx.lineWidth=(f.after?2.5:4)*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(0,0,CFG.towerR+k*f.r,0,6.283);ctx.stroke()}}
   ctx.globalAlpha=1;
