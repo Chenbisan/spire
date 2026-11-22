@@ -56,7 +56,7 @@ function spawn(t,x,y){
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.wt=d.weight*CFG.wtMul(R.wave)*R.tm.wt;e.spd=d.spd*R.tm.spd;e.mhp=e.hp=d.hp*CFG.hpMul(R.wave)*R.tm.hp;e.dmg=d.dmg*CFG.dmgMul(R.wave)*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
-  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.hn=0;e.healAt=-1e9;e.ht=d.heal?Math.random()*d.healEvery:0;e.rest=0;e.pend=0;e.gi=-1;e.fs=0;e.frz1=false;e.frzT=0;
+  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.hn=0;e.mh=0;e.healAt=-1e9;e.ht=d.heal?Math.random()*d.healEvery:0;e.rest=0;e.pend=0;e.gi=-1;e.fs=0;e.frz1=false;e.frzT=0;
   e.sg=0;enemies.push(e);return e;
 }
 function nextWave(){

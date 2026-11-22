@@ -150,9 +150,10 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     if(d>step+t.d.sz){m.x+=dx/d*step;m.y+=dy/d*step;continue}
     M.splice(i,1);missileHit(m,t,S)}}
 function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
+  const hitE=(o,f)=>{const v=S>=3?dmg*ULT.mStack**(o.mh||0):dmg;o.mh=(o.mh||0)+1;damage(o,v,0,false,f)}; // Platinum: each earlier missile hit on this enemy multiplies the damage
   if(S>=2&&t.d.r!==3&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,2); // Gold (Execute)
-  else damage(t,dmg,0);
-  forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)damage(o,dmg,0,false,1)}); // collateral: the same damage to everything in the blast
+  else hitE(t,0);
+  forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)hitE(o,1)}); // collateral: the same damage to everything in the blast
   if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5})} // Silver (Cluster)
   if(ultFx.length<80)ultFx.push({k:'boom',x:t.x,y:t.y,r:rad*(m.m<1?.6:1),at:performance.now()})}
 // the living enemy with the most health (absolute, not %): Laser's target

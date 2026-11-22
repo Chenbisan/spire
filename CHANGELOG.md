@@ -3,7 +3,7 @@
 ## 1.43.0 — 2026-11-21
 - **🚀 New ultimate, Missiles:** fires a missile that homes in on the enemy with the **least health** and hits harder the more of its health is missing. Everything within the blast radius takes the same damage. Built for finishing off the wounded.
   - Upgrades: **Missile damage** (100 levels, 5 per tier), **Cooldown** (15 → 3 s), **Blast radius** (20 → 70 m) and **Low-health bonus** (up to +100% → +500% damage on a target at 0% health).
-  - Medals: **Silver, Cluster**, each blast throws 2 bomblets at the next weakest enemies nearby for 50% damage · **Gold, Execute**, a missile kills any non-boss target below 15% health outright · **Platinum, Salvo**, 3 missiles at once at the 3 weakest enemies.
+  - Medals: **Silver, Cluster**, each blast throws 2 bomblets at the next weakest enemies nearby for 50% damage · **Gold, Execute**, a missile kills any non-boss target below 15% health outright · **Platinum, Salvo**, 3 missiles at once at the 3 weakest enemies, and every missile hit on an enemy makes the next one against it 25% stronger (compounding).
   - Prices ×1.25.
 
 ## 1.42.0 — 2026-11-21
