@@ -187,7 +187,7 @@ function update(dt){GEN_STEP++;
   separate();
   // healers pulse every healEvery s and heal a flat amount (a share of their own max health, so huge pools like bosses barely notice),
   // capped at healMax of the target's max health; each enemy at most once every CFG.healCd s, and healers never heal each other
-  for(const h of healers){const r2=h.d.healR**2,amt=h.mhp*h.d.heal,cap=h.d.healMax,now=R.time;forNear(h.x,h.y,h.d.healR,o=>{if(o.d.heal||now-o.healAt<CFG.healCd-.01||o.hp>=o.mhp||(o.x-h.x)**2+(o.y-h.y)**2>r2)return;o.healAt=now;o.hp=Math.min(o.mhp,o.hp+Math.min(amt,o.mhp*cap))})} // never more than healMax of the target's max health
+  for(const h of healers){const r2=h.d.healR**2,amt=h.mhp*h.d.heal,cap=h.d.healMax,now=R.time;forNear(h.x,h.y,h.d.healR,o=>{if(o.d.heal||now-o.healAt<CFG.healCd-.01||(o.noHealAt!=null&&now-o.noHealAt<ULT.noHeal)||o.hp>=o.mhp||(o.x-h.x)**2+(o.y-h.y)**2>r2)return;o.healAt=now;o.hp=Math.min(o.mhp,o.hp+Math.min(amt,o.mhp*cap))})} // never more than healMax of the target's max health
   healers.length=0;
   ultTick(dt,tgt);if(R.over)return;
   const fi=1/s.aspd;R.fireT+=dt;

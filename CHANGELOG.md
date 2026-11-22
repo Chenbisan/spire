@@ -1,5 +1,12 @@
 # What's new in Spire
 
+## 1.42.0 — 2026-11-21
+- **🔴 Laser is the boss killer:** when fully charged it fires at the enemy with the **most health** (the biggest number, not the biggest share), and burns everything along the beam.
+  - **Silver, Tracking:** while firing, the beam turns to follow whichever living enemy has the most health.
+  - **Gold, Cauterize:** enemies the beam hits can't be healed for 5 s.
+  - **Platinum, Lock-on:** the beam turns 3× faster, and enemies inside it are slowed by 50%.
+  - Gone: always firing at Silver, ignoring shields, +50% damage and the second beam. Duration and Charge time now always matter.
+
 ## 1.41.0 — 2026-11-21
 - **Splitters split into Splitters:** when one dies it breaks into **2 smaller Splitters with half its health**, and each of those splits once more into 2 with half again (7 in all), instead of 3 Fast enemies. Each split is smaller and pays half the coins and cash, and only the first one drops alloy. Chain Lightning is the answer.
 

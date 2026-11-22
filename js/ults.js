@@ -11,7 +11,7 @@ const ultCost=(t,l)=>Math.ceil((t.lv>=ULT.levels?ULT.cost(l):ULT.cost(Math.floor
 const ultUnlock=u=>Math.ceil(ULT.unlock*u.cost); // ... times the ultimate's own price multiplier
 // status: 0 none, 1 Silver, 2 Gold, 3 Platinum, from how complete the ultimate is (ULT.medals)
 function ultStatus(k){if(!ultOwned(k))return 0;const p=ultProg(k)+1e-9;let s=0;for(const m of ULT.medals)if(p>=m)s++;return s}
-const ultPerm=k=>UK[k].perm&&ultStatus(k)>=1; // ultimates marked perm (Laser) are always on at Silver
+const ultPerm=k=>UK[k].perm&&ultStatus(k)>=1; // ultimates marked perm are always on at Silver (none right now)
 const ultManual=k=>!!save.set.ultMan[k]&&!ultPerm(k)&&!UK[k].passive;
 // 1.23: tracks went from 4-20 levels to 40-100; convert old levels proportionally so every track keeps its value
 // the track layout used from 1.23 to 1.32 ([base, per level, levels, % growth]); old saves convert through it
@@ -51,14 +51,18 @@ function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u 
   for(const u of ULTS){if(!ultOwned(u.k)||u.passive)continue;const st=R.ult[u.k];
     if(u.k==='grav'){gravTick(dt,st,S.grav||0);continue} // its own rules: several wells, cooldown from cast
     if(ultPerm(u.k)){ // always on; the laser re-aims every few seconds
-      st.mv=(st.mv||0)-dt;
-      if(st.act<=0||st.mv<=0){st.cd=0;st.act=0;if(fireUlt(u.k,tgt))st.mv=ULT.laserAim}st.act=Math.max(st.act,1)}
+      if(st.act<=0){st.cd=0;fireUlt(u.k,tgt)}st.act=Math.max(st.act,1)}
     if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true); // Platinum (Echo): a second ring
     if(st.act>0){st.act-=dt;
       // damage over time lands in dotHz chunks (same total damage, far fewer hits to process); movement stays per step
       const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
-      if(u.k==='laser'&&dotT){const w=uv('laser','width')/2,dmg=R.s.damage*uv('laser','dmg')*(S.laser>=2?1.5:1)*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang),both=S.laser>=3,fl=S.laser>=1?3:1;
-        for(const e of enemies){if(e.dead)continue;if(!both&&e.x*cx+e.y*cy<=0)continue;if(Math.abs(e.x*cy-e.y*cx)<=w+e.d.sz)damage(e,dmg,0,false,fl)}}}
+      if(u.k==='laser'){const L=S.laser||0;
+        if(L>=1){const t=biggest();if(t){let da=Math.atan2(t.y,t.x)-st.ang;da=Math.atan2(Math.sin(da),Math.cos(da));const turn=(L>=3?ULT.laserTurnFast:ULT.laserTurn)*dt;st.ang+=Math.max(-turn,Math.min(turn,da))}} // Silver: tracking
+        if(dotT){const w=uv('laser','width')/2,dmg=R.s.damage*uv('laser','dmg')*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang);
+          for(const e of enemies){if(e.dead||e.x*cx+e.y*cy<=0||Math.abs(e.x*cy-e.y*cx)>w+e.d.sz)continue;
+            if(L>=2)e.noHealAt=R.time; // Gold (Cauterize)
+            if(L>=3){e.slowT=Math.max(e.slowT,1/CFG.dotHz+.05);e.slowF=Math.max(e.slowF||0,.5)} // Platinum (Lock-on): slowed inside the beam
+            damage(e,dmg,0,false,1)}}}}
     else if(st.cd>0)st.cd-=dt;
     if(st.cd<=0&&st.act<=0&&!ultManual(u.k)&&tgt)fireUlt(u.k,tgt)}}
 // Gravity Well: each well opens on the biggest cluster not already inside a well and pulls enemies within its radius in (pull ÷
@@ -131,12 +135,14 @@ function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),nf=uv('
       while(i>0&&chainNd[i-1]>d){chainNear[i]=chainNear[i-1];chainNd[i]=chainNd[i-1];i--}chainNear[i]=o;chainNd[i]=d});
     for(const o of chainNear){if(hitN>=ULT.chainMax)break;o.cz=stamp;hitN++;if(segs)segs.push([e.x,e.y,o.x,o.y,Math.random()-.5,Math.random()-.5,dp]);chainQ.push(o);chainV.push(v*mul);chainD.push(dp+1)}}
   if(fx)ultFx.push({k:'chain',x:e0.x,y:e0.y,segs,at:performance.now()})}
+// the living enemy with the most health (absolute, not %): Laser's target
+function biggest(){let b=null,h=-1;for(const e of enemies)if(!e.dead&&e.age>=CFG.fadeIn&&e.hp>h){h=e.hp;b=e}return b}
 function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[k].passive||st.cd>0||st.act>0||R.over)return false;
   if(k==='grav')return openWell(st);
   const near=inRange();if(!near.length)return false;tgt=tgt&&!tgt.dead?tgt:near.sort((a,b)=>a.dist-b.dist)[0];
   st.cd=uv(k,'cd');save.stats.ultUses++;const S=R.ultSt||{},now=performance.now();
   if(k==='shock'){shockBlast(false);if(S.shock>=3)st.after=ULT.aftershock}
-  else if(k==='laser'){st.ang=Math.atan2(tgt.y,tgt.x);st.act=uv('laser','dur')}
+  else if(k==='laser'){const t=biggest()||tgt;st.ang=Math.atan2(t.y,t.x);st.act=uv('laser','dur')} // aims at the enemy with the most health
   return true}
 // ---- drawing (called from draw()) ----
 function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.now(),dpr=W/(stage.clientWidth||W);
@@ -145,7 +151,7 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     for(const g of R.wells){for(let i=0;i<3;i++){ctx.globalAlpha=.25+.2*i;ctx.beginPath();ctx.arc(g.x,g.y,r*(1-i*.3),a0+i,a0+i+4);ctx.stroke()}
       ctx.globalAlpha=.12;ctx.fillStyle=C.shard;ctx.beginPath();ctx.arc(g.x,g.y,r,0,6.283);ctx.fill()}ctx.globalAlpha=1}
   const L=R.ult.laser;if(L&&ultOwned('laser')){const len=spawnMax()*1.5,w=uv('laser','width');
-    if(L.act>0){const cx=Math.cos(L.ang)*len,cy=Math.sin(L.ang)*len,fl=.85+.15*Math.sin(now/40),x0=(R.ultSt&&R.ultSt.laser>=3)?-cx:0,y0=(R.ultSt&&R.ultSt.laser>=3)?-cy:0;
+    if(L.act>0){const cx=Math.cos(L.ang)*len,cy=Math.sin(L.ang)*len,fl=.85+.15*Math.sin(now/40),x0=0,y0=0;
       ctx.lineCap='round';ctx.strokeStyle=C.hot;ctx.globalAlpha=.25*fl;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(cx,cy);ctx.stroke();
       ctx.globalAlpha=.9*fl;ctx.lineWidth=Math.max(2*dpr/sc,w*.25);ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt'}
     else if(L.cd<1.5){const k=1-Math.max(0,L.cd)/1.5;ctx.fillStyle=C.hot;ctx.globalAlpha=.15+.5*k;ctx.beginPath();ctx.arc(0,0,CFG.towerR+4+8*k,0,6.283);ctx.fill();ctx.globalAlpha=1}} // charging glow
