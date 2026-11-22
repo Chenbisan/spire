@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.48.0 — 2026-11-21
+- **💥 New ultimate, Mortar:** lobs a shell at the enemy that has **stood still the longest**: Ranged enemies, parked Healers, charging Chargers, or a crowd held up at the spire. The shell arcs over and lands where its target stood, and everything in the blast takes full damage.
+  - Upgrades: **Shell damage** (100 levels, 5 per tier), **Blast radius** (15 → 60 m), **Cooldown** (12 → 2 s) and **Shells per volley** (1 → 4, each at the next stillest enemy).
+  - Medals: **Silver, Scorched earth**, each blast leaves burning ground for 3 s · **Gold, Bunker buster**, double damage to enemies that have stood still for 5 s or more · **Platinum, Barrage**, a second volley follows 0.5 s later.
+
 ## 1.47.0 — 2026-11-21
 - **A fresh spire starts with 30 m of range** (was 110 m), on a smaller field: the view starts at 100 m across and enemies spawn about 110 m out (was 320 m and 335 m). The view still zooms out as your range grows. Range upgrades matter a lot more now.
 - **Ranged enemies stop at 90% of your range** (27 m for a fresh spire) instead of a fixed 125 m, so they're always just inside your reach (once one has found its spot it stays there, even if your range grows). To make up for it, their shots hit **70% harder** (2.04× a Basic's attack instead of 1.2×).

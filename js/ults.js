@@ -47,12 +47,13 @@ function ultDmgMult(e){const R=run,S=R&&R.ultSt;if(!S)return 1;let m=1;
   return m}
 function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u of ULTS)R.ultSt[u.k]=ultStatus(u.k);const S=R.ultSt;
   R.chainP=ultOwned('chain')?uv('chain','chance'):0; // read on every bullet hit
-  frostTick(dt,S.frost||0);shockRings(dt,S.shock||0);missileTick(dt,S.missile||0);
+  frostTick(dt,S.frost||0);shockRings(dt,S.shock||0);missileTick(dt,S.missile||0);mortarTick(dt,S.mortar||0);
   for(const u of ULTS){if(!ultOwned(u.k)||u.passive)continue;const st=R.ult[u.k];
     if(u.k==='grav'){gravTick(dt,st,S.grav||0);continue} // its own rules: several wells, cooldown from cast
     if(ultPerm(u.k)){ // always on; the laser re-aims every few seconds
       if(st.act<=0){st.cd=0;fireUlt(u.k,tgt)}st.act=Math.max(st.act,1)}
     if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true); // Platinum (Echo): a second ring
+    if(u.k==='mortar'&&st.after>0&&(st.after-=dt)<=0)launchMortar(); // Platinum (Barrage): a second volley
     if(st.act>0){st.act-=dt;
       // damage over time lands in dotHz chunks (same total damage, far fewer hits to process); movement stays per step
       const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
@@ -156,6 +157,21 @@ function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv
   forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)hitE(o,1)}); // collateral: the same damage to everything in the blast
   if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5})} // Silver (Cluster)
   if(ultFx.length<80)ultFx.push({k:'boom',x:t.x,y:t.y,r:rad*(m.m<1?.6:1),at:performance.now()})}
+// Mortar: each volley lobs Shells-per-volley shells at the enemies that have stood still the longest (e.still); a shell lands
+// ULT.shellFlight s later where its target stood and deals spire damage × Shell damage to everything within the blast radius.
+// Silver: burning ground for burnT s (burnDps × the blast per second). Gold: ×2 on enemies still for bunker s. Platinum: a second volley.
+function stillest(n){const out=[];for(const e of enemies){if(e.dead||e.age<CFG.fadeIn)continue;
+    if(out.length<n||e.still>out[out.length-1].still){out.push(e);out.sort((a,b)=>b.still-a.still);if(out.length>n)out.pop()}}return out}
+function launchMortar(){const R=run,Sh=R.shells||(R.shells=[]);for(const t of stillest(Math.round(uv('mortar','shells'))))Sh.push({x:t.x,y:t.y,t:0})}
+function mortarTick(dt,S){const R=run,Sh=R.shells,B=R.burns;
+  if(Sh&&Sh.length)for(let i=Sh.length-1;i>=0;i--){const s=Sh[i];if((s.t+=dt)<ULT.shellFlight)continue;Sh.splice(i,1);
+    const rad=uv('mortar','radius'),dmg=R.s.damage*uv('mortar','dmg');
+    forNear(s.x,s.y,rad,e=>{if((e.x-s.x)**2+(e.y-s.y)**2>rad*rad)return;damage(e,dmg*(S>=2&&e.still>=ULT.bunker?2:1),0)}); // Gold (Bunker buster)
+    if(S>=1)(R.burns||(R.burns=[])).push({x:s.x,y:s.y,r:rad,left:ULT.burnT,dps:dmg*ULT.burnDps,tick:0}); // Silver (Scorched earth)
+    if(ultFx.length<80)ultFx.push({k:'shell',x:s.x,y:s.y,r:rad,at:performance.now()})}
+  if(B&&B.length)for(let i=B.length-1;i>=0;i--){const b=B[i];b.left-=dt;b.tick+=dt;
+    if(b.tick>=1/CFG.dotHz){const v=b.dps*b.tick;b.tick=0;forNear(b.x,b.y,b.r,e=>{if((e.x-b.x)**2+(e.y-b.y)**2<=b.r*b.r)damage(e,v,0,false,1)})}
+    if(b.left<=0)B.splice(i,1)}}
 // the living enemy with the most health (absolute, not %): Laser's target
 function biggest(){let b=null,h=-1;for(const e of enemies)if(!e.dead&&e.age>=CFG.fadeIn&&e.hp>h){h=e.hp;b=e}return b}
 function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[k].passive||st.cd>0||st.act>0||R.over)return false;
@@ -163,6 +179,7 @@ function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[
   const near=inRange();if(!near.length)return false;tgt=tgt&&!tgt.dead?tgt:near.sort((a,b)=>a.dist-b.dist)[0];
   st.cd=uv(k,'cd');save.stats.ultUses++;const S=R.ultSt||{},now=performance.now();
   if(k==='missile')launchMissiles(S.missile||0);
+  else if(k==='mortar'){launchMortar();if(S.mortar>=3)st.after=ULT.barrage}
   else if(k==='shock'){shockBlast(false);if(S.shock>=3)st.after=ULT.aftershock}
   else if(k==='laser'){const t=biggest()||tgt;st.ang=Math.atan2(t.y,t.x);st.act=uv('laser','dur')} // aims at the enemy with the most health
   return true}
@@ -177,6 +194,11 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
       ctx.lineCap='round';ctx.strokeStyle=C.hot;ctx.globalAlpha=.25*fl;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(cx,cy);ctx.stroke();
       ctx.globalAlpha=.9*fl;ctx.lineWidth=Math.max(2*dpr/sc,w*.25);ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt'}
     else if(L.cd<1.5){const k=1-Math.max(0,L.cd)/1.5;ctx.fillStyle=C.hot;ctx.globalAlpha=.15+.5*k;ctx.beginPath();ctx.arc(0,0,CFG.towerR+4+8*k,0,6.283);ctx.fill();ctx.globalAlpha=1}} // charging glow
+  if(R.burns&&R.burns.length){ctx.fillStyle=C.mortar;for(const b of R.burns){ctx.globalAlpha=.12+.1*Math.min(1,b.left/ULT.burnT);ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.283);ctx.fill()}ctx.globalAlpha=1}
+  if(R.shells&&R.shells.length){ctx.fillStyle=C.mortar;const a=(run.over||paused)?0:A*CFG.step;
+    for(const s of R.shells){const p=Math.min(1,(s.t+a)/ULT.shellFlight),d=Math.hypot(s.x,s.y),h=d*.35*4*p*(1-p),x=s.x*p,y=s.y*p-h; // an arc from the spire, peaking at 35% of the distance
+      ctx.globalAlpha=.25;ctx.beginPath();ctx.arc(s.x*p,s.y*p,3*dpr/sc,0,6.283);ctx.fill(); // its shadow on the ground
+      ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,4.5*dpr/sc,0,6.283);ctx.fill()}}
   if(R.missiles&&R.missiles.length){ctx.strokeStyle=C.chip;ctx.fillStyle=C.chip;ctx.lineCap='round';
     for(const m of R.missiles){const x=IX(m),y=IY(m),s=(m.m<1?2.5:4)*dpr/sc;ctx.globalAlpha=.5;ctx.lineWidth=s;ctx.beginPath();ctx.moveTo(m.px,m.py);ctx.lineTo(x,y);ctx.stroke();ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,s,0,6.283);ctx.fill()}ctx.lineCap='butt'}
   if(R.rings)for(const g of R.rings){ctx.strokeStyle=C.gold;ctx.lineWidth=(g.after?2.5:4)*dpr/sc;ctx.globalAlpha=.85*(1-g.r/g.rad)+.15;ctx.beginPath();ctx.arc(0,0,CFG.towerR+g.r,0,6.283);ctx.stroke()}
@@ -185,6 +207,7 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     if(f.k==='chain'){if(i<ultFx.length-CFG.boltsDrawn)continue; // only the newest bolts; one path each
       ctx.strokeStyle=C.bolt;ctx.globalAlpha=1-k;ctx.fillStyle=C.bolt;ctx.beginPath();ctx.arc(f.x,f.y,5*dpr/sc,0,6.283);ctx.fill();
       ctx.lineWidth=2*dpr/sc;ctx.beginPath();for(const [x0,y0,x1,y1,jx,jy] of f.segs){const L=Math.hypot(x1-x0,y1-y0)*.35;ctx.moveTo(x0,y0);ctx.lineTo((x0+x1)/2+jx*L,(y0+y1)/2+jy*L);ctx.lineTo(x1,y1)}ctx.stroke()}
+    else if(f.k==='shell'){ctx.fillStyle=C.mortar;ctx.globalAlpha=(1-k)*.45;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(.3+.7*k),0,6.283);ctx.fill();ctx.strokeStyle=C.mortar;ctx.lineWidth=2.5*dpr/sc;ctx.globalAlpha=(1-k)*.9;ctx.stroke()}
     else if(f.k==='boom'){ctx.fillStyle=C.chip;ctx.globalAlpha=(1-k)*.35;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(.4+.6*k),0,6.283);ctx.fill();ctx.strokeStyle=C.chip;ctx.lineWidth=2*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.stroke()}
     else if(f.k==='collapse'){ctx.strokeStyle=C.shard;ctx.lineWidth=3*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1-k),0,6.283);ctx.stroke()}
     else if(f.k==='shock'){ctx.strokeStyle=C.gold;ctx.lineWidth=(f.after?2.5:4)*dpr/sc;ctx.globalAlpha=(1-k)*.8;ctx.beginPath();ctx.arc(0,0,CFG.towerR+k*f.r,0,6.283);ctx.stroke()}}
