@@ -2,7 +2,7 @@
 
 ## 1.47.0 — 2026-11-21
 - **A fresh spire starts with 30 m of range** (was 110 m), on a smaller field: the view starts at 100 m across and enemies spawn about 110 m out (was 320 m and 335 m). The view still zooms out as your range grows. Range upgrades matter a lot more now.
-- **Ranged enemies stop at 90% of your range** (27 m for a fresh spire) instead of a fixed 125 m, so they're always just inside your reach, and they back off as your range grows. To make up for it, their shots hit **70% harder** (2.04× a Basic's attack instead of 1.2×).
+- **Ranged enemies stop at 90% of your range** (27 m for a fresh spire) instead of a fixed 125 m, so they're always just inside your reach (once one has found its spot it stays there, even if your range grows). To make up for it, their shots hit **70% harder** (2.04× a Basic's attack instead of 1.2×).
 - **Healers** stop at 50 m or 90% of your range, whichever is closer, so a short-range spire can still reach them.
 
 ## 1.46.0 — 2026-11-21

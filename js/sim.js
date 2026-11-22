@@ -193,7 +193,6 @@ function update(dt){GEN_STEP++;
       else{const m=Math.min(d.ramSpd*dt,dist-hit);e.x-=e.x/dist*m;e.y-=e.y/dist*m; // rams straight through the crowd
         if(dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e);if(R.over)return}}}
     else if(dist>stop){e.pend+=sp*dt;if(e.rest>0)e.rest--;else if(e.pend>=CFG.walkMin||e.pend>=dist-stop){const m=Math.min(e.pend,dist-stop);e.pend=0;if(walk(e,-e.x/dist,-e.y/dist,m)<1e-3)e.rest=CFG.restSteps}} // stops (or slides aside) when the crowd ahead leaves no room; a fully blocked enemy rests a few steps before checking again; slow movers step every few frames once they've built up walkMin metres
-    else if(d.stopPct&&dist<stop-2)walk(e,e.x/dist,e.y/dist,Math.min(sp*dt,stop-dist)) // your range grew: back off to its spot (no attacking on the way)
     else{e.atk+=dt;
       if(!d.dmg){} // Healers never attack
       else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;ebs.push(b)}}
