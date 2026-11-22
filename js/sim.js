@@ -152,6 +152,8 @@ function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:
   tgt.shotAt=performance.now(); // render-only: targeting beam
   b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
   b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
+// where an enemy stops walking: at the spire, or at a fixed distance (stop) and/or a share of your range (stopPct), whichever is closer
+function stopOf(d,range){const touch=CFG.towerR+d.sz;if(!d.stop&&!d.stopPct)return touch;let r=d.stop||Infinity;if(d.stopPct)r=Math.min(r,range*d.stopPct);return Math.max(touch,r)}
 // multishot's extra targets: the best k in range after the main target (same order as targeting). Picked once per step
 // with a small insertion list instead of sorting every enemy on every shot.
 let multiStep=-1;const multiList=[],healers=[];
@@ -179,7 +181,7 @@ function update(dt){GEN_STEP++;
   sepBuild(); // the grid comes first: walking enemies check it so they never step into each other
   for(let i=0,n0=enemies.length;i<n0;i++){
     const e=enemies[i];if(e.dead)continue;
-    e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
+    e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=stopOf(d,s.range);e.dist=dist;
     let sp=e.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;if(e.fs&&R.frostCap)sp*=1-Math.min(R.frostCap,e.fs*ULT.frostPer); // frost stacks
     if(e.frzT>0)e.frzT-=dt; // frozen: no moving, no attacking
     else if(e.stunT>0)e.stunT-=dt; // stunned: no moving, no attacking
@@ -191,9 +193,10 @@ function update(dt){GEN_STEP++;
       else{const m=Math.min(d.ramSpd*dt,dist-hit);e.x-=e.x/dist*m;e.y-=e.y/dist*m; // rams straight through the crowd
         if(dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e);if(R.over)return}}}
     else if(dist>stop){e.pend+=sp*dt;if(e.rest>0)e.rest--;else if(e.pend>=CFG.walkMin||e.pend>=dist-stop){const m=Math.min(e.pend,dist-stop);e.pend=0;if(walk(e,-e.x/dist,-e.y/dist,m)<1e-3)e.rest=CFG.restSteps}} // stops (or slides aside) when the crowd ahead leaves no room; a fully blocked enemy rests a few steps before checking again; slow movers step every few frames once they've built up walkMin metres
+    else if(d.stopPct&&dist<stop-2)walk(e,e.x/dist,e.y/dist,Math.min(sp*dt,stop-dist)) // your range grew: back off to its spot (no attacking on the way)
     else{e.atk+=dt;
       if(!d.dmg){} // Healers never attack
-      else if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;ebs.push(b)}}
+      else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;ebs.push(b)}}
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg*CFG.hitRamp**e.hn++,e);if(R.over)return}}  // each attack an enemy lands hits CFG.hitRamp × harder than its last
     if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=d.healEvery){e.ht=0;e.hf=.4;healers.push(e)}} // healed below, once the grid is built
     if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}

@@ -1,11 +1,11 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.46.0';
+const APP_VERSION='1.47.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
   step:1/60, waveLen:30, spawnLen:15,  // a wave lasts waveLen game s: enemies spawn during the first spawnLen s, then a break until the next wave
-  arenaR:320, spawnR:335, spawnRatio:1.35, viewRatio:[1.15,1.5,510], fadeIn:.5,  // viewRatio: the view fits range × this, growing from [0] at the base range to [1] at [2] m so there's room to see enemies walk in
+  arenaR:100, spawnR:110, spawnRatio:1.35, viewRatio:[1.15,1.5,510], fadeIn:.5,  // viewRatio: the view fits range × this, growing from [0] at the base range to [1] at [2] m so there's room to see enemies walk in
   offscreen:25,  // offscreen: how far past the screen edge enemies spawn (m)
    // spawn ring 35% beyond your range; the view fits range ×1.12 so enemies walk in from off-screen; new enemies fade in (game s)
   towerR:14, bulletSpd:420, ebSpd:120,
@@ -49,7 +49,7 @@ const ST=[
  {k:'critMult',g:'Attack',n:'Crit damage',base:1.5,ra:.1,wa:.05,c:[10,1.15],w:[20,1.22],x:1},
  {k:'superCrit',g:'Attack',n:'Super crit chance (of crits)',base:0,ra:.01,wa:.005,max:.8,c:[20,1.18],w:[40,1.25],p:1},
  {k:'superMult',g:'Attack',n:'Super crit damage',base:2,ra:.1,wa:.05,c:[20,1.17],w:[40,1.22],x:1},
- {k:'range',g:'Attack',n:'Range',base:110,ra:3,wa:2,max:600,c:[8,1.16],w:[25,1.25],u:' m'},
+ {k:'range',g:'Attack',n:'Range',base:30,ra:3,wa:2,max:600,c:[8,1.16],w:[25,1.25],u:' m'},
  {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.02,c:[15,1.17],w:[30,1.25],p:1,u:' per m'},
  {k:'multiChance',g:'Attack',n:'Multishot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
  {k:'multiTargets',g:'Attack',n:'Multishot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
@@ -106,10 +106,10 @@ const RANKS=['','Normal','Elite','Boss'];
 const ET={
  basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1',cap:1700},
  fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:10,freq:.15,cap:1000},
- ranged:{n:'Ranged',r:1,d:'Stops 125 m out, beyond a new spire\'s range, and fires shots at it. Upgrade Range to reach it.',hp:3.5,dmg:1.2,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:100,freq:.08,fg:.002,fmax:0.12,stop:125,cap:500},
+ ranged:{n:'Ranged',r:1,d:'Stops at 90% of your range, just inside your reach, and fires a shot at the spire every 2 s. It backs off as your range grows.',hp:3.5,dmg:2.04,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:100,freq:.08,fg:.002,fmax:0.12,stopPct:.9,shoot:1,cap:500},
  tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:40,freq:.08,fg:.003,fmax:0.2,bar:1,cap:800},
  shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,freq:.03,fg:.002,fmax:0.12,bar:1,shield:3,cap:400},
- healer:{n:'Healer',r:2,d:'Never attacks: it stops 50 m from the spire and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,freq:.03,fg:.0012,fmax:0.08,bar:1,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
+ healer:{n:'Healer',r:2,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,freq:.03,fg:.0012,fmax:0.08,bar:1,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
  splitter:{n:'Splitter',r:2,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Smaller ones pay less and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,freq:.03,fg:.002,fmax:0.12,bar:1,split:2,splits:2,cap:400},
  charger:{n:'Charger',r:2,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,freq:.03,fg:.0015,fmax:0.1,immov:1,charge:3,ram:10,ramSpd:160,cap:300},
  protector:{n:'Protector',r:2,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,coin:5,sh:'crest',c:'e10',from:1800,freq:.03,fg:.0012,fmax:0.08,protect:1,cap:200},
