@@ -18,7 +18,7 @@ python -m http.server 8000
 
 ## How it plays
 
-- **Runs:** the spire fires automatically. A new wave starts every 30 s of game time: enemies spawn for the first 15 s, then there's a break. Waves start at 10 enemies and add 3 every 10 waves; higher waves bring more Tanks and elites (spawn chances grow per wave, `freq`/`fg`/`fmax` in `ET`). A boss arrives every 10 waves. Enemies never overlap by more than 10% of their combined size: a crowd forms a wall and newcomers stop or slide into gaps, and enemies are drawn as outlines with a light fill so they stay readable when packed.
+- **Runs:** the spire fires automatically. A new wave starts every 30 s of game time: enemies spawn for the first 15 s, then there's a break. Waves start at 10 enemies and add 3 every 10 waves; higher waves bring more Tanks and elites (each type arrives at `from` ÷ tier^1.2 and ramps from `freq` to `fmax` by triple that wave; `CFG.fromPow`, `CFG.rampTo`). A boss arrives every 10 waves. Enemies never overlap by more than 10% of their combined size: a crowd forms a wall and newcomers stop or slide into gaps, and enemies are drawn as outlines with a light fill so they stay readable when packed.
 - **Enemy stats:** the top bar shows this wave's Basic enemy (♥ health, ⚔ attack, » speed, ⚖ weight). Tap it for a table of every type (spawn chance, stats, wave summary) and a Your spire tab with your current stats. Weight decides who shoves whom in a crowd, and is meant for future knockback.
 - **Enemies** come in three ranks, each type with its own shape and colour:
   - *Normal:* Basic (grey square), Fast (yellow triangle), Ranged (purple diamond, stops outside base range and shoots), Tank (orange pentagon).

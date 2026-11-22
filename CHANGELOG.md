@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.46.0 — 2026-11-21
+- **Enemy types arrive much further apart:** on tier 1, Fast from wave 10, Tank 40, Ranged 100, Shielded 250, Healer 500, Splitter 800, Charger 1,200 and Protector 1,800 (they all used to arrive by wave 25). Bosses still come every 10 waves.
+- **Higher tiers bring them sooner:** arrival waves are divided by tier^1.2 (÷2.3 on tier 2, ÷7 on tier 5, ÷36 on tier 20), so Protectors show up around wave 780 on tier 2 and wave 50 on tier 20.
+- Each type now ramps in gradually after it arrives, reaching its full share by triple its arrival wave. Full shares are trimmed so every type fits: at the deepest waves a wave is about 20% Tanks, 15% Fast, 12% each Ranged, Shielded and Splitters, 10% Chargers, 8% each Healers and Protectors. The enemy table and Help show the arrival wave for your tier.
+
 ## 1.45.0 — 2026-11-21
 - **🛡 New elite, Protector** (from wave 25): guards its friends. Damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half of it. A faint ring shows the area it guards. Protectors don't guard each other, and Missiles' Execute still goes straight through. Kill it first to get at the rest.
 

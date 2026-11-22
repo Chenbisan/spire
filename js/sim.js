@@ -43,8 +43,11 @@ function newRun(tier){
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
 function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpMul(w)*tm.hp,atk:d.dmg*CFG.dmgMul(w)*tm.dmg,spd:d.spd*tm.spd,weight:d.weight*CFG.wtMul(w)*tm.wt,coins:d.coin*tm.coin*CFG.killCoin(w)}}
 // chance each type is picked for a regular spawn on wave w (mirrors pickType; Basic takes what's left)
-const typeFreq=(d,w)=>!d.freq||w<d.from?0:Math.min(d.fmax||d.freq,d.freq+(d.fg||0)*(w-d.from));
-function spawnChance(w){const o={};let left=1;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;const p=Math.min(left,f);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
+// the wave an enemy type first appears on tier t, and its spawn chance on wave w: freq on arrival, building up to fmax by
+// rampTo × the arrival wave
+const typeFrom=(d,t)=>d.from?Math.max(1,Math.round(d.from/t**CFG.fromPow)):1;
+const typeFreq=(d,w,t=run?run.tier:1)=>{if(!d.freq)return 0;const a=typeFrom(d,t);if(w<a)return 0;const mx=d.fmax||d.freq;return d.freq+(mx-d.freq)*Math.min(1,(w-a)/Math.max(1,(CFG.rampTo-1)*a))};
+function spawnChance(w,tier){const o={};let left=1;for(const t of TYPES){const f=typeFreq(ET[t],w,tier);if(!f)continue;const p=Math.min(left,f);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
 function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;acc+=f;if(r<acc)return t}return'basic'}
 const hasRoom=t=>aliveN<CFG.enemyCap&&(typeN[t]||0)<ET[t].cap;
 // a regular spawn whose type is full becomes another type this wave can have, if any has room
