@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.51.0';
+const APP_VERSION='1.52.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -110,6 +110,8 @@ const RANKS=['','Normal','Veteran','Elite','Super Elite','Boss'];
 const isElite=d=>d.r===RK.ELITE||d.r===RK.SUPER, isBoss=d=>d.r===RK.BOSS;
 // spawn chance per rank pool: once the pool's first type arrives it has a freq chance per spawn, building up to fmax by wave full
 // (full is ÷ tier^CFG.fromPow like arrivals). The pool's chance is split evenly between its types that have arrived; Normal (Basic) takes what's left
+// coins each enemy drops, per rank (before the wave, tier and coin bonus multipliers)
+const RANK_COIN={[RK.NORMAL]:2,[RK.VETERAN]:3,[RK.ELITE]:5,[RK.SUPER]:8,[RK.BOSS]:10};
 const POOLS={
  [RK.VETERAN]:{freq:.15, fmax:.45, full:300},
  [RK.ELITE]:{freq:.04, fmax:.32, full:2400},
@@ -119,23 +121,24 @@ const POOLS={
 // cap: most of this type on the field at once · from: first wave on tier 1 (sooner on higher tiers: from ÷ tier^CFG.fromPow) · spawn chances
 // are per rank, see POOLS · weight: resists being pushed (crowds now, knockback later) · n/d: shown in Help
 const ET={
- basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1',cap:1700},
- fast:{n:'Fast',r:2,d:'',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:10,cap:1000},
- ranged:{n:'Ranged',r:2,d:'Stops at 90% of your range, just inside your reach, and fires a shot at the spire every 2 s.',hp:3.5,dmg:2.04,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:100,stopPct:.9,shoot:1,cap:500},
- tank:{n:'Tank',r:2,d:'',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:40,cap:800},
- shielded:{n:'Shielded',r:3,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Every hit removes one charge however strong it is, so more shots per second break it faster.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,shield:3,cap:400},
- healer:{n:'Healer',r:3,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
- splitter:{n:'Splitter',r:3,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Each smaller one pays half the coins and cash of the one it split from, and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,split:2,splits:2,cap:400},
- charger:{n:'Charger',r:4,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there. It ignores the crowd: it walks and rams straight through other enemies.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,immov:1,ghost:1,charge:3,ram:10,ramSpd:160,cap:300},
- protector:{n:'Protector',r:4,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,coin:5,sh:'crest',c:'e10',from:1800,protect:1,cap:200},
- boss:{n:'Boss',r:5,d:'',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',cap:25}
+ basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,sh:'square',c:'e1',cap:1700},
+ fast:{n:'Fast',r:2,d:'',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,sh:'triangle',rot:'face',c:'e2',from:10,cap:1000},
+ ranged:{n:'Ranged',r:2,d:'Stops at 90% of your range, just inside your reach, and fires a shot at the spire every 2 s. Each shot that lands triggers your Thorns on it.',hp:3.5,dmg:2.04,spd:20,weight:0.9,sz:7,cash:2,sh:'diamond',c:'e4',from:100,stopPct:.9,shoot:1,cap:500},
+ tank:{n:'Tank',r:2,d:'',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,sh:'pentagon',c:'e3',from:40,cap:800},
+ shielded:{n:'Shielded',r:3,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Every hit removes one charge however strong it is, so more shots per second break it faster.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,sh:'octagon',c:'e6',from:250,shield:3,cap:400},
+ healer:{n:'Healer',r:3,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,sh:'cross',c:'e7',from:500,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
+ splitter:{n:'Splitter',r:3,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Each smaller one pays half the coins and cash of the one it split from, and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,sh:'star',c:'e8',from:800,split:2,splits:2,cap:400},
+ charger:{n:'Charger',r:4,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there. It ignores the crowd: it walks and rams straight through other enemies.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,sh:'chevron',rot:'face',c:'e9',from:1200,immov:1,ghost:1,charge:3,ram:10,ramSpd:160,cap:300},
+ protector:{n:'Protector',r:4,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,sh:'crest',c:'e10',from:1800,protect:1,cap:200},
+ boss:{n:'Boss',r:5,d:'',hp:150,dmg:6,spd:9,weight:20,stop:30,edge:1,barrage:10,barrageEvery:10,spike:.25,spikeFlight:1.6,spikeFan:75,spikeOut:50,sz:22,cash:60,sh:'hexagon',rot:'spin',c:'e5',cap:25}
 };
 const TYPES=Object.keys(ET);
+for(const k of TYPES)ET[k].coin=RANK_COIN[ET[k].r]; // coins are per rank
 // descriptions with exact ratios to a Basic (the same on every wave and tier, since both scale alike)
 {const B=ET.basic,x=v=>+v.toFixed(2)+'×',pc=v=>Math.round(v*100)+'%';
   ET.fast.d=`Moves ${x(ET.fast.spd/B.spd)} as fast as a Basic, with ${pc(ET.fast.hp/B.hp)} of its health and ${pc(ET.fast.dmg/B.dmg)} of its attack.`;
   ET.tank.d=`Moves at ${pc(ET.tank.spd/B.spd)} of a Basic's speed, with ${x(ET.tank.hp/B.hp)} its health, ${x(ET.tank.dmg/B.dmg)} its attack and ${x(ET.tank.weight/B.weight)} its weight.`;
-  ET.boss.d=`Arrives every ${CFG.bossEvery}th wave, with ${x(ET.boss.hp/B.hp)} a Basic's health and ${x(ET.boss.dmg/B.dmg)} its attack, moving at ${pc(ET.boss.spd/B.spd)} of its speed.`}
+  {const b=ET.boss;b.d=`Arrives every ${CFG.bossEvery}th wave, with ${x(b.hp/B.hp)} a Basic's health, ${x(b.dmg/B.dmg)} its attack and ${x(b.weight/B.weight)} its weight, moving at ${pc(b.spd/B.spd)} of its speed. It stops when its near edge is ${b.stop} m from the spire's centre (so a new spire can reach it) and as soon as it arrives, and every ${b.barrageEvery} s after, launches ${b.barrage} spikes from its back that fan out and curve in on the spire. Each spike deals ${pc(b.spike)} of its attack (${x(b.spike*b.barrage)} its attack per barrage), and spikes don't trigger Thorns.`}}
 // ================= Cards and Modules =================
 const PC=v=>{const p=+(v*100).toFixed(1);return(p<10?p:Math.round(p))+'%'};
 // drops: chips from bosses (Cards), alloy from elites (Modules); both grow with wave and tier

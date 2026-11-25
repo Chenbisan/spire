@@ -27,10 +27,10 @@ function shape(e,T=ctx){ // T: the canvas context, or a Path2D to collect into
 function shots(list,col,h){
   if(!list.length)return;
   ctx.strokeStyle=col;ctx.globalAlpha=.45;ctx.lineWidth=h;ctx.lineCap='round';ctx.beginPath();
-  for(const b of list){const x=IX(b),y=IY(b);let x0=b.rx,y0=b.ry;const dx=x-x0,dy=y-y0,L=Math.hypot(dx,dy);
+  for(const b of list){if(b.sp)continue;const x=IX(b),y=IY(b);let x0=b.rx,y0=b.ry;const dx=x-x0,dy=y-y0,L=Math.hypot(dx,dy);
     if(L>CFG.streakMax){x0=x-dx/L*CFG.streakMax;y0=y-dy/L*CFG.streakMax}if(L>.5){ctx.moveTo(x0,y0);ctx.lineTo(x,y)}}
   ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
-  ctx.fillStyle=col;ctx.beginPath();for(const b of list){const x=IX(b),y=IY(b);ctx.rect(x-h,y-h,h*2,h*2);b.rx=x;b.ry=y}ctx.fill();
+  ctx.fillStyle=col;ctx.beginPath();for(const b of list){if(b.sp)continue;const x=IX(b),y=IY(b);ctx.rect(x-h,y-h,h*2,h*2);b.rx=x;b.ry=y}ctx.fill();
 }
 // clean effects: at high game speed, show steady targeting beams and hit flashes instead of strobing shots
 const cleanFx=()=>save.set.fx==='clean'||(save.set.fx!=='full'&&save.set.speed>=CFG.cleanFxAt);
@@ -74,8 +74,14 @@ function draw(){
       const now=performance.now(),bl=viewR*CFG.beamLen;ctx.strokeStyle=C.acc;ctx.globalAlpha=.6;ctx.lineWidth=2;ctx.lineCap='round';ctx.beginPath();
       for(const e of enemies)if(!e.dead&&now-(e.shotAt||0)<CFG.beamHold){const x=IX(e),y=IY(e),d=Math.hypot(x,y)||1,s0=e.d.sz*1.2,s1=Math.min(d-CFG.towerR,s0+bl);
         if(s1>s0){ctx.moveTo(x-x/d*s0,y-y/d*s0);ctx.lineTo(x-x/d*s1,y-y/d*s1)}}ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
-      ctx.fillStyle=C.e4;ctx.beginPath();for(const b of ebs){const x=IX(b),y=IY(b);ctx.rect(x-2.5,y-2.5,5,5);b.rx=x;b.ry=y}ctx.fill();
+      ctx.fillStyle=C.e4;ctx.beginPath();for(const b of ebs){if(b.sp)continue;const x=IX(b),y=IY(b);ctx.rect(x-2.5,y-2.5,5,5);b.rx=x;b.ry=y}ctx.fill();
     }else{shots(bullets,C.acc,2);shots(ebs,C.e4,2.5)}
+    // Boss spikes: long thin spikes in the boss colour, pointing at the spire
+    {let any=false;ctx.fillStyle=C.e5;ctx.beginPath();
+      for(const b of ebs){if(!b.sp)continue;any=true;const x=IX(b),y=IY(b);let ux=x-b.rx,uy=y-b.ry,d=Math.hypot(ux,uy);if(d<1e-3){ux=-x;uy=-y;d=Math.hypot(ux,uy)||1}ux/=d;uy/=d;b.rx=x;b.ry=y;
+        // tip in the direction of travel
+        ctx.moveTo(x+ux*5,y+uy*5);ctx.lineTo(x-ux*6-uy*2,y-uy*6+ux*2);ctx.lineTo(x-ux*6+uy*2,y-uy*6-ux*2);ctx.closePath()}
+      if(any)ctx.fill()}
     ctx.lineCap='round';
     if(!clean)for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===3?C.hot:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
       let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}

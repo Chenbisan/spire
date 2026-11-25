@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.52.0 — 2026-11-25
+- **Bosses fight from a distance:** twice as heavy (20× a Basic's weight, was 10×). A Boss stops when its near edge is 30 m from the spire, so a new spire can still reach it. As soon as it arrives, and every 10 s after, it launches 10 spikes from its back that fan out and curve in on the spire. Each spike deals 25% of the Boss's attack (2.5× per barrage), and Bosses no longer hit the spire up close.
+- **Thorns works on every enemy attack:** Ranged shots now trigger it on the enemy that fired them, as melee hits and Charger rams already did. Boss spikes are the only exception.
+- **Coins are per rank:** every enemy in a rank pays the same: Normal 2, Veteran 3, Elite 5, Super Elite 8 (Chargers and Protectors were 5), Boss 10. The Enemy panel shows coins on each rank's row.
+
 ## 1.51.0 — 2026-11-25
 - **New enemy ranks:** Normal (Basic), Veteran (Fast, Ranged, Tank), Elite (Shielded, Healer, Splitter), Super Elite (Charger, Protector) and Boss. Elites and Super Elites drop alloy; Rail Cannon's bonus hits Elites, Super Elites and Bosses.
 - **Spawn chances are per rank:** each rank has one chance per spawn, shared equally by its types that have arrived. The Enemy panel now groups enemies by rank and shows one % per rank.

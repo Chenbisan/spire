@@ -163,8 +163,10 @@ function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:
 // managed under a quarter of its move (the crowd ahead leaves no room) rests restSteps before checking again
 function advance(e,dist,stop,m0){e.pend+=m0;if(e.rest>0){e.rest--;return}if(e.pend<CFG.walkMin&&e.pend<dist-stop)return;
   const m=Math.min(e.pend,dist-stop);e.pend=0;if(walk(e,-e.x/dist,-e.y/dist,m)<m*.25)e.rest=CFG.restSteps}
-// where an enemy stops walking: at the spire, or at a fixed distance (stop) and/or a share of your range (stopPct), whichever is closer
-function stopOf(d,range){const touch=CFG.towerR+d.sz;if(!d.stop&&!d.stopPct)return touch;let r=d.stop||Infinity;if(d.stopPct)r=Math.min(r,range*d.stopPct);return Math.max(touch,r)}
+// where an enemy stops walking (distance of its centre from the spire's): at the spire, or at a fixed distance (stop) and/or a share of
+// your range (stopPct), whichever is closer. edge: stop is measured to the enemy's near edge instead (half a metre inside, so a spire
+// whose range is exactly stop can still reach it)
+function stopOf(d,range){const touch=CFG.towerR+d.sz;if(!d.stop&&!d.stopPct)return touch;let r=d.stop?d.stop+(d.edge?d.sz-.5:0):Infinity;if(d.stopPct)r=Math.min(r,range*d.stopPct);return Math.max(touch,r)}
 // multishot's extra targets: the best k in range after the main target (same order as targeting). Picked once per step
 // with a small insertion list instead of sorting every enemy on every shot.
 let multiStep=-1;const multiList=[],healers=[];
@@ -204,10 +206,16 @@ function update(dt){GEN_STEP++;
       else if(e.cs===1){if((e.ct+=dt)>=d.charge)e.cs=2}
       else{const m=Math.min(d.ramSpd*dt,dist-hit);e.x-=e.x/dist*m;e.y-=e.y/dist*m; // rams straight through the crowd (Chargers ignore collision)
         if(dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e);if(R.over)return}}}
-    else if(dist>stop)advance(e,dist,stop,sp*dt) // walks in, resting while the crowd ahead leaves it little room
+    else if(dist>stop+1e-6)advance(e,dist,stop,sp*dt) // walks in, resting while the crowd ahead leaves it little room
     else{e.atk+=dt;
       if(!d.dmg){} // Healers never attack
-      else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;ebs.push(b)}}
+      // Boss: on arrival and every d.barrageEvery s, d.barrage spikes leave its back and fly a curve (a quadratic Bézier) out
+      // through a fan of points d.spikeOut m behind it, spread ±d.spikeFan°, and in to the spire over d.spikeFlight s.
+      // Each barrage ramps like one hit
+      else if(d.barrage){if(!e.hn||e.atk>=d.barrageEvery){e.atk=0;const dm=e.dmg*d.spike*CFG.hitRamp**e.hn++,ux=e.x/dist,uy=e.y/dist,bx=e.x+ux*d.sz,by=e.y+uy*d.sz;
+        for(let i=0;i<d.barrage;i++){const a=(i/(d.barrage-1)-.5)*2*d.spikeFan*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a),b=ebPool.pop()||{};
+          b.x=b.px=b.rx=b.x0=bx;b.y=b.py=b.ry=b.y0=by;b.cx=bx+(ux*ca-uy*sa)*d.spikeOut;b.cy=by+(ux*sa+uy*ca)*d.spikeOut;b.u=0;b.T=d.spikeFlight;b.dmg=dm;b.sp=1;b.src=null;ebs.push(b)}}}
+      else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;b.sp=0;b.src=e;b.g=e.gen;ebs.push(b)}}
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg*CFG.hitRamp**e.hn++,e);if(R.over)return}}  // each attack an enemy lands hits CFG.hitRamp × harder than its last
     if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=d.healEvery){e.ht=0;e.hf=.4;healers.push(e)}} // healed below, once the grid is built
     if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}
@@ -239,7 +247,11 @@ function update(dt){GEN_STEP++;
   }
   const em=CFG.ebSpd*dt;
   for(let i=ebs.length-1;i>=0;i--){const b=ebs[i],d=Math.hypot(b.x,b.y);b.px=b.x;b.py=b.y;
-    if(d<=tr+em){trace(b.rx,b.ry,b.x/d*tr,b.y/d*tr,1);ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);hitTower(b.dmg,null);if(R.over)return}
+    // Boss spikes follow their curve and land on the spire when it ends (spikes have no attacker, so no Thorns)
+    if(b.sp){b.u+=dt/b.T;if(b.u>=1){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);hitTower(b.dmg,null);if(R.over)return;continue}
+      const u=b.u,v=1-u;b.x=v*v*b.x0+2*v*u*b.cx;b.y=v*v*b.y0+2*v*u*b.cy;continue}
+    // a Ranged shot triggers Thorns on its shooter, if it's still alive
+    if(d<=tr+em){trace(b.rx,b.ry,b.x/d*tr,b.y/d*tr,1);ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);const s=b.src;hitTower(b.dmg,s&&!s.dead&&s.gen===b.g?s:null);b.src=null;if(R.over)return}
     else{b.x-=b.x/d*em;b.y-=b.y/d*em}}
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.px=p.x;p.py=p.y;p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;if(p.l<=0){parts[i]=parts[parts.length-1];parts.pop()}}
   for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}
