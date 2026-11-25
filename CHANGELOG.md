@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.62.0 — 2026-11-25
+- **Cluster bomblets fan out:** Missiles' Silver now throws 3 bomblets (was 2). They burst out of the far side of the enemy the missile hit, fanned in a V around the missile's direction of travel, then curve onto the weakest enemies nearby. If there are fewer enemies than bomblets, bomblets share targets, so all 3 always launch. Bomblets turn 6× tighter than missiles so they land within their 120 m range.
+
 ## 1.61.0 — 2026-11-25
 - **Dramatic missile arcs:** far from its target a missile now turns at only about 25° per second, sweeping round in a huge curve. It turns sharper the closer it gets to its target (and a little more every second it chases), so it homes in instead of circling, and both reset when it picks a new target. Near the edge of the view it turns harder too, so the arcs stay on screen.
 

@@ -156,7 +156,7 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     // chases this target and much more as it closes in (missileHome), so it homes in instead of circling; a new target resets both
     m.k=(m.k||0)+dt;let da=Math.atan2(dy,dx)-m.a;da=Math.atan2(Math.sin(da),Math.cos(da));const rm=Math.hypot(m.x,m.y)/(viewFit()*ULT.missileLeash);
     // leash: past missileLeash of the view radius it turns harder and harder, so wide arcs stay on screen
-    const tn=ULT.missileTurn*(1+ULT.missileSharpen*m.k)*(1+(ULT.missileHome/Math.max(1,d))**2)*(rm>1?1+30*(rm-1):1)*dt;
+    const tn=ULT.missileTurn*(m.b?ULT.bombletTurn:1)*(1+ULT.missileSharpen*m.k)*(1+(ULT.missileHome/Math.max(1,d))**2)*(rm>1?1+30*(rm-1):1)*dt;
     m.a+=Math.max(-tn,Math.min(tn,da));m.x+=Math.cos(m.a)*step;m.y+=Math.sin(m.a)*step;
     // smoke trail: the last missileTrail positions
     const tr=m.tr||(m.tr=[]);tr.push(m.x,m.y);if(tr.length>ULT.missileTrail*2)tr.splice(0,2)}}
@@ -168,7 +168,10 @@ function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv
   if(S>=2&&!isBoss(t.d)&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,6); // Gold (Execute): straight through any Protector
   else hitE(t,0);
   forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)hitE(o,1)}); // collateral: the same damage to everything in the blast
-  if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5,a:Math.atan2(b.y-t.y,b.x-t.x),b:1,ox:t.x,oy:t.y,tv:0})} // Silver (Cluster)
+  // Silver (Cluster): the bomblets burst out of the far side of the enemy hit, fanned in a V around the missile's direction of travel,
+  // and curve onto the weakest other enemies within bombletR (with fewer targets than bomblets, they share them)
+  if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]),tg=weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR),n=ULT.bomblets,fan=ULT.bombletFan*Math.PI/180;
+    if(tg.length)for(let i=0;i<n;i++){const b=tg[i%tg.length];M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5,a:(m.a||0)+(n>1?(i/(n-1)-.5)*2*fan:0),b:1,ox:t.x,oy:t.y,tv:0})}}
   if(ultFx.length<80)ultFx.push({k:'boom',x:t.x,y:t.y,r:rad*(m.m<1?.6:1),at:performance.now()})}
 // Firebomb: lobs a firebomb at the enemy that has stood still the longest (e.still); it lands ULT.shellFlight s later and leaves
 // a flaming carpet for Carpet duration s. Every dotHz tick, anything on a carpet takes spire damage × Fire damage per second ×
