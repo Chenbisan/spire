@@ -152,8 +152,11 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     if(m.b&&(m.tv=(m.tv||0)+step)>ULT.bombletR){M.splice(i,1);blastAt(m,m.x,m.y,S);continue}
     const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);
     if(d<=step+t.d.sz){M.splice(i,1);missileHit(m,t,S);continue}
-    // steer: turns towards the target at most missileTurn rad/s (wide, sweeping arcs), sharpening by missileSharpen every second it chases
-    m.k=(m.k||0)+dt;let da=Math.atan2(dy,dx)-m.a;da=Math.atan2(Math.sin(da),Math.cos(da));const tn=ULT.missileTurn*(1+ULT.missileSharpen*m.k)*dt;
+    // steer: turns towards the target at most missileTurn rad/s (wide, sweeping arcs), sharpening by missileSharpen every second it
+    // chases this target and much more as it closes in (missileHome), so it homes in instead of circling; a new target resets both
+    m.k=(m.k||0)+dt;let da=Math.atan2(dy,dx)-m.a;da=Math.atan2(Math.sin(da),Math.cos(da));const rm=Math.hypot(m.x,m.y)/(viewFit()*ULT.missileLeash);
+    // leash: past missileLeash of the view radius it turns harder and harder, so wide arcs stay on screen
+    const tn=ULT.missileTurn*(1+ULT.missileSharpen*m.k)*(1+(ULT.missileHome/Math.max(1,d))**2)*(rm>1?1+30*(rm-1):1)*dt;
     m.a+=Math.max(-tn,Math.min(tn,da));m.x+=Math.cos(m.a)*step;m.y+=Math.sin(m.a)*step;
     // smoke trail: the last missileTrail positions
     const tr=m.tr||(m.tr=[]);tr.push(m.x,m.y);if(tr.length>ULT.missileTrail*2)tr.splice(0,2)}}

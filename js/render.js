@@ -33,11 +33,12 @@ function shots(list,col,h){
   ctx.fillStyle=col;ctx.beginPath();for(const b of list){if(b.sp)continue;const x=IX(b),y=IY(b);ctx.rect(x-h,y-h,h*2,h*2);b.rx=x;b.ry=y}ctx.fill();
 }
 let viewR=0,viewT=0;
+// the radius the view zooms to (m from the spire to the nearest screen edge): fits the spawn ring, which follows your range
+function viewFit(){const [v0,v1,vAt]=CFG.viewRatio,rg=run&&run.s?run.s.range:0,vk=Math.max(0,Math.min(1,(rg-SK.range.base)/(vAt-SK.range.base)));return Math.max(CFG.arenaR,rg*(v0+(v1-v0)*vk))}
 function draw(){
   const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
   // the view zooms smoothly to fit the spawn ring, which follows your range
-  const [v0,v1,vAt]=CFG.viewRatio,rg=run&&run.s?run.s.range:0,vk=Math.max(0,Math.min(1,(rg-SK.range.base)/(vAt-SK.range.base)));
-  const target=Math.max(CFG.arenaR,rg*(v0+(v1-v0)*vk)),now=performance.now();
+  const target=viewFit(),now=performance.now();
   viewR=viewR?viewR+(target-viewR)*Math.min(1,(now-viewT)/300):target;viewT=now;
   const VR=viewR,sc=Math.min(W,H)/(2*VR),ext=Math.max(W,H)/sc/2;VIEW.hx=W/2/sc;VIEW.hy=H/2/sc;ctx.setTransform(sc,0,0,sc,W/2,H/2);
   // distance rings every 100 m (wider apart when zoomed far out or on small screens), labelled along the crosshair
