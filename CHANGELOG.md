@@ -1,6 +1,7 @@
 # What's new in Spire
 
 ## 1.60.0 — 2026-11-25
+- **Even wider missile turns:** missiles now turn at about 40° per second (was 57°), a curve roughly 65 m across, and tighten more slowly the longer they chase.
 - **Bomblets stay local:** Missiles' Silver bomblets no longer chase enemies across the map. If a bomblet's target dies, it only picks a new one within 120 m of the blast that threw it, and if there's none it bursts where it is. It also bursts if it has flown 120 m without landing.
 
 ## 1.59.0 — 2026-11-25
