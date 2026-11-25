@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.57.0 — 2026-11-25
+- **Runs keep going in the background:** a run no longer pauses when you switch tabs or minimise the window; it keeps playing at your chosen speed while the game is open. Offline earnings now cover only the time the game is closed (or when no run is going), so background time isn't paid twice. On a huge late-game crowd the background run may fall a little behind your chosen speed, as it can on screen.
+
 ## 1.56.0 — 2026-11-25
 - **Chips are earned offline too:** like coins and shards, your best boss chips per game-hour (from a run of at least the usual minimum length; milestone chips don't count) keeps paying while you're away, at your fastest unlocked speed × Offline speed research, up to your Offline duration. The welcome-back screen, Workshop, start screen and Records show the chip rate. Your rate is set by your next qualifying run.
 
