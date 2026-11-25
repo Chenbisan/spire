@@ -32,8 +32,6 @@ function shots(list,col,h){
   ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
   ctx.fillStyle=col;ctx.beginPath();for(const b of list){if(b.sp)continue;const x=IX(b),y=IY(b);ctx.rect(x-h,y-h,h*2,h*2);b.rx=x;b.ry=y}ctx.fill();
 }
-// clean effects: at high game speed, show steady targeting beams and hit flashes instead of strobing shots
-const cleanFx=()=>save.set.fx==='clean'||(save.set.fx!=='full'&&save.set.speed>=CFG.cleanFxAt);
 let viewR=0,viewT=0;
 function draw(){
   const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
@@ -68,14 +66,7 @@ function draw(){
           ctx.drawImage(sp.cv,x-h,y-h,h*2,h*2)}}}
     for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=HF[band(e)]*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
-    const clean=cleanFx();
-    if(clean){ // one faint, steady line per enemy being shot at
-      // a short stub off each enemy being shot at, pointing back at the spire; held for beamHold real ms after each shot
-      const now=performance.now(),bl=viewR*CFG.beamLen;ctx.strokeStyle=C.acc;ctx.globalAlpha=.6;ctx.lineWidth=2;ctx.lineCap='round';ctx.beginPath();
-      for(const e of enemies)if(!e.dead&&now-(e.shotAt||0)<CFG.beamHold){const x=IX(e),y=IY(e),d=Math.hypot(x,y)||1,s0=e.d.sz*1.2,s1=Math.min(d-CFG.towerR,s0+bl);
-        if(s1>s0){ctx.moveTo(x-x/d*s0,y-y/d*s0);ctx.lineTo(x-x/d*s1,y-y/d*s1)}}ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
-      ctx.fillStyle=C.e4;ctx.beginPath();for(const b of ebs){if(b.sp)continue;const x=IX(b),y=IY(b);ctx.rect(x-2.5,y-2.5,5,5);b.rx=x;b.ry=y}ctx.fill();
-    }else{shots(bullets,C.acc,2);shots(ebs,C.e4,2.5)}
+    shots(bullets,C.acc,2);shots(ebs,C.e4,2.5);
     // Boss spikes: long thin spikes in the boss colour, pointing at the spire
     {let any=false;ctx.fillStyle=C.e5;ctx.beginPath();
       for(const b of ebs){if(!b.sp)continue;any=true;const x=IX(b),y=IY(b);let ux=x-b.rx,uy=y-b.ry,d=Math.hypot(ux,uy);if(d<1e-3){ux=-x;uy=-y;d=Math.hypot(ux,uy)||1}ux/=d;uy/=d;b.rx=x;b.ry=y;
@@ -83,7 +74,7 @@ function draw(){
         ctx.moveTo(x+ux*5,y+uy*5);ctx.lineTo(x-ux*6-uy*2,y-uy*6+ux*2);ctx.lineTo(x-ux*6+uy*2,y-uy*6-ux*2);ctx.closePath()}
       if(any)ctx.fill()}
     ctx.lineCap='round';
-    if(!clean)for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===3?C.hot:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
+    for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===3?C.hot:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
       let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}
       ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1);ctx.stroke()}
     ctx.globalAlpha=1;ctx.lineCap='butt';

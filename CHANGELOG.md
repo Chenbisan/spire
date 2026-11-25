@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.54.0 — 2026-11-25
+- **Laser charge ring:** a thin red ring round the spire fills up over the Laser's whole charge time and empties when the beam fires. It replaces the red glow that flashed on the spire just before each beam, which strobed at high game speeds.
+- **Same effects at every speed:** the clean shot-effects mode is gone, along with the Shot effects setting. Shots, hit streaks, kill particles and damage numbers now look the same at 1× and at 24×.
+
 ## 1.53.0 — 2026-11-25
 - **Missiles turn like missiles:** instead of snapping to face a new target, a missile banks round in an arc (up to about 200° per second at first, tightening the longer it chases so it never circles forever). They also leave a fading smoke trail and have a longer exhaust flame.
 

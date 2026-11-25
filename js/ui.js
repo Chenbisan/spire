@@ -138,7 +138,6 @@ $('panel').addEventListener('click',e=>{
 });
 function settingsHtml(){return`<div class="set">
   <label><input type="checkbox" id="optDn" ${save.set.dmgNums?'checked':''}> Damage numbers</label>
-  <label>Shot effects <select id="optFx" style="font:inherit;min-height:36px;border-radius:8px;background:var(--arena);color:var(--ink);border:1px solid var(--line)">${[['auto',`Auto (clean at ${CFG.cleanFxAt}× and up)`],['full','Full'],['clean','Clean']].map(([v,t])=>`<option value="${v}" ${save.set.fx===v?'selected':''}>${t}</option>`).join('')}</select></label>
   <label><input type="checkbox" id="optPf" ${save.set.perf?'checked':''}> Performance overlay</label>
   <label><input type="checkbox" id="optAuto" ${save.set.auto?'checked':''}> Auto-restart after a run ends, after
     <select id="optDelay" style="font:inherit;min-height:36px;border-radius:8px;background:var(--arena);color:var(--ink);border:1px solid var(--line)">${[3,5,10,15].map(n=>`<option ${save.set.autoDelay===n?'selected':''}>${n}</option>`).join('')}</select> s</label>
@@ -159,7 +158,7 @@ function settingsClick(b){
   else if(a==='abandon'){if(run&&!run.over){closeModal();gameOver(true)}}
   else if(a==='reset'){if(Date.now()-resetArm<3000){stopAuto();save=fresh();persist();run=null;enemies.length=bullets.length=ebs.length=0;ovTier=1;showOv('start');buildPanel();buildSpeeds();closeModal();toast('Progress reset')}else{resetArm=Date.now();b.textContent='Click again to confirm'}}
 }
-function optChange(e){if(e.target.id==='optFx')save.set.fx=e.target.value;if(e.target.id==='optDn')save.set.dmgNums=e.target.checked;if(e.target.id==='optPf')save.set.perf=e.target.checked;
+function optChange(e){if(e.target.id==='optDn')save.set.dmgNums=e.target.checked;if(e.target.id==='optPf')save.set.perf=e.target.checked;
   if(e.target.id==='optAuto'){save.set.auto=e.target.checked;if(!save.set.auto&&autoTimer){stopAuto();if(run&&run.over)showOv('over')}}
   if(e.target.id==='optDelay')save.set.autoDelay=+e.target.value;
   if(e.target.dataset.ab)save.set.ab[e.target.dataset.ab]=e.target.checked;persist()}
@@ -292,7 +291,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; Ranged enemies stop at ${Math.round(ET.ranged.stopPct*100)}% of your range. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so they have to walk in; the arena zooms with your range. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
   <h3>Ultimate weapons</h3><p>Bought and upgraded with chips in the Ultimates tab. Every one you own is active: ${ULTS.map(u=>`<b>${u.n}</b> (${(d=>d.charAt(0).toLowerCase()+d.slice(1,-1))(ultDesc(u))})`).join('; ')}. Chain Lightning and Frost Field are always working; the others fire on their own cooldown when there's an enemy in range, or set one to Manual and fire it with its button under the arena. Strength upgrades (damage, Force, Pull) have ${ULT.levels} levels in bands of ${ULT.band} (one per tier): a band costs about what farming its tier earns in chips, and keeps pace with that tier's enemies. Capped stats (chance, slow, cooldowns, durations) have ${Math.min(...ULTS.flatMap(u=>u.t).filter(t=>t.lv<ULT.levels).map(t=>t.lv))} to ${Math.max(...ULTS.flatMap(u=>u.t).filter(t=>t.lv<ULT.levels).map(t=>t.lv))} levels each, and every level costs more than the one before. Each ultimate's unlock and level prices are on its buttons, so choose what's worth saving for. Tap an ultimate in the tab to open it, and use ×1 / ×10 / Max to buy several levels at once. Medals come from how complete an ultimate is (the average of its 4 upgrades): <b>Silver</b> at ${Math.round(ULT.medals[0]*100)}%, <b>Gold</b> at ${Math.round(ULT.medals[1]*100)}% and <b>Platinum</b> at ${Math.round(ULT.medals[2]*100)}%; each adds a bonus.</p>
   <h3>Targeting</h3><p>Tap 🎯 <b>Target</b> under the arena to set target priority. Drag enemy types above <b>Closest</b> to have the spire shoot them first, top to bottom (closest first within a type); everything below Closest is shot closest-first. With Closest at the top, it simply shoots the closest enemy.</p>
-  <h3>Shot effects</h3><p>At high game speeds, individual shots are too fast to follow, so from ${CFG.cleanFxAt}× up the arena switches to clean effects: a short steady line off each enemy it's shooting at, pointing back at the spire, enemies lighting up when hit, and only crit damage numbers. Change this under Settings → Shot effects.</p>
+
   <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}
 function buildSpeeds(){$('speeds').innerHTML=speeds().map(s=>`<button data-sp="${s}" class="${save.set.speed===s?'on':''}">${s}×</button>`).join('')}
 $('speeds').addEventListener('click',e=>{const b=e.target.closest('button');if(b){save.set.speed=+b.dataset.sp;persist();buildSpeeds()}});

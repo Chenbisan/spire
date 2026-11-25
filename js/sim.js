@@ -93,7 +93,7 @@ function kill(e){
   // Splitters: split into `split` smaller Splitters with half the health, `splits` times over
   if(e.d.split&&e.sg<e.d.splits){const d=splitDef(e.sg+1);for(let i=0;i<e.d.split;i++){const c=spawn(e.t,e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
     if(c){c.sg=e.sg+1;c.d=d;c.mhp=c.hp=e.mhp/2;c.wt=e.wt*CFG.splitSz;c.age=CFG.fadeIn}}}
-  for(let i=0;i<(cleanFx()?1:4)&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
+  for(let i=0;i<4&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
 }
 function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over time), 2 = ignores shields, 4 = can't be redirected
   // guarded by a Protector (links are refreshed every CFG.guardEvery steps): the Protector
@@ -103,7 +103,7 @@ function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over tim
   const blocked=e.shield>0&&!(f&2),st=save.stats;
   let a=0;if(blocked){e.shield--;st.blocked++}else{a=Math.min(v,Math.max(0,e.hp));e.hp-=v;st.dmg+=a;if(thorn)st.thorn+=a}
   e.hitAt=performance.now(); // render-only: hit flash
-  if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums&&!(f&1)&&(crit||blocked||!cleanFx()))dnums.push({x:e.x,y:e.y-e.d.sz,py:e.y-e.d.sz,v,c:crit,b:blocked,l:.6}); // clean mode: only crits and blocks
+  if(save.set.dmgNums&&dnums.length<CFG.maxDmgNums&&!(f&1))dnums.push({x:e.x,y:e.y-e.d.sz,py:e.y-e.d.sz,v,c:crit,b:blocked,l:.6});
   if(e.hp<=0&&!e.dead)kill(e);
   return a;
 }
@@ -156,7 +156,6 @@ let rankKey='',rankMap=null;
 function targetRank(){const P=save.set.prio,ci=P.indexOf('closest');if(ci<=0)return null;const k=P.join();
   if(k!==rankKey){rankKey=k;rankMap={};TYPES.forEach(t=>rankMap[t]=ci);for(let i=0;i<ci;i++)rankMap[P[i]]=i}return rankMap}
 function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:0;save.stats.shots++;if(c){save.stats.crits++;if(s.superCrit>0&&Math.random()<s.superCrit){c=2;save.stats.supers++}}
-  tgt.shotAt=performance.now(); // render-only: targeting beam
   b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
   b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
 // one step of walking towards the spire, up to `stop`: small moves are saved up until they reach walkMin, and an enemy that

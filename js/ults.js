@@ -162,7 +162,7 @@ function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv
   if(ultFx.length<80)ultFx.push({k:'boom',x:t.x,y:t.y,r:rad*(m.m<1?.6:1),at:performance.now()})}
 // Firebomb: lobs a firebomb at the enemy that has stood still the longest (e.still); it lands ULT.shellFlight s later and leaves
 // a flaming carpet for Carpet duration s. Every dotHz tick, anything on a carpet takes spire damage × Fire damage per second ×
-// (1 + heat × the seconds it has stayed on fire); stepping off resets that. Silver: enemies that die on a carpet light a smaller one.
+// (1 + heat × the total seconds it has ever spent on a carpet); that never resets. Silver: enemies that die on a carpet light a smaller one.
 // Gold: heat doubled. Platinum: 2 firebombs per launch.
 function stillest(n){const out=[];for(const e of enemies){if(e.dead||e.age<CFG.fadeIn)continue;
     if(out.length<n||e.still>out[out.length-1].still){out.push(e);out.sort((a,b)=>b.still-a.still);if(out.length>n)out.pop()}}return out}
@@ -202,7 +202,10 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     if(L.act>0){const cx=Math.cos(L.ang)*len,cy=Math.sin(L.ang)*len,fl=.85+.15*Math.sin(now/40),x0=0,y0=0;
       ctx.lineCap='round';ctx.strokeStyle=C.hot;ctx.globalAlpha=.25*fl;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(cx,cy);ctx.stroke();
       ctx.globalAlpha=.9*fl;ctx.lineWidth=Math.max(2*dpr/sc,w*.25);ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt'}
-    else if(L.cd<1.5){const k=1-Math.max(0,L.cd)/1.5;ctx.fillStyle=C.hot;ctx.globalAlpha=.15+.5*k;ctx.beginPath();ctx.arc(0,0,CFG.towerR+4+8*k,0,6.283);ctx.fill();ctx.globalAlpha=1}} // charging glow
+    // charge ring: a faint track round the spire that fills clockwise from the top over the whole charge time (looks the same at every speed)
+    else{const k=Math.min(1,Math.max(0,1-L.cd/uv('laser','cd'))),r=CFG.towerR+5,top=-Math.PI/2;ctx.strokeStyle=C.hot;ctx.lineWidth=3*dpr/sc;
+      ctx.globalAlpha=.18;ctx.beginPath();ctx.arc(0,0,r,0,6.283);ctx.stroke();
+      if(k>0){ctx.globalAlpha=.85;ctx.beginPath();ctx.arc(0,0,r,top,top+k*6.283);ctx.stroke()}ctx.globalAlpha=1}}
   if(R.carpets&&R.carpets.length){const fl=.85+.15*Math.sin(now/90);ctx.fillStyle=C.fire;for(const c of R.carpets){ctx.globalAlpha=(.14+.12*Math.min(1,c.left/2))*fl;ctx.beginPath();ctx.arc(c.x,c.y,c.r,0,6.283);ctx.fill();ctx.globalAlpha=.4*Math.min(1,c.left/2);ctx.strokeStyle=C.fire;ctx.lineWidth=2*dpr/sc;ctx.stroke()}ctx.globalAlpha=1}
   if(R.shells&&R.shells.length){ctx.fillStyle=C.fire;const a=(run.over||paused)?0:A*CFG.step;
     for(const s of R.shells){const p=Math.min(1,(s.t+a)/ULT.shellFlight),d=Math.hypot(s.x,s.y),h=d*.35*4*p*(1-p),x=s.x*p,y=s.y*p-h; // an arc from the spire, peaking at 35% of the distance
