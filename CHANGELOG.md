@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.53.0 — 2026-11-25
+- **Missiles turn like missiles:** instead of snapping to face a new target, a missile banks round in an arc (up to about 200° per second at first, tightening the longer it chases so it never circles forever). They also leave a fading smoke trail and have a longer exhaust flame.
+
 ## 1.52.0 — 2026-11-25
 - **Bosses fight from a distance:** twice as heavy (20× a Basic's weight, was 10×). A Boss stops when its near edge is 30 m from the spire, so a new spire can still reach it. As soon as it arrives, and every 10 s after, it launches 10 spikes from its back that fan out and curve in on the spire. Each spike deals 25% of the Boss's attack (2.5× per barrage), and Bosses no longer hit the spire up close.
 - **Thorns works on every enemy attack:** Ranged shots now trigger it on the enemy that fired them, as melee hits and Charger rams already did. Boss spikes are the only exception.

@@ -144,10 +144,15 @@ function weakest(n,skip,x,y,r){const out=[];for(const e of enemies){if(e.dead||e
 function launchMissiles(S){const R=run,M=R.missiles||(R.missiles=[]);for(const t of weakest(S>=3?ULT.salvo:1))M.push({x:0,y:0,px:0,py:0,t,g:t.gen,m:1,a:Math.atan2(t.y,t.x)})}
 function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;const step=ULT.missileSpd*dt;
   for(let i=M.length-1;i>=0;i--){const m=M[i];m.px=m.x;m.py=m.y;let t=m.t;
-    if(t.dead||t.gen!==m.g){t=weakest(1)[0];if(!t){M.splice(i,1);continue}m.t=t;m.g=t.gen} // its target died: find the next weakest
-    const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);if(d>0)m.a=Math.atan2(dy,dx);
-    if(d>step+t.d.sz){m.x+=dx/d*step;m.y+=dy/d*step;continue}
-    M.splice(i,1);missileHit(m,t,S)}}
+    // its target died: find the next weakest (k, the time spent chasing this target, starts again)
+    if(t.dead||t.gen!==m.g){t=weakest(1)[0];if(!t){M.splice(i,1);continue}m.t=t;m.g=t.gen;m.k=0}
+    const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);
+    if(d<=step+t.d.sz){M.splice(i,1);missileHit(m,t,S);continue}
+    // steer: turns towards the target at most missileTurn rad/s, a little sharper every second it chases (so it can never circle forever)
+    m.k=(m.k||0)+dt;let da=Math.atan2(dy,dx)-m.a;da=Math.atan2(Math.sin(da),Math.cos(da));const tn=ULT.missileTurn*(1+m.k)*dt;
+    m.a+=Math.max(-tn,Math.min(tn,da));m.x+=Math.cos(m.a)*step;m.y+=Math.sin(m.a)*step;
+    // smoke trail: the last missileTrail positions
+    const tr=m.tr||(m.tr=[]);tr.push(m.x,m.y);if(tr.length>ULT.missileTrail*2)tr.splice(0,2)}}
 function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
   const hitE=(o,f)=>{const v=S>=3?dmg*ULT.mStack**(o.mh||0):dmg;o.mh=(o.mh||0)+1;damage(o,v,0,false,f)}; // Platinum: each earlier missile hit on this enemy multiplies the damage
   if(S>=2&&!isBoss(t.d)&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,6); // Gold (Execute): straight through any Protector
@@ -205,8 +210,13 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
       ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,4.5*dpr/sc,0,6.283);ctx.fill()}}
   // missiles: a body with a pointed nose and tail fins, facing where it flies, with a flickering exhaust flame behind it
   if(R.missiles&&R.missiles.length){const fl=.75+.25*Math.sin(now/45);
-    for(const m of R.missiles){const L=(m.m<1?15:24)*dpr/sc,w=L*.13;ctx.save();ctx.translate(IX(m),IY(m));ctx.rotate(m.a||0);
-      ctx.fillStyle=C.fire;ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(-L*.42,-w*.8);ctx.lineTo(-L*(.42+.45*fl),0);ctx.lineTo(-L*.42,w*.8);ctx.fill();ctx.globalAlpha=1;
+    for(const m of R.missiles){const L=(m.m<1?15:24)*dpr/sc,w=L*.13,tr=m.tr;
+      // smoke trail: fades out towards its tail
+      if(tr&&tr.length>=4){ctx.strokeStyle=C.chip;ctx.lineCap='round';const n=tr.length/2;
+        for(let j=1;j<n;j++){ctx.globalAlpha=.55*j/n;ctx.lineWidth=w*(.7+1.3*j/n);ctx.beginPath();ctx.moveTo(tr[2*j-2],tr[2*j-1]);ctx.lineTo(tr[2*j],tr[2*j+1]);ctx.stroke()}
+        ctx.globalAlpha=1;ctx.lineCap='butt'}
+      ctx.save();ctx.translate(IX(m),IY(m));ctx.rotate(m.a||0);
+      ctx.fillStyle=C.fire;ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(-L*.42,-w*.8);ctx.lineTo(-L*(.42+.7*fl),0);ctx.lineTo(-L*.42,w*.8);ctx.fill();ctx.globalAlpha=1;
       ctx.fillStyle=C.chip;ctx.beginPath();ctx.moveTo(L*.58,0);ctx.lineTo(L*.32,-w);ctx.lineTo(-L*.3,-w);ctx.lineTo(-L*.45,-w*2.6);ctx.lineTo(-L*.45,-w);ctx.lineTo(-L*.45,w);ctx.lineTo(-L*.45,w*2.6);ctx.lineTo(-L*.3,w);ctx.lineTo(L*.32,w);ctx.closePath();ctx.fill();ctx.restore()}}
   if(R.rings)for(const g of R.rings){ctx.strokeStyle=C.gold;ctx.lineWidth=(g.after?2.5:4)*dpr/sc;ctx.globalAlpha=.85*(1-g.r/g.rad)+.15;ctx.beginPath();ctx.arc(0,0,CFG.towerR+g.r,0,6.283);ctx.stroke()}
   ctx.globalAlpha=1;
