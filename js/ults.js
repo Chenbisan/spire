@@ -9,7 +9,8 @@ const uv=(k,tr)=>ultVal(UK[k],tr,ultLv(k,tr));
 const ultProg=k=>UK[k].t.reduce((a,t)=>a+Math.min(1,ultLv(k,t.k)/t.lv),0)/UK[k].t.length;
 // a level's price: the 100-level price at the same point in the tier bands, × √(100/lv) for short tracks
 const ultCost=(t,l)=>Math.ceil((t.lv>=ULT.levels?ULT.cost(l):ULT.cost(Math.floor(l*ULT.levels/t.lv))*Math.sqrt(ULT.levels/t.lv))*(t.cm||1));
-const ultUnlock=u=>Math.ceil(ULT.unlock*u.cost); // ... times the ultimate's own price multiplier
+// unlock price: ULT.unlock × the ultimate's own price multiplier × unlockGrow for every ultimate you already own (each one costs more)
+const ultUnlock=u=>Math.ceil(ULT.unlock*u.cost*ULT.unlockGrow**Object.keys(save.ults).length);
 // status: 0 none, 1 Silver, 2 Gold, 3 Platinum, from how complete the ultimate is (ULT.medals)
 function ultStatus(k){if(!ultOwned(k))return 0;const p=ultProg(k)+1e-9;let s=0;for(const m of ULT.medals)if(p>=m)s++;return s}
 const ultManual=k=>!!save.set.ultMan[k]&&!UK[k].passive;

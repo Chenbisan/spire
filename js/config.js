@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.62.0';
+const APP_VERSION='1.63.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -14,8 +14,10 @@ const CFG={
   // tier 10); enemy health tier^3.5 grows a little faster, so each tier asks for more power than it pays for; drops (chips, alloy) tier^1.5
   tier:t=>({hp:t**3.5,dmg:t**3,coin:t**3,shard:t<2?0:(t-1)**1.5,wt:t**1.2,spd:1+.03*(t-1),drop:t**1.5}),
   // enemy growth is polynomial, not exponential: a spire's power grows like a power of what it earns (exponential prices
-  // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1)
-  hpMul:w=>(1+(w-1)/10)**4, dmgMul:w=>(1+(w-1)/10)**3,
+  // cancel exponential effects), so enemies grow the same way. hpMul/dmgMul: multiplier on wave w (1 on wave 1).
+  // Tuned with the headless player sim (1.63.0) so a fresh player playing non-stop unlocks tier 2 after about 5 hours: health ×23 by
+  // wave 100, ×28,000 by 1000, ×580,000 by 2500 (the tier 2 unlock), ×31 million by 10,000
+  hpMul:w=>(1+(w-1)/50)**3.25, dmgMul:w=>(1+(w-1)/50)**2.25,
   wtMul:w=>(1+(w-1)/50)**.75,  // weight grows too (×2.4 by wave 100, ×10 by 1000, ×53 by 10000), so knockback, Shockwave and Gravity Well move high-wave enemies less
   hitRamp:1.03,  // each attack an enemy makes does this much more than its previous one (×1.34 by the 10th hit, ×18 by the 100th), so enemies can't linger forever
   protectR:40, protectShare:.5,  // Protectors: radius they guard (m) and the share of redirected damage they take
@@ -114,13 +116,14 @@ const RK={NORMAL:1,VETERAN:2,ELITE:3,SUPER:4,BOSS:5};
 const RANKS=['','Normal','Veteran','Elite','Super Elite','Boss'];
 const isElite=d=>d.r===RK.ELITE||d.r===RK.SUPER, isBoss=d=>d.r===RK.BOSS;
 // spawn chance per rank pool: once the pool's first type arrives it has a freq chance per spawn, building up to fmax by wave full
-// (full is ÷ tier^CFG.fromPow like arrivals). The pool's chance is split evenly between its types that have arrived; Normal (Basic) takes what's left
+// (full is ÷ tier^CFG.fromPow like arrivals). The pool's chance is split evenly between its types that have arrived; Normal (Basic) takes what's left.
+// tier: the pool only spawns from this tier on (Elites from tier 3, Super Elites from tier 5)
 // coins each enemy drops, per rank (before the wave, tier and coin bonus multipliers)
-const RANK_COIN={[RK.NORMAL]:2,[RK.VETERAN]:3,[RK.ELITE]:5,[RK.SUPER]:8,[RK.BOSS]:10};
+const RANK_COIN={[RK.NORMAL]:2,[RK.VETERAN]:3,[RK.ELITE]:5,[RK.SUPER]:8,[RK.BOSS]:70};
 const POOLS={
  [RK.VETERAN]:{freq:.15, fmax:.45, full:300},
- [RK.ELITE]:{freq:.04, fmax:.32, full:2400},
- [RK.SUPER]:{freq:.04, fmax:.18, full:5400},
+ [RK.ELITE]:{freq:.04, fmax:.32, full:2400, tier:3},
+ [RK.SUPER]:{freq:.04, fmax:.18, full:5400, tier:5},
 };
 // ghost: ignores collision (walks through others, and others through it) · r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
 // cap: most of this type on the field at once · from: first wave on tier 1 (sooner on higher tiers: from ÷ tier^CFG.fromPow) · spawn chances
@@ -188,7 +191,7 @@ const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.ma
 //     × √(100 / lv), so each level is a big step and the price climbs fast (ultCost in ults.js).
 // cost: each ultimate's price multiplier (unlock and every level). The more impactful ones cost more, so choosing what to save for matters.
 // Medals come from how complete an ultimate is (average progress across its 4 tracks, ULT.medals: 10% / 30% / 60%).
-const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, laserTurn:Math.PI/60, laserTurnFast:Math.PI/30, noHeal:5, missileSpd:45, missileTurn:.44, missileSharpen:.25, missileHome:20, missileLeash:.8, missileTrail:24, shellFlight:1.2, heat:.25, spreadFire:.5, bomblets:3, bombletR:120, bombletFan:35, bombletTurn:6, execute:.15, salvo:3, mStack:1.25, maxWells:3, collapse:1.5, siphon:.5, heavy:1.5, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02, bossWt:.1, shaken:5, ringTime:.5, crush:1, spreadR:25};  // Firebomb: shellFlight, seconds a firebomb is in the air; heat, extra damage per second an enemy stays on the carpet (Gold doubles it); spreadFire, size and duration of Silver's new fires as a share of the carpet's. Missiles: missileSpd (m/s); missileTurn, how fast a missile can turn far from its target (rad/s: about 25°/s, a sweeping arc about 200 m across at missile speed); missileSharpen, how much sharper that gets per second chasing one target; missileHome (m): close to its target it turns sharper still, × (1 + (missileHome ÷ distance)²), so it closes in instead of circling (both reset on a new target); missileLeash: past this share of the view radius it turns harder, so arcs stay on screen; missileTrail, positions kept for its smoke trail; bomblets and bombletR, Silver's bomblets and how far they look; bombletFan, the half-angle of the V they burst out in (°); bombletTurn, how much faster than a missile they turn (they're short-range); execute, Gold's health share; salvo, Platinum's missiles per launch; mStack, Platinum's damage multiplier per earlier missile hit on the same enemy. Laser: laserTurn / laserTurnFast, how fast the beam tracks at Silver / Platinum (radians per s); noHeal, Gold's no-healing time. Gravity Well: maxWells open at once; collapse, Silver's yank = this many seconds of pull; siphon, Gold's seconds added per kill inside; heavy, Platinum's weight multiplier inside. Shockwave: bossWt, bosses count this share of their weight; shaken, seconds the shake lasts; ringTime, game seconds the ring takes to reach its radius; crush, Silver's extra multiplier for an enemy that couldn't move at all; spreadR, how far Gold's Aftershock spreads the shake (m); frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
+const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:600, unlockGrow:1.6, laserTurn:Math.PI/60, laserTurnFast:Math.PI/30, noHeal:5, missileSpd:45, missileTurn:.44, missileSharpen:.25, missileHome:20, missileLeash:.8, missileTrail:24, shellFlight:1.2, heat:.25, spreadFire:.5, bomblets:3, bombletR:120, bombletFan:35, bombletTurn:6, execute:.15, salvo:3, mStack:1.25, maxWells:3, collapse:1.5, siphon:.5, heavy:1.5, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02, bossWt:.1, shaken:5, ringTime:.5, crush:1, spreadR:25};  // Firebomb: shellFlight, seconds a firebomb is in the air; heat, extra damage per second an enemy stays on the carpet (Gold doubles it); spreadFire, size and duration of Silver's new fires as a share of the carpet's. Missiles: missileSpd (m/s); missileTurn, how fast a missile can turn far from its target (rad/s: about 25°/s, a sweeping arc about 200 m across at missile speed); missileSharpen, how much sharper that gets per second chasing one target; missileHome (m): close to its target it turns sharper still, × (1 + (missileHome ÷ distance)²), so it closes in instead of circling (both reset on a new target); missileLeash: past this share of the view radius it turns harder, so arcs stay on screen; missileTrail, positions kept for its smoke trail; bomblets and bombletR, Silver's bomblets and how far they look; bombletFan, the half-angle of the V they burst out in (°); bombletTurn, how much faster than a missile they turn (they're short-range); execute, Gold's health share; salvo, Platinum's missiles per launch; mStack, Platinum's damage multiplier per earlier missile hit on the same enemy. Laser: laserTurn / laserTurnFast, how fast the beam tracks at Silver / Platinum (radians per s); noHeal, Gold's no-healing time. Gravity Well: maxWells open at once; collapse, Silver's yank = this many seconds of pull; siphon, Gold's seconds added per kill inside; heavy, Platinum's weight multiplier inside. Shockwave: bossWt, bosses count this share of their weight; shaken, seconds the shake lasts; ringTime, game seconds the ring takes to reach its radius; crush, Silver's extra multiplier for an enemy that couldn't move at all; spreadR, how far Gold's Aftershock spreads the shake (m); frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
 ULT.cost=l=>Math.ceil(ULT.c0*(1+l/ULT.band)**1.5);
 const PC1=v=>(v*100).toFixed(1).replace(/\.0$/,'')+'%'; // ultimate percentages keep a decimal so every level shows its gain
 // track levels before the 1.23 rework (old saves are converted proportionally, keeping each track's value)

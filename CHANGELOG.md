@@ -1,5 +1,11 @@
 # What's new in Spire
 
+## 1.63.0 — 2026-11-25
+- **Rebalanced early game, tuned with a simulated player:** enemies now grow far more gently within a tier (health ×23 by wave 100, ×28,000 by wave 1,000, ×580,000 by wave 2,500, instead of ×14,000, ×100 million and ×4 billion). A new player who keeps the game running now unlocks tier 2 after about 5 hours instead of being stuck around wave 100.
+- **Ultimates unlock more gradually:** the first unlock costs 600 chips × its price multiplier (about 5 minutes of play), and each one after that costs 1.6× more than the last, so they arrive one by one over the first two to three hours instead of all within a few minutes.
+- **Elites from tier 3, Super Elites from tier 5:** tiers 1 and 2 only have Basics, Veterans and Bosses. The Enemy panel and help show the tier each rank starts on.
+- **Bosses pay 7× the coins** (70 instead of 10, before multipliers), since they only come once every 10 waves.
+
 ## 1.62.0 — 2026-11-25
 - **Cluster bomblets fan out:** Missiles' Silver now throws 3 bomblets (was 2). They burst out of the far side of the enemy the missile hit, fanned in a V around the missile's direction of travel, then curve onto the weakest enemies nearby. If there are fewer enemies than bomblets, bomblets share targets, so all 3 always launch. Bomblets turn 6× tighter than missiles so they land within their 120 m range.
 

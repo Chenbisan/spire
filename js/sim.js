@@ -44,12 +44,14 @@ function newRun(tier){
 function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpMul(w)*tm.hp,atk:d.dmg*CFG.dmgMul(w)*tm.dmg,spd:d.spd*tm.spd,weight:d.weight*CFG.wtMul(w)*tm.wt,coins:d.coin*tm.coin*CFG.killCoin(w)}}
 // the wave an enemy type first appears on tier t
 const typeFrom=(d,t)=>d.from?Math.max(1,Math.round(d.from/t**CFG.fromPow)):1;
+// the first tier a type can spawn on (its rank pool's tier), and whether it can spawn on wave w of tier t
+const rankTier=d=>(POOLS[d.r]&&POOLS[d.r].tier)||1, typeOn=(d,w,t)=>t>=rankTier(d)&&w>=typeFrom(d,t);
 const POOL_TYPES={};for(const k of TYPES){const r=ET[k].r;if(POOLS[r])(POOL_TYPES[r]||(POOL_TYPES[r]=[])).push(k)}
 // late game (CFG.lateWave → finalWave): Normal and Veteran chances shrink and Elite and Super Elite chances grow, step by step with the wave
 const lateMul=(r,w)=>{if(w<=CFG.lateWave)return 1;const k=Math.min(1,(w-CFG.lateWave)/(CFG.finalWave-CFG.lateWave));return 1+k*((r>=RK.ELITE?CFG.lateElite:CFG.lateNormal)-1)};
 // a pool's types that have arrived by wave w on tier t, and the pool's chance per regular spawn
-const poolTypes=(r,w,t)=>POOL_TYPES[r].filter(k=>w>=typeFrom(ET[k],t));
-function poolChance(r,w,t){const P=POOLS[r],a=Math.min(...POOL_TYPES[r].map(k=>typeFrom(ET[k],t)));if(w<a)return 0;
+const poolTypes=(r,w,t)=>POOL_TYPES[r].filter(k=>typeOn(ET[k],w,t));
+function poolChance(r,w,t){const P=POOLS[r];if(t<(P.tier||1))return 0;const a=Math.min(...POOL_TYPES[r].map(k=>typeFrom(ET[k],t)));if(w<a)return 0;
   const full=Math.max(a+1,Math.round(P.full/t**CFG.fromPow));return(P.freq+(P.fmax-P.freq)*Math.min(1,(w-a)/(full-a)))*lateMul(r,w)}
 // chance per regular spawn for each pool (rank → chance; Normal takes what's left) and for each type
 function poolChances(w,t){const o={};let left=1;for(const r in POOLS){const p=Math.min(left,poolChance(+r,w,t));if(p>0){o[r]=p;left-=p}}o[RK.NORMAL]=left;return o}
@@ -58,7 +60,7 @@ function spawnChance(w,t){const P=poolChances(w,t),o={basic:P[RK.NORMAL]};for(co
 function pickType(w){const t=run.tier,P=poolChances(w,t);let x=Math.random();for(const r in POOLS){if(!P[r])continue;if(x<P[r]){const ks=poolTypes(+r,w,t);return ks[Math.floor(Math.random()*ks.length)]}x-=P[r]}return'basic'}
 const hasRoom=t=>aliveN<CFG.enemyCap&&(typeN[t]||0)<ET[t].cap;
 // a regular spawn whose type is full becomes another type this wave can have, if any has room
-function roomType(t,w){if(hasRoom(t))return t;const ok=TYPES.filter(k=>!isBoss(ET[k])&&w>=typeFrom(ET[k],run.tier)&&hasRoom(k));return ok.length?ok[Math.floor(Math.random()*ok.length)]:null}
+function roomType(t,w){if(hasRoom(t))return t;const ok=TYPES.filter(k=>!isBoss(ET[k])&&typeOn(ET[k],w,run.tier)&&hasRoom(k));return ok.length?ok[Math.floor(Math.random()*ok.length)]:null}
 function spawn(t,x,y){
   if(!hasRoom(t))return; // field (or this type) is full
   typeN[t]=(typeN[t]||0)+1;aliveN++;
