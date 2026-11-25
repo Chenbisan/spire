@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.54.0';
+const APP_VERSION='1.55.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -156,7 +156,8 @@ const CARDS=[
 // Modules: one per slot, bought and levelled with alloy. Every 10 levels the rarity goes up (an ascension, costing CFG×ascend),
 // which raises the module's special effect. main: stat bonus per level (mul = +per×lvl %, add = flat).
 const RARITY=['Common','Rare','Epic','Legendary'];
-const MOD={buy:30, cost:l=>Math.ceil(8*1.15**l), ascend:4, per:10, max:40};
+// off: Modules are under maintenance: their tab only shows a notice, owned modules give no bonuses, and alloy keeps dropping and is saved for later
+const MOD={off:true, buy:30, cost:l=>Math.ceil(8*1.15**l), ascend:4, per:10, max:40};
 const MOD_SLOTS=[{k:'cannon',n:'Cannon'},{k:'armor',n:'Armor'},{k:'core',n:'Core'},{k:'gen',n:'Generator'}];
 const MODS=[
  {k:'rail',s:'cannon',n:'Rail Cannon',st:'damage',per:.03,mul:1,sp:[.1,.25,.5,1],sf:v=>`+${PC(v)} damage to elites and bosses`,fx:(F,v)=>F.eliteDmg+=v},

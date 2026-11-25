@@ -8,7 +8,7 @@ function loadoutFx(){
   const F={mul:{},add:{},slowAura:0,slowHit:0,revive:0,rush:0,eliteDmg:0,multi:0,interest:0,drop:0};
   for(const s of ST){F.mul[s.k]=1;F.add[s.k]=0}
   for(const k of save.cardEq){const c=CK[k],l=cardLv(k);if(c&&l)c.fx(F,c.v[l-1])}
-  for(const sl of MOD_SLOTS){const m=MK[save.modEq[sl.k]],l=m&&modLv(m.k);if(!l)continue;
+  if(!MOD.off)for(const sl of MOD_SLOTS){const m=MK[save.modEq[sl.k]],l=m&&modLv(m.k);if(!l)continue;
     if(m.mul)F.mul[m.st]*=1+m.per*l;else F.add[m.st]+=m.per*l;m.fx(F,m.sp[modRarity(l)])}
   return F;
 }
@@ -32,6 +32,7 @@ function cardsHtml(){
   return h+`</div><p class="note">More equipment is on the way.</p>`;
 }
 function modsHtml(){
+  if(MOD.off)return`<p class="note"><b>Modules are under maintenance.</b> They're being reworked, so for now the modules you own give no bonuses and can't be bought or levelled. Elites still drop <b class="alloy">alloy</b>, and everything you collect is saved for when Modules return.</p><div class="lhead"><span>Alloy saved <b class="alloy">${fmt(save.alloy)}</b></span></div>`;
   let h=`<p class="note">Modules are gear for the spire, bought and levelled with <b class="alloy">alloy</b>, which elites drop. One per slot. Every ${MOD.per} levels a module ranks up (${RARITY.join(' → ')}), raising its special effect to the next value shown on it.</p>
   <div class="lhead"><span>Alloy <b class="alloy">${fmt(save.alloy)}</b></span></div>`;
   for(const sl of MOD_SLOTS){const cur=MK[save.modEq[sl.k]];
@@ -56,6 +57,7 @@ $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
     if(!l&&save.cardEq.length<save.cardSlots)save.cardEq.push(k);loadoutChanged()}
   else if(d.ceq){const k=d.ceq,i=save.cardEq.indexOf(k);if(i>=0)save.cardEq.splice(i,1);else if(save.cardEq.length<save.cardSlots)save.cardEq.push(k);loadoutChanged()}
   else if('cslot' in d){const c=CARD.slotCost[save.cardSlots-CARD.slots0];if(c==null||save.chips<c)return;save.chips-=c;save.cardSlots++;loadoutChanged()}
+  else if(MOD.off&&(d.mbuy||d.meq))return;
   else if(d.mbuy){const m=MK[d.mbuy],l=modLv(m.k),c=l?modCost(l):MOD.buy;if(l>=MOD.max||save.alloy<c)return;save.alloy-=c;save.stats.alloySpent=(save.stats.alloySpent||0)+c;save.mods[m.k]=l+1;
     if(!l&&!modLv(save.modEq[m.s]||''))save.modEq[m.s]=m.k;loadoutChanged()}
   else if(d.meq){const m=MK[d.meq];save.modEq[m.s]=save.modEq[m.s]===m.k?null:m.k;loadoutChanged()}

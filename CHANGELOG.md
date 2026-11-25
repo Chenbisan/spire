@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.55.0 — 2026-11-25
+- **Modules are under maintenance:** they're being reworked. For now the Modules tab shows a notice, modules you own give no bonuses, and they can't be bought or levelled. Elites still drop alloy, and it's all saved for when Modules return.
+
 ## 1.54.0 — 2026-11-25
 - **Laser charge ring:** a thin red ring round the spire fills up over the Laser's whole charge time and empties when the beam fires. It replaces the red glow that flashed on the spire just before each beam, which strobed at high game speeds.
 - **Same effects at every speed:** the clean shot-effects mode is gone, along with the Shot effects setting. Shots, hit streaks, kill particles and damage numbers now look the same at 1× and at 24×.
