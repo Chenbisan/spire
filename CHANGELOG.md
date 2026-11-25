@@ -1,13 +1,14 @@
 # What's new in Spire
 
 ## 1.58.0 — 2026-11-25
-- **Offline earnings at 60%:** coins, shards and chips earned while the game is closed now pay 60% of what the same time playing at your best rate would (still at your fastest unlocked speed, × Offline speed research), so playing stays worth more than being away hour for hour, until Offline speed research is well along.
+- **Offline earnings at 60%:** coins, shards and chips earned while the game is closed now pay 60% of what the same time playing at your best rate would (still at your fastest unlocked speed), so playing stays worth more than being away hour for hour.
+- **Offline speed research removed:** it would have pushed offline earnings past what playing earns. Any shards you spent on it are refunded.
 
 ## 1.57.0 — 2026-11-25
 - **Runs keep going in the background:** a run no longer pauses when you switch tabs or minimise the window; it keeps playing at your chosen speed while the game is open. Offline earnings now cover only the time the game is closed. While the game is open (in a background tab, on the menu or between runs) it earns nothing offline, and offline earnings are paid when you open the game again. On a huge late-game crowd the background run may fall a little behind your chosen speed, as it can on screen.
 
 ## 1.56.0 — 2026-11-25
-- **Chips are earned offline too:** like coins and shards, your best boss chips per game-hour (from a run of at least the usual minimum length; milestone chips don't count) keeps paying while you're away, at your fastest unlocked speed × Offline speed research, up to your Offline duration. The welcome-back screen, Workshop, start screen and Records show the chip rate. Your rate is set by your next qualifying run.
+- **Chips are earned offline too:** like coins and shards, your best boss chips per game-hour (from a run of at least the usual minimum length; milestone chips don't count) keeps paying while you're away, at your fastest unlocked speed, up to your Offline duration. The welcome-back screen, Workshop, start screen and Records show the chip rate. Your rate is set by your next qualifying run.
 
 ## 1.55.0 — 2026-11-25
 - **Modules are under maintenance:** they're being reworked. For now the Modules tab shows a notice, modules you own give no bonuses, and they can't be bought or levelled. Elites still drop alloy, and it's all saved for when Modules return.

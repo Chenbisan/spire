@@ -43,7 +43,7 @@ python -m http.server 8000
 - **Targeting:** the 🎯 Target button under the arena opens target priority: drag enemy types above Closest to shoot them first, in order.
 - **Auto-restart:** a run that ends restarts after a short countdown, which you can change or turn off in Settings.
 - **Background running:** a run keeps going while the game is open, even in a hidden tab, driven by a small worker ticker (`CFG.bgTick`, `bgBudget`, `bgMaxGap`).
-- **Offline earnings** (only for time the game is closed; paid when it's opened again): your best coins, shards and boss chips per game-hour (from runs of at least 2 game-minutes) is paid out while you're away at 60% efficiency (`CFG.offlineEff`), as if the game ran at your fastest unlocked speed (8×, up to 24× with Overdrive). The Lab's Offline speed multiplies it and Offline duration sets the cap. Shards are paid offline the same way, from your best shards per game-hour.
+- **Offline earnings** (only for time the game is closed; paid when it's opened again): your best coins, shards and boss chips per game-hour (from runs of at least 2 game-minutes) is paid out while you're away at 60% efficiency (`CFG.offlineEff`), as if the game ran at your fastest unlocked speed (8×, up to 24× with Overdrive). The Lab's Offline duration sets the cap. Shards are paid offline the same way, from your best shards per game-hour.
 
 ### Lab
 
@@ -51,7 +51,6 @@ Paid in shards.
 
 | Research | Effect |
 |---|---|
-| Offline speed | ×1 → ×2.5 offline earnings |
 | Offline duration | 24 h → 72 h cap |
 | Overdrive | Unlocks 12×, 16×, 24× game speed |
 | Workshop discount | Up to −30% Workshop costs |

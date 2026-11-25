@@ -87,13 +87,14 @@ const ST=[
 const SK=Object.fromEntries(ST.map(s=>[s.k,s]));
 // Lab: meta upgrades, paid in shards, applied instantly
 const LAB=[
- {k:'offSpd',n:'Offline speed',d:'Multiplies your offline earnings: +15% per level.',max:10,c:[20,1.6],val:l=>1+.15*l,f:v=>'×'+v.toFixed(2)},
  {k:'offCap',n:'Offline duration',d:'Offline earnings count for up to 24 h, plus 4 h per level.',max:12,c:[15,1.5],val:l=>24+4*l,f:v=>v+'h'},
  {k:'speed',n:'Overdrive',d:'Each level unlocks the next game speed: 12×, then 16×, then 24×.',max:3,c:[200,5],val:l=>[8,12,16,24][l],f:v=>'up to '+v+'×'},
  {k:'disc',n:'Workshop discount',d:'Every Workshop upgrade costs 2% fewer coins per level (up to 30% at level 15).',max:15,c:[30,1.5],val:l=>.02*l,f:v=>'−'+Math.round(v*100)+'%'},
  {k:'auto',n:'Auto-buyer',d:'Adds an auto-buy toggle to each section (Attack, Defense, Utility) of the Upgrades tab. Buys the cheapest upgrade first.',max:1,c:[150,1],val:l=>l,f:v=>v?'unlocked':'locked'},
 ];
 const LK=Object.fromEntries(LAB.map(l=>[l.k,l]));
+// research removed from the game, with its old cost [first level, growth], so saves get the shards back
+const LAB_GONE={offSpd:[20,1.6]};
 // Enemy shapes as unit polygons (scaled by sz). Used by the canvas and the Help icons.
 const regPoly=(n,r,rot=0)=>Array.from({length:n},(_,i)=>{const a=rot+i*2*Math.PI/n;return[Math.cos(a)*r,Math.sin(a)*r]});
 const SHAPES={

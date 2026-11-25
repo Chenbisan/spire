@@ -7,7 +7,10 @@ const freshStats=()=>({since:Date.now(),time:0,coins:0,offCoins:0,cash:0,shards:
 const fresh=()=>({v:1,ultV:7,bestCph:0,bestSph:0,bestChph:0,lastSeen:0,coins:0,shards:0,chips:0,alloy:0,cards:{},cardEq:[],cardSlots:2,mods:{},modEq:{},ults:{},ms:{},cleared:{},hist:[],stats:freshStats(),ws:{},lab:{},tierMax:1,best:{},runs:0,kills:0,set:{ultMan:{},dmgNums:true,prio:['closest','healer','protector','boss','charger','splitter','shielded','ranged','tank','fast','basic'],perf:false,speed:1,auto:true,autoDelay:5,ab:{}}});
 let save=fresh();
 // items removed from the game are refunded in chips (save.refund is shown once by the Equipment code)
-function migrate(sv){let back=0;for(const k of Object.keys(sv.cards)){if(CK[k])continue;const l=sv.cards[k];back+=CARD.buy;for(let i=0;i<l-1;i++)back+=CARD.up[i];delete sv.cards[k]}
+function migrate(sv){let back=0;
+  // removed research: refund its shards (shown once as a toast)
+  for(const k of Object.keys(sv.lab||{}))if(LAB_GONE[k]){const [c0,g]=LAB_GONE[k];let sh=0;for(let i=0;i<sv.lab[k];i++)sh+=c0*g**i;delete sv.lab[k];if(sh){sv.shards+=sh;sv.shardRefund=(sv.shardRefund||0)+sh}}
+for(const k of Object.keys(sv.cards)){if(CK[k])continue;const l=sv.cards[k];back+=CARD.buy;for(let i=0;i<l-1;i++)back+=CARD.up[i];delete sv.cards[k]}
   sv.cardEq=sv.cardEq.filter(k=>CK[k]);if(sv.set.tab==='Cards')sv.set.tab='Equipment';
   // target priority: one list with a 'closest' divider (types above it are shot first, in order)
   {const P=sv.set.prio;if(!P.includes('closest')){if(sv.set.target==='priority')P.push('closest');else P.unshift('closest')}for(const t of TYPES)if(!P.includes(t))P.push(t);delete sv.set.target}if(back){sv.chips+=back;sv.refund=(sv.refund||0)+back}return sv}
@@ -17,8 +20,8 @@ function persist(){save.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.st
 
 // ---- offline earnings ----
 function awayText(s){const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h}h ${m}m`:`${m}m`}
-// offline coins/real hour: best coins per game-hour, as if the game ran at your fastest unlocked speed, × CFG.offlineEff × Lab Offline speed
-const offMult=()=>Math.max(...speeds())*CFG.offlineEff*labVal('offSpd');
+// offline coins/real hour: best coins per game-hour, as if the game ran at your fastest unlocked speed, × CFG.offlineEff
+const offMult=()=>Math.max(...speeds())*CFG.offlineEff;
 // shards and chips: best shards / boss chips per game-hour, same rules
 const offlineRate=()=>save.bestCph*offMult(), offlineShardRate=()=>save.bestSph*offMult(), offlineChipRate=()=>(save.bestChph||0)*offMult();
 function offline(){
