@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.49.1 — 2026-11-25
+- **Help gives the real enemy count:** it used to say every 10 waves adds 3 enemies per wave; it now lists the actual counts (10 per wave on waves 1–10, 16 from wave 11, 18 from wave 21, and so on), worked out from the game's own formula.
+
 ## 1.49.0 — 2026-11-25
 - **No more vague descriptions:** everything now says exactly what it does, with numbers.
   - Every ultimate's description is built from your current upgrades (e.g. Laser: "Every 60 s, fires a 10 m wide beam for 3 s … takes ×3 spire damage per second"), and their Silver / Gold / Platinum bonuses give exact figures (turn speeds, ranges, sizes).
