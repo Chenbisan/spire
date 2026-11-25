@@ -1,5 +1,11 @@
 # What's new in Spire
 
+## 1.51.0 — 2026-11-25
+- **New enemy ranks:** Normal (Basic), Veteran (Fast, Ranged, Tank), Elite (Shielded, Healer, Splitter), Super Elite (Charger, Protector) and Boss. Elites and Super Elites drop alloy; Rail Cannon's bonus hits Elites, Super Elites and Bosses.
+- **Spawn chances are per rank:** each rank has one chance per spawn, shared equally by its types that have arrived. The Enemy panel now groups enemies by rank and shows one % per rank.
+- **Waves stop growing at wave 6,000** (156 enemies per wave). From there to wave 10,000 the mix shifts step by step towards Elites and Super Elites: Normal and Veteran chances halve and Elite and Super Elite chances grow 1.5×, ending at about 25% Normal + Veteran and 75% Elite + Super Elite (was about 50 / 50).
+- **Laser turns far slower:** Silver tracking now turns at most 3° per second (was 15°) and Platinum at most 6° per second (was 30°).
+
 ## 1.50.0 — 2026-11-25
 - **Missiles look like missiles:** they're drawn with a pointed nose, tail fins and an exhaust flame, turn to face where they're flying, and are drawn bigger, and fly at half the speed (45 m/s, was 90 m/s) so you can follow them.
 - **Firebomb's burn bonus never resets:** every second an enemy spends on any carpet adds +25% (+50% with Gold) to the fire damage it takes, and it keeps that bonus when it steps off, so the next carpet picks up where the last one left off.

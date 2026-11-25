@@ -18,11 +18,13 @@ python -m http.server 8000
 
 ## How it plays
 
-- **Runs:** the spire fires automatically. A new wave starts every 30 s of game time: enemies spawn for the first 15 s, then there's a break. Waves start at 10 enemies and add 3 every 10 waves; higher waves bring more Tanks and elites (each type arrives at `from` ÷ tier^1.2 and ramps from `freq` to `fmax` by triple that wave; `CFG.fromPow`, `CFG.rampTo`). A boss arrives every 10 waves. Enemies never overlap by more than 10% of their combined size: a crowd forms a wall and newcomers stop or slide into gaps, and enemies are drawn as outlines with a light fill so they stay readable when packed.
-- **Enemy stats:** the top bar shows this wave's Basic enemy (♥ health, ⚔ attack, » speed, ⚖ weight). Tap it for a table of every type (spawn chance, stats, wave summary) and a Your spire tab with your current stats. Weight decides who shoves whom in a crowd, and is meant for future knockback.
-- **Enemies** come in three ranks, each type with its own shape and colour:
-  - *Normal:* Basic (grey square), Fast (yellow triangle), Ranged (purple diamond, stops at 90% of your range and shoots), Tank (orange pentagon).
-  - *Elite* (from wave 15): Shielded (blue octagon, shield blocks the first 3 hits), Healer (green cross, heals nearby enemies), Splitter (magenta star, splits into 2 half-health Splitters, twice), Charger (lime arrowhead, from wave 22: immovable, charges in your range for 3 s then rams the spire for 10× its attack), Protector (brown shield, from wave 25: damage aimed at enemies within 40 m of it hits the Protector instead, at half).
+- **Runs:** the spire fires automatically. A new wave starts every 30 s of game time: enemies spawn for the first 15 s, then there's a break. Waves start at 10 enemies and grow every 10 waves by less and less, stopping at 156 from wave 6,000 (`CFG.spawnCount`, `CFG.lateWave`). Spawn chances are per rank pool (`POOLS`): each pool ramps from `freq` to `fmax` by wave `full` and is split evenly between its types that have arrived (each type arrives at `from` ÷ tier^1.2, `CFG.fromPow`). From wave 6,000 to 10,000 Normal and Veteran chances halve and Elite and Super Elite chances grow 1.5× (`CFG.lateNormal`, `CFG.lateElite`), ending at about 25% / 75%. A boss arrives every 10 waves. Enemies never overlap by more than 10% of their combined size: a crowd forms a wall and newcomers stop or slide into gaps, and enemies are drawn as outlines with a light fill so they stay readable when packed.
+- **Enemy stats:** the top bar shows this wave's Basic enemy (♥ health, ⚔ attack, » speed, ⚖ weight). Tap it for a table of every type (spawn chance per rank, stats, wave summary) and a Your spire tab with your current stats. Weight decides who shoves whom in a crowd, and is meant for future knockback.
+- **Enemies** come in ranks (`RK`, `RANKS`), each type with its own shape and colour:
+  - *Normal:* Basic (grey square).
+  - *Veteran:* Fast (yellow triangle), Ranged (purple diamond, stops at 90% of your range and shoots), Tank (orange pentagon).
+  - *Elite:* Shielded (blue octagon, shield blocks the first 3 hits), Healer (green cross, heals nearby enemies), Splitter (magenta star, splits into 2 half-health Splitters, twice).
+  - *Super Elite:* Charger (lime arrowhead: immovable, ignores the crowd, charges in your range for 3 s then rams the spire for 10× its attack), Protector (brown shield: damage aimed at enemies within 40 m of it hits the Protector instead, at half).
   - *Boss:* red hexagon, every 10th wave.
 - **Spire stats:** Attack has damage, attack speed, crits and super crits, range, damage per distance, multishot (chance + extra targets) and bounce shots (chance + bounces + range, capped at 40% of range). Defense has health, regen, barrier (a shield sized as a share of max health, shown in its own blue bar next to health; once broken it comes back at full after a recharge timer that starts at 5:00 and upgrades shorten), defense, thorns, lifesteal, death defy, and knockback (chance + force, divided by the enemy's weight). Utility has cash and coin bonuses, cash interest, starting cash, and free attack / defense / utility upgrade chances.
 - **Cash:** earned from kills and cash interest (paid at the start of every wave), spent in the Upgrades tab (Attack / Defense / Utility sections, as in the Workshop). It resets every run.
@@ -66,7 +68,7 @@ Paid in shards.
 
 All balance numbers are in `js/config.js`:
 
-- `ET` uses `freq` for spawn frequency and `weight` for push/knockback resistance.
+- `POOLS` sets spawn chances per rank; `ET` uses `weight` for push/knockback resistance.
 - `CFG`: crowd spacing (`sepGap`, `sepPush`), wave length, enemy scaling, spawn counts, tier multipliers, rewards (including `shardPerKill`), offline rules
 - `ST`: tower stats, per-level gains, cash and coin costs
 - `ET`: enemy types: rank, shape, colour, stats, abilities, and the name and description shown in Help (shapes are in `SHAPES`)

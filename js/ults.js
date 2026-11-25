@@ -101,7 +101,7 @@ function frostTick(dt,st){const R=run;if(!ultOwned('frost')){R.frostR=R.frostCap
 // never through the crowd) and shaken for ULT.shaken s: it takes damage × (multiplier × weight) from everything. No damage of its own.
 let ringId=0;
 // how hard enemy e is shaken: the multiplier × its weight (bosses count bossWt of theirs), never below 1
-const shakeOf=e=>Math.max(1,uv('shock','dmg')*(e.d.r===3?wtOf(e)*ULT.bossWt:wtOf(e)));
+const shakeOf=e=>Math.max(1,uv('shock','dmg')*(isBoss(e.d)?wtOf(e)*ULT.bossWt:wtOf(e)));
 // Gold (Aftershock): a shaken enemy that dies passes its shake to enemies within spreadR for the time it had left,
 // at each one's own strength (a stronger or longer shake already on them is kept)
 function shakeSpread(e){const R=run,r2=ULT.spreadR**2;forNear(e.x,e.y,ULT.spreadR,o=>{if(o===e||(o.x-e.x)**2+(o.y-e.y)**2>r2)return;
@@ -150,7 +150,7 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     M.splice(i,1);missileHit(m,t,S)}}
 function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
   const hitE=(o,f)=>{const v=S>=3?dmg*ULT.mStack**(o.mh||0):dmg;o.mh=(o.mh||0)+1;damage(o,v,0,false,f)}; // Platinum: each earlier missile hit on this enemy multiplies the damage
-  if(S>=2&&t.d.r!==3&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,6); // Gold (Execute): straight through any Protector
+  if(S>=2&&!isBoss(t.d)&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,6); // Gold (Execute): straight through any Protector
   else hitE(t,0);
   forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)hitE(o,1)}); // collateral: the same damage to everything in the blast
   if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5,a:Math.atan2(b.y-t.y,b.x-t.x)})} // Silver (Cluster)

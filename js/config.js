@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.50.0';
+const APP_VERSION='1.51.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -19,14 +19,18 @@ const CFG={
   wtMul:w=>(1+(w-1)/50)**.75,  // weight grows too (×2.4 by wave 100, ×10 by 1000, ×53 by 10000), so knockback, Shockwave and Gravity Well move high-wave enemies less
   hitRamp:1.03,  // each attack an enemy makes does this much more than its previous one (×1.34 by the 10th hit, ×18 by the 100th), so enemies can't linger forever
   protectR:40, protectShare:.5,  // Protectors: radius they guard (m) and the share of redirected damage they take
-  fromPow:1.2, rampTo:3,  // enemy types arrive at ET from ÷ tier^fromPow, and their spawn chance builds up until wave rampTo × that
+  fromPow:1.2,  // enemy types arrive at ET from ÷ tier^fromPow, and their pool's chance builds up to POOLS full ÷ tier^fromPow
   guardEvery:3,  // Protectors' guard links are refreshed every this many steps
   chargeAt:.9,  // a Charger stops to charge once it's this far inside your range (share of range)
   splitSz:.75,  // each smaller Splitter is this much the size of its parent
   healCd:5,  // an enemy can be healed at most once every this many game seconds
   finalWave:10000,  // reaching this wave stops all spawning; destroying every enemy left clears the tier (the run ends as a win)
   enemyCap:5000,  // most enemies on the field at once (each type also has its own cap, ET cap); spawns past it are skipped
-  spawnCount:w=>10+Math.floor(6*Math.sqrt(Math.floor((w-1)/10))),  // enemies per wave: steps up every 10 waves, by less and less (29 at wave 100, 70 at 1000, 200 at 10000); harder waves come from the mix, see ET freq
+  // enemies per wave: steps up every 10 waves, by less and less (28 at wave 101, 70 at 1001), and stops growing at lateWave (156 from wave 6000)
+  spawnCount:w=>10+Math.floor(6*Math.sqrt(Math.floor((Math.min(w,CFG.lateWave)-1)/10))),
+  // from lateWave to finalWave the mix shifts towards elites: Normal and Veteran spawn chances fall to lateNormal × and Elite and Super Elite ones rise to lateElite ×
+  // (about 25% Normal + Veteran / 75% Elite + Super Elite by the final wave, from about 50 / 50)
+  lateWave:6000, lateNormal:.5, lateElite:1.5,
   waveCash:w=>6+w*3,
   killCash:w=>2*(1+w*.05), killCoin:w=>3.5*(1+w*.03),  // per-kill rewards (× the enemy's own cash/coin); fewer, tougher enemies per wave than before, so each pays more and higher waves pay much more
   shardPerKill:.2,           // shards paid when a run ends = kills × this × tier shard multiplier (tier 2+ only)
@@ -100,21 +104,31 @@ const SHAPES={
  star:Array.from({length:10},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,r=i%2?.55:1.3;return[Math.cos(a)*r,Math.sin(a)*r]}),
  hexagon:regPoly(6,1),
 };
-const RANKS=['','Normal','Elite','Boss'];
+// enemy ranks (ET r): 1 Normal (Basic), 2 Veteran (Fast, Ranged, Tank), 3 Elite (Shielded, Healer, Splitter), 4 Super Elite (Charger, Protector), and Boss on its own
+const RK={NORMAL:1,VETERAN:2,ELITE:3,SUPER:4,BOSS:5};
+const RANKS=['','Normal','Veteran','Elite','Super Elite','Boss'];
+const isElite=d=>d.r===RK.ELITE||d.r===RK.SUPER, isBoss=d=>d.r===RK.BOSS;
+// spawn chance per rank pool: once the pool's first type arrives it has a freq chance per spawn, building up to fmax by wave full
+// (full is ÷ tier^CFG.fromPow like arrivals). The pool's chance is split evenly between its types that have arrived; Normal (Basic) takes what's left
+const POOLS={
+ [RK.VETERAN]:{freq:.15, fmax:.45, full:300},
+ [RK.ELITE]:{freq:.04, fmax:.32, full:2400},
+ [RK.SUPER]:{freq:.04, fmax:.18, full:5400},
+};
 // ghost: ignores collision (walks through others, and others through it) · r: rank · sh: shape · c: colour token (--eN) · rot: 'face' points at the spire, 'spin' rotates
-// cap: most of this type on the field at once · from: first wave on tier 1 (sooner on higher tiers: from ÷ tier^CFG.fromPow) · freq: spawn chance
-// when it arrives, growing to fmax by CFG.rampTo × its arrival wave (higher waves bring more tanks and elites) · weight: resists being pushed (crowds now, knockback later) · n/d: shown in Help
+// cap: most of this type on the field at once · from: first wave on tier 1 (sooner on higher tiers: from ÷ tier^CFG.fromPow) · spawn chances
+// are per rank, see POOLS · weight: resists being pushed (crowds now, knockback later) · n/d: shown in Help
 const ET={
  basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1',cap:1700},
- fast:{n:'Fast',r:1,d:'',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:10,freq:.15,cap:1000},
- ranged:{n:'Ranged',r:1,d:'Stops at 90% of your range, just inside your reach, and fires a shot at the spire every 2 s.',hp:3.5,dmg:2.04,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:100,freq:.08,fmax:0.12,stopPct:.9,shoot:1,cap:500},
- tank:{n:'Tank',r:1,d:'',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:40,freq:.08,fmax:0.2,cap:800},
- shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Every hit removes one charge however strong it is, so more shots per second break it faster.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,freq:.03,fmax:0.12,shield:3,cap:400},
- healer:{n:'Healer',r:2,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,freq:.03,fmax:0.08,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
- splitter:{n:'Splitter',r:2,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Each smaller one pays half the coins and cash of the one it split from, and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,freq:.03,fmax:0.12,split:2,splits:2,cap:400},
- charger:{n:'Charger',r:2,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there. It ignores the crowd: it walks and rams straight through other enemies.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,freq:.03,fmax:0.1,immov:1,ghost:1,charge:3,ram:10,ramSpd:160,cap:300},
- protector:{n:'Protector',r:2,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,coin:5,sh:'crest',c:'e10',from:1800,freq:.03,fmax:0.08,protect:1,cap:200},
- boss:{n:'Boss',r:3,d:'',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',cap:25}
+ fast:{n:'Fast',r:2,d:'',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:10,cap:1000},
+ ranged:{n:'Ranged',r:2,d:'Stops at 90% of your range, just inside your reach, and fires a shot at the spire every 2 s.',hp:3.5,dmg:2.04,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:100,stopPct:.9,shoot:1,cap:500},
+ tank:{n:'Tank',r:2,d:'',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:40,cap:800},
+ shielded:{n:'Shielded',r:3,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Every hit removes one charge however strong it is, so more shots per second break it faster.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,shield:3,cap:400},
+ healer:{n:'Healer',r:3,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
+ splitter:{n:'Splitter',r:3,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Each smaller one pays half the coins and cash of the one it split from, and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,split:2,splits:2,cap:400},
+ charger:{n:'Charger',r:4,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there. It ignores the crowd: it walks and rams straight through other enemies.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,immov:1,ghost:1,charge:3,ram:10,ramSpd:160,cap:300},
+ protector:{n:'Protector',r:4,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,coin:5,sh:'crest',c:'e10',from:1800,protect:1,cap:200},
+ boss:{n:'Boss',r:5,d:'',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',cap:25}
 };
 const TYPES=Object.keys(ET);
 // descriptions with exact ratios to a Basic (the same on every wave and tier, since both scale alike)
@@ -165,7 +179,7 @@ const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.ma
 //     × √(100 / lv), so each level is a big step and the price climbs fast (ultCost in ults.js).
 // cost: each ultimate's price multiplier (unlock and every level). The more impactful ones cost more, so choosing what to save for matters.
 // Medals come from how complete an ultimate is (average progress across its 4 tracks, ULT.medals: 10% / 30% / 60%).
-const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, laserTurn:Math.PI/12, laserTurnFast:Math.PI/6, noHeal:5, missileSpd:45, shellFlight:1.2, heat:.25, spreadFire:.5, bomblets:2, bombletR:120, execute:.15, salvo:3, mStack:1.25, maxWells:3, collapse:1.5, siphon:.5, heavy:1.5, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02, bossWt:.1, shaken:5, ringTime:.5, crush:1, spreadR:25};  // Firebomb: shellFlight, seconds a firebomb is in the air; heat, extra damage per second an enemy stays on the carpet (Gold doubles it); spreadFire, size and duration of Silver's new fires as a share of the carpet's. Missiles: missileSpd (m/s); bomblets and bombletR, Silver's bomblets and how far they look; execute, Gold's health share; salvo, Platinum's missiles per launch; mStack, Platinum's damage multiplier per earlier missile hit on the same enemy. Laser: laserTurn / laserTurnFast, how fast the beam tracks at Silver / Platinum (radians per s); noHeal, Gold's no-healing time. Gravity Well: maxWells open at once; collapse, Silver's yank = this many seconds of pull; siphon, Gold's seconds added per kill inside; heavy, Platinum's weight multiplier inside. Shockwave: bossWt, bosses count this share of their weight; shaken, seconds the shake lasts; ringTime, game seconds the ring takes to reach its radius; crush, Silver's extra multiplier for an enemy that couldn't move at all; spreadR, how far Gold's Aftershock spreads the shake (m); frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
+const ULT={levels:100, band:5, c0:200, medals:[.1,.3,.6], chainJump:70, chainDepth:8, chainMax:40, unlock:50, laserTurn:Math.PI/60, laserTurnFast:Math.PI/30, noHeal:5, missileSpd:45, shellFlight:1.2, heat:.25, spreadFire:.5, bomblets:2, bombletR:120, execute:.15, salvo:3, mStack:1.25, maxWells:3, collapse:1.5, siphon:.5, heavy:1.5, aftershock:1, gravSample:64, frostPer:.05, freeze:5, melt:.02, bossWt:.1, shaken:5, ringTime:.5, crush:1, spreadR:25};  // Firebomb: shellFlight, seconds a firebomb is in the air; heat, extra damage per second an enemy stays on the carpet (Gold doubles it); spreadFire, size and duration of Silver's new fires as a share of the carpet's. Missiles: missileSpd (m/s); bomblets and bombletR, Silver's bomblets and how far they look; execute, Gold's health share; salvo, Platinum's missiles per launch; mStack, Platinum's damage multiplier per earlier missile hit on the same enemy. Laser: laserTurn / laserTurnFast, how fast the beam tracks at Silver / Platinum (radians per s); noHeal, Gold's no-healing time. Gravity Well: maxWells open at once; collapse, Silver's yank = this many seconds of pull; siphon, Gold's seconds added per kill inside; heavy, Platinum's weight multiplier inside. Shockwave: bossWt, bosses count this share of their weight; shaken, seconds the shake lasts; ringTime, game seconds the ring takes to reach its radius; crush, Silver's extra multiplier for an enemy that couldn't move at all; spreadR, how far Gold's Aftershock spreads the shake (m); frostPer: slow per frost stack; freeze: Frost Field Silver freeze (game s); melt: Frost Field Platinum, chance per 10 m an enemy shot travels inside the field to melt
 ULT.cost=l=>Math.ceil(ULT.c0*(1+l/ULT.band)**1.5);
 const PC1=v=>(v*100).toFixed(1).replace(/\.0$/,'')+'%'; // ultimate percentages keep a decimal so every level shows its gain
 // track levels before the 1.23 rework (old saves are converted proportionally, keeping each track's value)

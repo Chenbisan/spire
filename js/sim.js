@@ -42,16 +42,23 @@ function newRun(tier){
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
 function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpMul(w)*tm.hp,atk:d.dmg*CFG.dmgMul(w)*tm.dmg,spd:d.spd*tm.spd,weight:d.weight*CFG.wtMul(w)*tm.wt,coins:d.coin*tm.coin*CFG.killCoin(w)}}
-// chance each type is picked for a regular spawn on wave w (mirrors pickType; Basic takes what's left)
-// the wave an enemy type first appears on tier t, and its spawn chance on wave w: freq on arrival, building up to fmax by
-// rampTo × the arrival wave
+// the wave an enemy type first appears on tier t
 const typeFrom=(d,t)=>d.from?Math.max(1,Math.round(d.from/t**CFG.fromPow)):1;
-const typeFreq=(d,w,t=run?run.tier:1)=>{if(!d.freq)return 0;const a=typeFrom(d,t);if(w<a)return 0;const mx=d.fmax||d.freq;return d.freq+(mx-d.freq)*Math.min(1,(w-a)/Math.max(1,(CFG.rampTo-1)*a))};
-function spawnChance(w,tier){const o={};let left=1;for(const t of TYPES){const f=typeFreq(ET[t],w,tier);if(!f)continue;const p=Math.min(left,f);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
-function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;acc+=f;if(r<acc)return t}return'basic'}
+const POOL_TYPES={};for(const k of TYPES){const r=ET[k].r;if(POOLS[r])(POOL_TYPES[r]||(POOL_TYPES[r]=[])).push(k)}
+// late game (CFG.lateWave → finalWave): Normal and Veteran chances shrink and Elite and Super Elite chances grow, step by step with the wave
+const lateMul=(r,w)=>{if(w<=CFG.lateWave)return 1;const k=Math.min(1,(w-CFG.lateWave)/(CFG.finalWave-CFG.lateWave));return 1+k*((r>=RK.ELITE?CFG.lateElite:CFG.lateNormal)-1)};
+// a pool's types that have arrived by wave w on tier t, and the pool's chance per regular spawn
+const poolTypes=(r,w,t)=>POOL_TYPES[r].filter(k=>w>=typeFrom(ET[k],t));
+function poolChance(r,w,t){const P=POOLS[r],a=Math.min(...POOL_TYPES[r].map(k=>typeFrom(ET[k],t)));if(w<a)return 0;
+  const full=Math.max(a+1,Math.round(P.full/t**CFG.fromPow));return(P.freq+(P.fmax-P.freq)*Math.min(1,(w-a)/(full-a)))*lateMul(r,w)}
+// chance per regular spawn for each pool (rank → chance; Normal takes what's left) and for each type
+function poolChances(w,t){const o={};let left=1;for(const r in POOLS){const p=Math.min(left,poolChance(+r,w,t));if(p>0){o[r]=p;left-=p}}o[RK.NORMAL]=left;return o}
+function spawnChance(w,t){const P=poolChances(w,t),o={basic:P[RK.NORMAL]};for(const r in POOLS){if(!P[r])continue;const ks=poolTypes(+r,w,t);for(const k of ks)o[k]=P[r]/ks.length}return o}
+// pick a pool, then one of its arrived types at random
+function pickType(w){const t=run.tier,P=poolChances(w,t);let x=Math.random();for(const r in POOLS){if(!P[r])continue;if(x<P[r]){const ks=poolTypes(+r,w,t);return ks[Math.floor(Math.random()*ks.length)]}x-=P[r]}return'basic'}
 const hasRoom=t=>aliveN<CFG.enemyCap&&(typeN[t]||0)<ET[t].cap;
 // a regular spawn whose type is full becomes another type this wave can have, if any has room
-function roomType(t,w){if(hasRoom(t))return t;const ok=TYPES.filter(k=>ET[k].r<3&&(k==='basic'||typeFreq(ET[k],w)>0)&&hasRoom(k));return ok.length?ok[Math.floor(Math.random()*ok.length)]:null}
+function roomType(t,w){if(hasRoom(t))return t;const ok=TYPES.filter(k=>!isBoss(ET[k])&&w>=typeFrom(ET[k],run.tier)&&hasRoom(k));return ok.length?ok[Math.floor(Math.random()*ok.length)]:null}
 function spawn(t,x,y){
   if(!hasRoom(t))return; // field (or this type) is full
   typeN[t]=(typeN[t]||0)+1;aliveN++;
@@ -78,11 +85,11 @@ function kill(e){
   const R=run;e.dead=true;typeN[e.t]--;aliveN--;R.kills++;save.kills++;
   if(R.ultSt&&R.ultSt.shock>=2&&e.shakenAt!=null&&R.time-e.shakenAt<ULT.shaken)shakeSpread(e); // Shockwave Gold (Aftershock)
   if(R.ultSt&&R.ultSt.grav>=2)gravSiphon(e); // Gravity Well Gold (Siphon)
-  const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave),st=save.stats;R.cash+=c;R.cashEarned+=c;st.cash+=c;if(e.d.r===2)st.elite++;else if(e.d.r===3)st.boss++;
+  const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave),st=save.stats;R.cash+=c;R.cashEarned+=c;st.cash+=c;if(isElite(e.d))st.elite++;else if(isBoss(e.d))st.boss++;
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
   const db=1+R.fx.drop;
-  if(e.d.r===3){const v=DROPS.chips(R.wave,R.tier)*db;save.chips+=v;R.chips+=v;st.chips+=v}
-  else if(e.d.r===2&&!e.sg){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
+  if(isBoss(e.d)){const v=DROPS.chips(R.wave,R.tier)*db;save.chips+=v;R.chips+=v;st.chips+=v}
+  else if(isElite(e.d)&&!e.sg){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
   // Splitters: split into `split` smaller Splitters with half the health, `splits` times over
   if(e.d.split&&e.sg<e.d.splits){const d=splitDef(e.sg+1);for(let i=0;i<e.d.split;i++){const c=spawn(e.t,e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
     if(c){c.sg=e.sg+1;c.d=d;c.mhp=c.hp=e.mhp/2;c.wt=e.wt*CFG.splitSz;c.age=CFG.fadeIn}}}
@@ -225,7 +232,7 @@ function update(dt){GEN_STEP++;
     const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
-      if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=2?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(R.chainP&&Math.random()<R.chainP)chainBolt(e);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
+      if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=RK.ELITE?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(R.chainP&&Math.random()<R.chainP)chainBolt(e);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
         if(!e.dead&&!e.d.immov&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/wtOf(e),spawnMax()-d);if(k>0){walk(e,e.x/d,e.y/d,k);e.px=e.x;e.py=e.y;e.rest=0;save.stats.kbs++}}
         if(b.bn>0){const n=nearestOther(e.x,e.y,e,s.bounceRange);if(n){b.bn--;b.rx=b.x=b.px=e.x;b.ry=b.y=b.py=e.y;b.e=n;b.g=n.gen;b.l=2;drop=false;save.stats.bounces++}}}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
