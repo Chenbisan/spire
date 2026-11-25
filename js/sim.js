@@ -142,6 +142,8 @@ function gameOver(quit,won){
   R.cph=R.time>0?R.coins/R.time*3600:0;R.newBest=false;
   if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
   R.sph=R.time>0?R.shards/R.time*3600:0;R.newBestS=R.time>=CFG.offlineMinRun&&R.sph>save.bestSph;if(R.newBestS)save.bestSph=R.sph;
+  // boss chips per game-hour (milestone chips don't count): the best one is paid offline too
+  R.chph=R.time>0?R.chips/R.time*3600:0;R.newBestC=R.time>=CFG.offlineMinRun&&R.chph>(save.bestChph||0);if(R.newBestC)save.bestChph=R.chph;
   const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;
   if(prevBest<R.wave)save.best[R.tier]=R.wave;
   {const T=save.stats.tiers[R.tier]||(save.stats.tiers[R.tier]={runs:0,coins:0,cph:0});T.runs++;T.coins+=R.coins;if(R.time>=CFG.offlineMinRun)T.cph=Math.max(T.cph,R.cph)}

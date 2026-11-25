@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.56.0 — 2026-11-25
+- **Chips are earned offline too:** like coins and shards, your best boss chips per game-hour (from a run of at least the usual minimum length; milestone chips don't count) keeps paying while you're away, at your fastest unlocked speed × Offline speed research, up to your Offline duration. The welcome-back screen, Workshop, start screen and Records show the chip rate. Your rate is set by your next qualifying run.
+
 ## 1.55.0 — 2026-11-25
 - **Modules are under maintenance:** they're being reworked. For now the Modules tab shows a notice, modules you own give no bonuses, and they can't be bought or levelled. Elites still drop alloy, and it's all saved for when Modules return.
 
