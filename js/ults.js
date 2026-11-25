@@ -144,8 +144,12 @@ function weakest(n,skip,x,y,r){const out=[];for(const e of enemies){if(e.dead||e
 function launchMissiles(S){const R=run,M=R.missiles||(R.missiles=[]);for(const t of weakest(S>=3?ULT.salvo:1))M.push({x:0,y:0,px:0,py:0,t,g:t.gen,m:1,a:Math.atan2(t.y,t.x)})}
 function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;const step=ULT.missileSpd*dt;
   for(let i=M.length-1;i>=0;i--){const m=M[i];m.px=m.x;m.py=m.y;let t=m.t;
-    // its target died: find the next weakest (k, the time spent chasing this target, starts again)
-    if(t.dead||t.gen!==m.g){t=weakest(1)[0];if(!t){M.splice(i,1);continue}m.t=t;m.g=t.gen;m.k=0}
+    // its target died: find the next weakest (k, the time spent chasing this target, starts again). A bomblet (b) only looks
+    // within bombletR of the blast that threw it, and explodes where it is if nothing's there
+    if(t.dead||t.gen!==m.g){t=m.b?weakest(1,null,m.ox,m.oy,ULT.bombletR)[0]:weakest(1)[0];
+      if(!t){M.splice(i,1);if(m.b)blastAt(m,m.x,m.y,S);continue}m.t=t;m.g=t.gen;m.k=0}
+    // a bomblet never flies further than bombletR in all: past that it explodes where it is
+    if(m.b&&(m.tv=(m.tv||0)+step)>ULT.bombletR){M.splice(i,1);blastAt(m,m.x,m.y,S);continue}
     const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);
     if(d<=step+t.d.sz){M.splice(i,1);missileHit(m,t,S);continue}
     // steer: turns towards the target at most missileTurn rad/s (wide, sweeping arcs), sharpening by missileSharpen every second it chases
@@ -153,12 +157,15 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     m.a+=Math.max(-tn,Math.min(tn,da));m.x+=Math.cos(m.a)*step;m.y+=Math.sin(m.a)*step;
     // smoke trail: the last missileTrail positions
     const tr=m.tr||(m.tr=[]);tr.push(m.x,m.y);if(tr.length>ULT.missileTrail*2)tr.splice(0,2)}}
+// a bomblet that lost its target (or ran out of range) bursts where it is: its damage to everything in the blast radius
+function blastAt(m,x,y,S){const rad=uv('missile','radius'),dmg=run.s.damage*uv('missile','dmg')*m.m;
+  forNear(x,y,rad,o=>{if((o.x-x)**2+(o.y-y)**2>rad*rad)return;const v=S>=3?dmg*ULT.mStack**(o.mh||0):dmg;o.mh=(o.mh||0)+1;damage(o,v,0,false,1)})}
 function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
   const hitE=(o,f)=>{const v=S>=3?dmg*ULT.mStack**(o.mh||0):dmg;o.mh=(o.mh||0)+1;damage(o,v,0,false,f)}; // Platinum: each earlier missile hit on this enemy multiplies the damage
   if(S>=2&&!isBoss(t.d)&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,6); // Gold (Execute): straight through any Protector
   else hitE(t,0);
   forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)hitE(o,1)}); // collateral: the same damage to everything in the blast
-  if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5,a:Math.atan2(b.y-t.y,b.x-t.x)})} // Silver (Cluster)
+  if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5,a:Math.atan2(b.y-t.y,b.x-t.x),b:1,ox:t.x,oy:t.y,tv:0})} // Silver (Cluster)
   if(ultFx.length<80)ultFx.push({k:'boom',x:t.x,y:t.y,r:rad*(m.m<1?.6:1),at:performance.now()})}
 // Firebomb: lobs a firebomb at the enemy that has stood still the longest (e.still); it lands ULT.shellFlight s later and leaves
 // a flaming carpet for Carpet duration s. Every dotHz tick, anything on a carpet takes spire damage × Fire damage per second ×

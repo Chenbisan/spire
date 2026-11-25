@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.60.0 — 2026-11-25
+- **Bomblets stay local:** Missiles' Silver bomblets no longer chase enemies across the map. If a bomblet's target dies, it only picks a new one within 120 m of the blast that threw it, and if there's none it bursts where it is. It also bursts if it has flown 120 m without landing.
+
 ## 1.59.0 — 2026-11-25
 - **Missiles swing round in wide arcs:** when a missile has to change target it now turns at about 57° per second (was about 200°), sweeping round in a wide curve roughly 45 m across, and only tightens slowly the longer it chases. Its smoke trail is a third longer so the arc shows.
 

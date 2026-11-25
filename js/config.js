@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.59.0';
+const APP_VERSION='1.60.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -225,7 +225,7 @@ const ULTS=[
   icon:'<path d="M14.5 4.5c2.5-1 4.6-1 5 .1.4 1-.6 3.2-3 5.5l-6 6-3-3z"/><path d="M8.5 10.5 5 11l-2 3 3.5.5M13.5 15.5 13 19l-3 2-.5-3.5"/><path d="m6.5 17.5-2 2"/>',
   t:[{k:'dmg',n:'Missile damage',base:5,pow:1.2,f:v=>`×${fmt(v)} spire damage`},{k:'cd',lv:12,n:'Cooldown',base:15,end:3,f:S1},
      {k:'radius',lv:10,n:'Blast radius',base:20,end:70,f:v=>(+v.toFixed(1))+' m'},{k:'low',lv:10,n:'Low-health bonus',base:1,end:5,f:v=>`up to +${Math.round(v*100)}% at 0% health`}],
-  sb:`Cluster: each blast throws ${ULT.bomblets} bomblets at the ${ULT.bomblets} weakest other enemies within ${ULT.bombletR} m, each for 50% of the missile damage`, gb:'Execute: a missile kills any non-boss target below 15% health outright', pb:'Salvo: fires 3 missiles at once, at the 3 weakest enemies, and every missile hit on an enemy makes the next one against it 25% stronger (compounding)'},
+  sb:`Cluster: each blast throws ${ULT.bomblets} bomblets at the ${ULT.bomblets} weakest other enemies within ${ULT.bombletR} m, each for 50% of the missile damage. A bomblet never flies more than ${ULT.bombletR} m: if its target dies it only retargets within ${ULT.bombletR} m of the blast, and otherwise bursts where it is`, gb:'Execute: a missile kills any non-boss target below 15% health outright', pb:'Salvo: fires 3 missiles at once, at the 3 weakest enemies, and every missile hit on an enemy makes the next one against it 25% stronger (compounding)'},
  {k:'firebomb',cost:1,n:'Firebomb',col:'fire',d:()=>`Every ${S1(uv('firebomb','cd'))}, lobs a firebomb at the enemy that has stood still the longest. It leaves a flaming carpet with a ${fmt(uv('firebomb','radius'))} m radius for ${S1(uv('firebomb','dur'))}. Anything on it takes ×${fmt(uv('firebomb','dmg'))} spire damage per second, +${PC1(ULT.heat)} for every second it has ever spent on a carpet. The bonus never resets, even if it steps off or reaches another carpet later.`,
   icon:'<path d="M12 21c-4 0-6.5-2.6-6.5-6 0-3.2 2.2-5 3.5-7.5.6 1.6 1.6 2.6 2.6 3 .2-2.8 1.4-5.6 3.9-7.5-.3 2.8.8 4.6 2 6.3 1 1.5 1.5 3 1.5 4.7 0 4-2.9 7-7 7z"/><path d="M12 21c-1.7 0-3-1.2-3-3 0-1.6 1.3-2.6 2-4 .9 1.6 4 2.4 4 4.2 0 1.6-1.3 2.8-3 2.8z"/>',
   t:[{k:'dmg',n:'Fire damage',base:1,pow:1.2,f:v=>`×${fmt(v)} spire damage /s`},{k:'radius',lv:7,n:'Carpet radius',base:15,end:50,f:v=>(+v.toFixed(1))+' m'},
