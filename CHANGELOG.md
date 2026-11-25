@@ -1,5 +1,11 @@
 # What's new in Spire
 
+## 1.50.0 — 2026-11-25
+- **Missiles look like missiles:** they're drawn with a pointed nose, tail fins and an exhaust flame, turn to face where they're flying, and are drawn bigger, and fly at half the speed (45 m/s, was 90 m/s) so you can follow them.
+- **Firebomb's burn bonus never resets:** every second an enemy spends on any carpet adds +25% (+50% with Gold) to the fire damage it takes, and it keeps that bonus when it steps off, so the next carpet picks up where the last one left off.
+- **Laser is slower and more deliberate:** it picks the enemy with the most health once when it fires and stays locked on to it. It only picks a new target when that enemy dies, so it no longer flicks back and forth as health values change.
+  - Silver tracking turns the beam at up to 15° per second (was 29°), and Platinum Lock-on at up to 30° per second (was 86°).
+
 ## 1.49.1 — 2026-11-25
 - **Help gives the real enemy count:** it used to say every 10 waves adds 3 enemies per wave; it now lists the actual counts (10 per wave on waves 1–10, 16 from wave 11, 18 from wave 21, and so on), worked out from the game's own formula.
 

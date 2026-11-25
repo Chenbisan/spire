@@ -55,7 +55,8 @@ function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u 
       // damage over time lands in dotHz chunks (same total damage, far fewer hits to process); movement stays per step
       const dotT=(st.dot=(st.dot||0)+dt)>=1/CFG.dotHz?st.dot:0;if(dotT)st.dot=0;
       if(u.k==='laser'){const L=S.laser||0;
-        if(L>=1){if(dotT||!st.big||st.big.dead)st.big=biggest();const t=st.big;if(t){let da=Math.atan2(t.y,t.x)-st.ang;da=Math.atan2(Math.sin(da),Math.cos(da));const turn=(L>=3?ULT.laserTurnFast:ULT.laserTurn)*dt;st.ang+=Math.max(-turn,Math.min(turn,da))}} // Silver: tracking
+        // Silver: tracking. The beam stays locked on the enemy it chose and only picks a new one (the one with the most health now) once that enemy dies
+        if(L>=1){let t=st.big;if(!t||t.dead||t.gen!==st.bigGen){t=st.big=biggest();st.bigGen=t?t.gen:0}if(t){let da=Math.atan2(t.y,t.x)-st.ang;da=Math.atan2(Math.sin(da),Math.cos(da));const turn=(L>=3?ULT.laserTurnFast:ULT.laserTurn)*dt;st.ang+=Math.max(-turn,Math.min(turn,da))}}
         if(dotT){const w=uv('laser','width')/2,dmg=R.s.damage*uv('laser','dmg')*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang);
           for(const e of enemies){if(e.dead||e.x*cx+e.y*cy<=0||Math.abs(e.x*cy-e.y*cx)>w+e.d.sz)continue;
             if(L>=2)e.noHealAt=R.time; // Gold (Cauterize)
@@ -140,11 +141,11 @@ function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),nf=uv('
 function weakest(n,skip,x,y,r){const out=[];for(const e of enemies){if(e.dead||e.age<CFG.fadeIn||(skip&&skip.has(e)))continue;
     if(r!=null&&(e.x-x)**2+(e.y-y)**2>r*r)continue;
     if(out.length<n||e.hp<out[out.length-1].hp){out.push(e);out.sort((a,b)=>a.hp-b.hp);if(out.length>n)out.pop()}}return out}
-function launchMissiles(S){const R=run,M=R.missiles||(R.missiles=[]);for(const t of weakest(S>=3?ULT.salvo:1))M.push({x:0,y:0,px:0,py:0,t,g:t.gen,m:1})}
+function launchMissiles(S){const R=run,M=R.missiles||(R.missiles=[]);for(const t of weakest(S>=3?ULT.salvo:1))M.push({x:0,y:0,px:0,py:0,t,g:t.gen,m:1,a:Math.atan2(t.y,t.x)})}
 function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;const step=ULT.missileSpd*dt;
   for(let i=M.length-1;i>=0;i--){const m=M[i];m.px=m.x;m.py=m.y;let t=m.t;
     if(t.dead||t.gen!==m.g){t=weakest(1)[0];if(!t){M.splice(i,1);continue}m.t=t;m.g=t.gen} // its target died: find the next weakest
-    const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);
+    const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);if(d>0)m.a=Math.atan2(dy,dx);
     if(d>step+t.d.sz){m.x+=dx/d*step;m.y+=dy/d*step;continue}
     M.splice(i,1);missileHit(m,t,S)}}
 function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
@@ -152,7 +153,7 @@ function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv
   if(S>=2&&t.d.r!==3&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,6); // Gold (Execute): straight through any Protector
   else hitE(t,0);
   forNear(t.x,t.y,rad,o=>{if(o!==t&&(o.x-t.x)**2+(o.y-t.y)**2<=rad*rad)hitE(o,1)}); // collateral: the same damage to everything in the blast
-  if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5})} // Silver (Cluster)
+  if(S>=1&&m.m===1){const M=R.missiles||(R.missiles=[]);for(const b of weakest(ULT.bomblets,new Set([t]),t.x,t.y,ULT.bombletR))M.push({x:t.x,y:t.y,px:t.x,py:t.y,t:b,g:b.gen,m:.5,a:Math.atan2(b.y-t.y,b.x-t.x)})} // Silver (Cluster)
   if(ultFx.length<80)ultFx.push({k:'boom',x:t.x,y:t.y,r:rad*(m.m<1?.6:1),at:performance.now()})}
 // Firebomb: lobs a firebomb at the enemy that has stood still the longest (e.still); it lands ULT.shellFlight s later and leaves
 // a flaming carpet for Carpet duration s. Every dotHz tick, anything on a carpet takes spire damage × Fire damage per second ×
@@ -168,10 +169,9 @@ function firebombTick(dt,S){const R=run,Sh=R.shells,C2=R.carpets;
   if(!C2||!C2.length)return;R.burnT=(R.burnT||0)+dt;for(const c of C2)c.left-=dt;
   if(R.burnT>=1/CFG.dotHz){const tick=R.burnT,id=++fireTickN;R.burnT=0;const dps=R.s.damage*uv('firebomb','dmg'),heat=ULT.heat*(S>=2?2:1);
     for(const c of C2)forNear(c.x,c.y,c.r,e=>{if(e.fireTick!==id&&(e.x-c.x)**2+(e.y-c.y)**2<=c.r*c.r)e.fireTick=id});
-    const burning=R.burning||(R.burning=new Set());
-    for(const e of burning)if(e.fireTick!==id||e.dead){e.onFire=0;burning.delete(e)} // stepped off (or died): the build-up resets
+    // e.onFire is the total time an enemy has spent on any carpet; it never resets (only a new enemy starts at 0)
     // each burning enemy takes one hit per tick, however many carpets overlap it
-    for(const c of C2)forNear(c.x,c.y,c.r,e=>{if(e.fireTick!==id||e.fireDone===id)return;e.fireDone=id;burning.add(e);
+    for(const c of C2)forNear(c.x,c.y,c.r,e=>{if(e.fireTick!==id||e.fireDone===id)return;e.fireDone=id;
       e.onFire=(e.onFire||0)+tick;damage(e,dps*tick*(1+heat*e.onFire),0,false,1);
       if(S>=1&&e.dead)C2.push({x:e.x,y:e.y,r:c.r*ULT.spreadFire,left:uv('firebomb','dur')*ULT.spreadFire})})} // Silver (Spreading flames)
   for(let i=C2.length-1;i>=0;i--)if(C2[i].left<=0)C2.splice(i,1)}
@@ -184,7 +184,8 @@ function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[
   if(k==='missile')launchMissiles(S.missile||0);
   else if(k==='firebomb')launchFirebomb(S.firebomb||0);
   else if(k==='shock'){shockBlast(false);if(S.shock>=3)st.after=ULT.aftershock}
-  else if(k==='laser'){const t=biggest()||tgt;st.ang=Math.atan2(t.y,t.x);st.act=uv('laser','dur')} // aims at the enemy with the most health
+  // aims at the enemy with the most health, chosen once here, and locks on to it
+  else if(k==='laser'){const t=biggest()||tgt;st.big=t;st.bigGen=t.gen;st.ang=Math.atan2(t.y,t.x);st.act=uv('laser','dur')}
   return true}
 // ---- drawing (called from draw()) ----
 function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.now(),dpr=W/(stage.clientWidth||W);
@@ -202,8 +203,11 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
     for(const s of R.shells){const p=Math.min(1,(s.t+a)/ULT.shellFlight),d=Math.hypot(s.x,s.y),h=d*.35*4*p*(1-p),x=s.x*p,y=s.y*p-h; // an arc from the spire, peaking at 35% of the distance
       ctx.globalAlpha=.25;ctx.beginPath();ctx.arc(s.x*p,s.y*p,3*dpr/sc,0,6.283);ctx.fill(); // its shadow on the ground
       ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,4.5*dpr/sc,0,6.283);ctx.fill()}}
-  if(R.missiles&&R.missiles.length){ctx.strokeStyle=C.chip;ctx.fillStyle=C.chip;ctx.lineCap='round';
-    for(const m of R.missiles){const x=IX(m),y=IY(m),s=(m.m<1?2.5:4)*dpr/sc;ctx.globalAlpha=.5;ctx.lineWidth=s;ctx.beginPath();ctx.moveTo(m.px,m.py);ctx.lineTo(x,y);ctx.stroke();ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,s,0,6.283);ctx.fill()}ctx.lineCap='butt'}
+  // missiles: a body with a pointed nose and tail fins, facing where it flies, with a flickering exhaust flame behind it
+  if(R.missiles&&R.missiles.length){const fl=.75+.25*Math.sin(now/45);
+    for(const m of R.missiles){const L=(m.m<1?15:24)*dpr/sc,w=L*.13;ctx.save();ctx.translate(IX(m),IY(m));ctx.rotate(m.a||0);
+      ctx.fillStyle=C.fire;ctx.globalAlpha=.85;ctx.beginPath();ctx.moveTo(-L*.42,-w*.8);ctx.lineTo(-L*(.42+.45*fl),0);ctx.lineTo(-L*.42,w*.8);ctx.fill();ctx.globalAlpha=1;
+      ctx.fillStyle=C.chip;ctx.beginPath();ctx.moveTo(L*.58,0);ctx.lineTo(L*.32,-w);ctx.lineTo(-L*.3,-w);ctx.lineTo(-L*.45,-w*2.6);ctx.lineTo(-L*.45,-w);ctx.lineTo(-L*.45,w);ctx.lineTo(-L*.45,w*2.6);ctx.lineTo(-L*.3,w);ctx.lineTo(L*.32,w);ctx.closePath();ctx.fill();ctx.restore()}}
   if(R.rings)for(const g of R.rings){ctx.strokeStyle=C.gold;ctx.lineWidth=(g.after?2.5:4)*dpr/sc;ctx.globalAlpha=.85*(1-g.r/g.rad)+.15;ctx.beginPath();ctx.arc(0,0,CFG.towerR+g.r,0,6.283);ctx.stroke()}
   ctx.globalAlpha=1;
   for(let i=ultFx.length-1;i>=0;i--){const f=ultFx[i],k=(now-f.at)/(f.k==='chain'?260:450);if(k>=1){ultFx.splice(i,1);continue}
