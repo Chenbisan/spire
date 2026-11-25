@@ -16,7 +16,7 @@ const stars=l=>'★'.repeat(l)+'☆'.repeat(5-l);
 const eqIcon=c=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="var(--${c.col})" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${c.icon}</svg>`;
 function cardsHtml(){
   const used=save.cardEq.length,next=CARD.slotCost[save.cardSlots-CARD.slots0],canSlot=next!=null&&save.cardSlots<CARDS.length;
-  let h=`<p class="note">Equipment adds new abilities to the spire. Buy it with <b class="chip">chips</b>, which bosses drop, equip it into a slot and level it up to 5 stars. Swap any time, even mid-run.</p>
+  let h=`<p class="note">Equipment adds new abilities to the spire. Refund anything for all its chips back. Buy it with <b class="chip">chips</b>, which bosses drop, equip it into a slot and level it up to 5 stars. Swap any time, even mid-run.</p>
   <div class="lhead"><span>Chips <b class="chip">${fmt(save.chips)}</b></span>${canSlot?`<button class="chip" data-cslot ${save.chips>=next?'':'disabled'}>+1 slot · ${fmt(next)}</button>`:''}</div>
   <div class="gh">Equipped ${used} / ${save.cardSlots}</div><div class="eqslots">`;
   for(let i=0;i<save.cardSlots;i++){const c=CK[save.cardEq[i]];
@@ -28,7 +28,7 @@ function cardsHtml(){
     h+=`<div class="item${eq?' eq':''}${l?'':' locked'}" style="--c:var(--${c.col})"><div class="itop">${eqIcon(c)}<div><b>${c.n}</b><span class="stars">${l?stars(l):'not owned'}</span></div></div>
       <p>${v}</p><div class="ibtns">
       ${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-cbuy="${c.k}" ${save.chips>=cost?'':'disabled'}>${l?'<span class="q">★</span>':'Buy '}${fmt(cost)}</button>`}
-      ${l?`<button data-ceq="${c.k}" class="${eq?'on':''}" ${!eq&&used>=save.cardSlots?'disabled':''}>${eq?'Equipped':'Equip'}</button>`:''}</div></div>`}
+      ${l?`<button data-ceq="${c.k}" class="${eq?'on':''}" ${!eq&&used>=save.cardSlots?'disabled':''}>${eq?'Equipped':'Equip'}</button>`:''}</div>${l?respecBtn('card:'+c.k,'Refund'):''}</div>`}
   return h+`</div><p class="note">More equipment is on the way.</p>`;
 }
 function modsHtml(){
@@ -42,7 +42,7 @@ function modsHtml(){
         <span class="v">${l?(mx?modMain(m,l):`${modMain(m,l)} → ${modMain(m,l+1).replace(/^\+/,'+')}`):modMain(m,1)+' at Lv 1'}</span>
         <span class="v sp">${m.sf(m.sp[r])}${!mx&&r<RARITY.length-1?` <span class="nx">(${RARITY[r+1]}: ${m.sf(m.sp[r+1])})</span>`:''}</span></div><div class="lbtns">
         ${mx?'<button class="buy" disabled>Max</button>':`<button class="buy alloy" data-mbuy="${m.k}" ${save.alloy>=cost?'':'disabled'}>${!l?'Buy ':asc?'Rank up ':'<span class="q">+1</span>'}${fmt(cost)}</button>`}
-        ${l?`<button data-meq="${m.k}" class="${eq?'on':''}">${eq?'Equipped':'Equip'}</button>`:''}</div></div>`}}
+        ${l?`<button data-meq="${m.k}" class="${eq?'on':''}">${eq?'Equipped':'Equip'}</button>`:''}${l?respecBtn('mod:'+m.k,'Refund'):''}</div></div>`}}
   return h;
 }
 // affordability changes as chips/alloy drop mid-run; rebuild the tab when it does
@@ -61,4 +61,21 @@ $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
   else if(d.meq){const m=MK[d.meq];save.modEq[m.s]=save.modEq[m.s]===m.k?null:m.k;loadoutChanged()}
 });
 
-if(save.refund){toast(`Removed equipment refunded: ${fmt(save.refund)} chips`);delete save.refund;persist()}
+// ---- respec: undo purchases for a full refund, so builds are free to try ----
+// key 'ws:<group>' (Workshop section), 'ult:<k>' (an ultimate's upgrades; it stays unlocked), 'card:<k>', 'mod:<k>'
+function respecValue(key){const [kind,k]=key.split(':');let v=0;
+  if(kind==='ws'){const d=1-labVal('disc');for(const s of ST)if(s.g===k)for(let i=0;i<(save.ws[s.k]||0);i++)v+=s.w[0]*d*s.w[1]**i;return{cur:'coin',v}} // at today's discount, never more than was paid
+  if(kind==='ult'){for(const t of UK[k].t)for(let i=0;i<ultLv(k,t.k);i++)v+=ultCost(t,i);return{cur:'chip',v}}
+  if(kind==='card'){const l=cardLv(k);if(l)v=CARD.buy;for(let i=0;i<l-1;i++)v+=CARD.up[i];return{cur:'chip',v}}
+  if(kind==='mod'){const l=modLv(k);if(l)v=MOD.buy;for(let i=1;i<l;i++)v+=modCost(i);return{cur:'alloy',v}}
+  return{cur:'',v:0}}
+function respec(key){const [kind,k]=key.split(':'),{cur,v}=respecValue(key);if(!v)return;
+  if(kind==='ws'){for(const s of ST)if(s.g===k)save.ws[s.k]=0;save.coins+=v}
+  else if(kind==='ult'){save.ults[k]={};save.chips+=v}
+  else if(kind==='card'){delete save.cards[k];save.cardEq=save.cardEq.filter(x=>x!==k);save.chips+=v}
+  else if(kind==='mod'){delete save.mods[k];const s=MK[k].s;if(save.modEq[s]===k)save.modEq[s]=null;save.alloy+=v}
+  save.stats.respecs=(save.stats.respecs||0)+1;toast(`Refunded ${fmt(v)} ${cur==='coin'?'coins':cur==='chip'?'chips':'alloy'}`);
+  persist();if(run&&!run.over)recalc();loSig='';buildPanel();if(typeof buildUltBar==='function')buildUltBar()}
+// the refund button: tap once to see the amount, again to confirm
+const respecBtn=(key,label)=>{const {cur,v}=respecValue(key);return v?`<button class="respec" data-respec="${key}" title="Undo every purchase here for a full refund">${label} <span class="${cur}">+${fmt(v)}</span></button>`:''};
+if(save.refund){toast(`Refunded ${fmt(save.refund)} chips for removed upgrades`);delete save.refund;persist()}

@@ -14,19 +14,20 @@ function bars(){
   const on=!!run&&!run.over&&run.barMax>0,down=on&&run.barT>0,br=!on?0:down?1-run.barT/Math.max(1e-9,run.s.barrierRegen):Math.max(0,Math.min(1,run.bar/run.barMax));
   $('barW').hidden=!on;$('barTrack').classList.toggle('down',down);if(Math.abs(br-lastBar)>1e-4){lastBar=br;barBar.style.transform=`scaleX(${Math.max(0,Math.min(1,br))})`}
   if(Math.abs(wv-lastWv)>1e-4){lastWv=wv;waveBar.style.transform=`scaleX(${wv})`}
+  waveBar.parentNode.classList.toggle('brk',!!run&&!run.over&&run.waveT>=run.spawnLen); // break between waves
 }
 // ================= UI =================
 $('verTag').textContent='v'+APP_VERSION;$('verTag').href=CHANGELOG_URL;
 const TX=(id,t)=>{const e=$(id);t=String(t);if(e.textContent!==t)e.textContent=t};
 function hud(){
-  TX('hTier',run?run.tier:'–');TX('hWave',run?run.wave:'–');
+  TX('hTier',run?run.tier:'–');TX('hWave',run?(run.wave>=CFG.finalWave&&!run.over?`${run.wave} · ${fmt(aliveN)} left`:run.wave):'–');
   TX('hCash',run?fmt(run.cash):'0');TX('hCoins',fmt(save.coins));TX('hShards',fmt(save.shards));$('shardChip').hidden=!shardsOn();
   TX('hChips',fmt(save.chips));$('chipChip').hidden=!(save.chips>0||save.stats.chips>0);TX('hAlloy',fmt(save.alloy));$('alloyChip').hidden=!(save.alloy>0||save.stats.alloy>0);
   {const w=run?run.wave:1,t=run?run.tier:ovTier,e=enemyStats('basic',w,t);
    TX('eHp',fmt(e.hp));TX('eAtk',fmt(e.atk));TX('eSpd',fmt(e.spd));TX('eWt',fmt(e.weight));
    if(modalKind==='enemies'){
      if(w!==eTabW||t!==eTabT)mBody.innerHTML=enemyHtml();
-     else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',Math.ceil(run.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
+     else if(eTab==='wave'&&run&&!run.over&&$('wiTime')){TX('wiTime',run.wave>=CFG.finalWave?'final wave':Math.ceil(run.waveLen-run.waveT)+' s');TX('wiSpawned',run.spawned);TX('wiAlive',enemies.filter(e=>!e.dead).length)}
      else if(eTab==='spire'){const {live,v}=spireStats();if(JSON.stringify(v)+(live?Math.round(run.hp):'')!==eSig)mBody.innerHTML=enemyHtml()}}}
   if(run){TX('hpTxt',`${fmt(Math.max(0,run.hp))} / ${fmt(run.s.health)}`+(run.invT>0?` · ✦ ${Math.ceil(run.invT)}s`:''))}
   else{TX('hpTxt','–')}
@@ -38,8 +39,8 @@ function hud(){
 let ovTier=save.tierMax;
 const shardsOn=()=>save.tierMax>=2||save.shards>0;
 function tierPicker(){let h='<div class="tiers">';for(let t=1;t<=save.tierMax;t++)h+=`<button data-tier="${t}" class="${t===ovTier?'on':''}">Tier ${t}<small>best ${save.best[t]||0} · coins ×${fmt(CFG.tier(t).coin)}</small></button>`;return h+'</div>'}
-function tierInfo(t){const tm=CFG.tier(t),T=save.stats.tiers[t]||{runs:0,cph:0},nxt=t<save.tierMax?'':`<p class="note" style="margin:0">Reach wave ${CFG.tierUnlockWave} here to unlock tier ${t+1} (enemies ×${fmt(CFG.tier(t+1).hp)} health, coins ×${fmt(CFG.tier(t+1).coin)}).</p>`;
-  return`<div class="tinfo"><div><span>Enemy health</span><b>×${fmt(tm.hp)}</b></div><div><span>Enemy attack</span><b>×${fmt(tm.dmg)}</b></div><div><span>Coins</span><b class="coin">×${fmt(tm.coin)}</b></div><div><span>Shards</span><b class="shard">${tm.shard?'×'+fmt(tm.shard):'none'}</b></div>
+function tierInfo(t){const tm=CFG.tier(t),T=save.stats.tiers[t]||{runs:0,cph:0},nxt=t<save.tierMax?'':`<p class="note" style="margin:0">Reach wave ${CFG.tierUnlockWave.toLocaleString()} here to unlock tier ${t+1} (enemies ×${fmt(CFG.tier(t+1).hp)} health, coins ×${fmt(CFG.tier(t+1).coin)}).</p>`;
+  return`<div class="tinfo"><div><span>Enemy health</span><b>×${fmt(tm.hp)}</b></div><div><span>Enemy attack</span><b>×${fmt(tm.dmg)}</b></div><div><span>Enemy weight · speed</span><b>×${fmt(tm.wt)} · ×${fmt(tm.spd)}</b></div><div><span>Coins</span><b class="coin">×${fmt(tm.coin)}</b></div><div><span>Shards</span><b class="shard">${tm.shard?'×'+fmt(tm.shard):'none'}</b></div>
   <div><span>Best wave</span><b>${save.best[t]||0}</b></div><div><span>Best coins/hour</span><b class="coin">${fmt(T.cph)}</b></div><div><span>Runs</span><b>${fmt(T.runs)}</b></div><div><span>Offline rate</span><b class="coin">${fmt(offlineRate())}/h</b>${save.bestSph?` <b class="shard">${fmt(offlineShardRate())}/h</b>`:''}</div></div>${nxt}`}
 function showOv(kind){
   const ov=$('ov'),c=$('ovCard');if(!kind){ov.hidden=true;return}ov.hidden=false;
@@ -53,7 +54,7 @@ function showOv(kind){
   else{const R=run,m=Math.floor(R.time/60),s=Math.floor(R.time%60);
     // after a run: the same screen as the start, with a compact summary of the run on top
     c.className='card big';
-    c.innerHTML=`<div class="lastrun"><div class="lrh"><b>${R.quit?'Ended':'Fell'} on wave ${R.wave}</b><span>Tier ${R.tier} · best ${save.best[R.tier]||0} · ${m}m ${s}s</span></div><div class="grid2 lrg"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':R.time<CFG.offlineMinRun?' · too short to count':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b> <small>${fmt(R.sph)}/h${R.newBestS?' · new best':''}</small></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div>${R.defies?`<div><span>Deaths defied</span>${fmt(R.defies)}</div>`:''}<div><span>Cash earned</span>${fmt(R.cashEarned)}</div></div></div>
+    c.innerHTML=`<div class="lastrun"><div class="lrh"><b>${R.won?`Tier ${R.tier} cleared!`:`${R.quit?'Ended':'Fell'} on wave ${R.wave}`}</b><span>Tier ${R.tier} · best ${save.best[R.tier]||0} · ${m}m ${s}s</span></div><div class="grid2 lrg"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':R.time<CFG.offlineMinRun?' · too short to count':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b> <small>${fmt(R.sph)}/h${R.newBestS?' · new best':''}</small></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div>${R.defies?`<div><span>Deaths defied</span>${fmt(R.defies)}</div>`:''}<div><span>Cash earned</span>${fmt(R.cashEarned)}</div></div></div>
     <h2>Next run</h2>${tierPicker()}${tierInfo(ovTier)}
     <div class="obtns"><button id="toWs">Workshop · <span class="coin">${fmt(save.coins)}</span></button><button id="toHist">Records</button><button id="toHelp">How to play</button></div>
     <button class="go" id="goBtn">${autoTimer?`Start tier ${ovTier} · auto in <span id="autoTxt">${autoLeft}</span>s`:`Start tier ${ovTier}`}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
@@ -97,7 +98,7 @@ function buildPanel(){
   let h=`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`
     +`<div class="subs">${GROUPS.map(g=>`<button data-sub="${g}" class="${g===sec?'on':''}">${g}</button>`).join('')}</div>`;
   if(ws){h+='<p class="note">Permanent upgrades, paid in coins. They apply to every run, including the one in progress. Values shown are your starting values.</p>'+`<p class="note">Offline rate: <b class="coin">${fmt(offlineRate())} coins/hour</b>${save.bestSph?` · <b class="shard">${fmt(offlineShardRate())} shards/hour</b>`:''}</p>`;
-    h+=ST.filter(s=>s.g===sec).map(rowHtml).join('')}
+    h+=ST.filter(s=>s.g===sec).map(rowHtml).join('')+respecBtn('ws:'+sec,`Refund all ${sec.toLowerCase()} upgrades`)}
   else{h+=!run||run.over?'<p class="note">Start a run to buy in-run upgrades.</p>':'<p class="note">Paid in cash, which resets every run.</p>';
     if(labLv('auto'))h+=`<label class="ab abs"><input type="checkbox" data-ab="${sec}" ${save.set.ab[sec]?'checked':''}> Auto-buy ${sec.toLowerCase()} upgrades</label>`;
     h+=ST.filter(s=>s.g===sec&&!s.ws).map(rowHtml).join('')}
@@ -114,6 +115,9 @@ function refreshPanel(){
     const vt=mx?l.f(l.val(lv))+' (max)':`${l.f(l.val(lv))} → ${l.f(l.val(lv+1))}`;if(r.v.textContent!==vt)r.v.textContent=vt;
     const ok=!mx&&save.shards>=c;if(r.b.disabled===ok)r.b.disabled=!ok;const t=mx?'Max':fmt(c);if(r.b.textContent!==t)r.b.textContent=t}
   const ws=ui.tab==='Workshop';
+  if(ws){const P=$('panel'),rb=P.querySelector('[data-respec^="ws:"]'),key='ws:'+(GROUPS.includes((save.set.sub||{}).Workshop)?save.set.sub.Workshop:'Attack');
+    if(!rb||!rb.dataset.arm){const html=respecBtn(key,`Refund all ${key.slice(3).toLowerCase()} upgrades`);
+      if(rb){if(rb.outerHTML!==html){if(html)rb.outerHTML=html;else rb.remove()}}else if(html)P.insertAdjacentHTML('beforeend',html)}}
   for(const r of rows){const p=plan(r.s,ws);
     const vt=p.isCap?fv(r.s,p.cur)+' (max)':`${fv(r.s,p.cur)} → ${fv(r.s,p.nxt)}`;if(r.v.textContent!==vt)r.v.textContent=vt;
     if(r.b.disabled===p.ok)r.b.disabled=!p.ok;
@@ -123,6 +127,7 @@ function refreshPanel(){
 }
 $('panel').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.respec){if(b.dataset.arm)return respec(b.dataset.respec);b.dataset.arm=1;b.classList.add('arm');b.firstChild.textContent='Tap again to refund ';return}
   if(b.dataset.sub){save.set.sub=Object.assign({},save.set.sub,{[ui.tab]:b.dataset.sub});persist();return buildPanel()}
   if(b.dataset.mult){ui.mult=save.set.mult=b.dataset.mult==='Max'?'Max':+b.dataset.mult;persist();return buildPanel()}
   if(b.dataset.lab){const l=LK[b.dataset.lab],c=labCost(l);if(labLv(l.k)>=l.max||save.shards<c)return;save.shards-=c;save.lab[l.k]=labLv(l.k)+1;save.stats.lab++;save.stats.labShards+=c;persist();
@@ -201,13 +206,21 @@ mBody.addEventListener('keydown',e=>{const r=e.target.closest&&e.target.closest(
 $('tgtBtn').addEventListener('click',()=>modalKind==='target'?closeModal():openModal('target'));
 $('histBtn').addEventListener('click',()=>modalKind==='history'?closeModal():openModal('history'));
 const dur=s=>{s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${m}m`:`${m}m ${x}s`};
-let hTab='runs';
-function historyHtml(){const H=save.hist,tabs=`<div class="mults"><button data-htab="runs" class="${hTab==='runs'?'on':''}">Battle history</button><button data-htab="stats" class="${hTab==='stats'?'on':''}">Lifetime stats</button></div>`;
+let hTab='runs',msTier=null;
+// Milestones tab: every milestone of one tier, claimed ones ticked, with its rewards
+function msHtml(){const t=msTier&&msTier<=save.tierMax?msTier:save.tierMax,n=save.ms[t]||0;
+  let h=`<div class="tiers">${Array.from({length:save.tierMax},(_,i)=>`<button data-mstier="${i+1}" class="${i+1===t?'on':''}">Tier ${i+1}<small>${save.ms[i+1]||0}/${MILESTONES.length}${save.cleared[i+1]?' · cleared':''}</small></button>`).join('')}</div>`;
+  h+=`<p class="note">Reach each wave once on a tier to collect its reward. On wave ${CFG.finalWave.toLocaleString()} nothing more spawns: destroy every enemy left to clear the tier and collect the last one.</p><div class="mslist">`;
+  MILESTONES.forEach((w,i)=>{const r=msReward(w,t,i),got=i<n;
+    h+=`<div class="msrow${got?' got':''}${i===n?' next':''}"><b>${got?'✓ ':''}Wave ${w.toLocaleString()}</b><span><b class="coin">${fmt(r.coins)}</b>${r.alloy?` <b class="alloy">${fmt(r.alloy)}</b>`:''}${r.chips?` <b class="chip">${fmt(r.chips)}</b>`:''}${r.shards?` <b class="shard">${fmt(r.shards)}</b>`:''}</span></div>`});
+  return h+'</div>'}
+function historyHtml(){const H=save.hist,tabs=`<div class="mults"><button data-htab="runs" class="${hTab==='runs'?'on':''}">Battle history</button><button data-htab="stats" class="${hTab==='stats'?'on':''}">Lifetime stats</button><button data-htab="ms" class="${hTab==='ms'?'on':''}">Milestones</button></div>`;
   if(hTab==='stats')return tabs+statsHtml();
+  if(hTab==='ms')return tabs+msHtml();
   if(!H.length)return tabs+`<p class="note">No runs yet. Your last ${CFG.histMax} runs will show up here when they end.</p>`;
   const top=Math.max(...H.map(h=>h.cph));
   return tabs+`<p class="note">Your last ${CFG.histMax} runs, newest first. Run time and coins per hour are in game time.</p><div class="hist">${H.map(h=>{const d=new Date(h.at);
-    return`<div class="hrow"><div class="htop"><b>Tier ${h.t}</b><b>Wave ${h.w}</b>${h.best?'<span class="tag">best wave</span>':''}${h.quit?'<span class="tag mute">ended early</span>':''}<span class="hdate">${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+    return`<div class="hrow"><div class="htop"><b>Tier ${h.t}</b><b>Wave ${h.w}</b>${h.best?'<span class="tag">best wave</span>':''}${h.quit?'<span class="tag mute">ended early</span>':''}${h.won?'<span class="tag">cleared</span>':''}<span class="hdate">${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
     <div class="hst"><span>Coins <b class="coin">${fmt(h.c)}</b></span><span>Coins/hour <b class="coin">${fmt(h.cph)}</b>${h.cph===top&&H.length>1?' ★':''}</span>${h.t>=2?`<span>Shards <b class="shard">${fmt(h.s)}</b></span>`:''}${h.ch?`<span>Chips <b class="chip">${fmt(h.ch)}</b></span>`:''}${h.al?`<span>Alloy <b class="alloy">${fmt(h.al)}</b></span>`:''}<span>Kills <b>${fmt(h.k)}</b></span>${h.df?`<span>Defied <b>${fmt(h.df)}</b></span>`:''}<span>Time <b>${dur(h.time)}</b></span></div></div>`}).join('')}</div>`}
 $('eBtn').addEventListener('click',()=>modalKind==='enemies'?closeModal():openModal('enemies'));
 let eTabW=0,eTabT=0,eTab='wave',eSig='';
@@ -216,20 +229,20 @@ function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=l
   $('mTitle').textContent=`Tier ${t} · Wave ${w}`;
   const tabs=`<div class="mults"><button data-etab="wave" class="${eTab==='wave'?'on':''}">Wave info</button><button data-etab="spire" class="${eTab==='spire'?'on':''}">Your spire</button></div>`;
   if(eTab==='spire')return tabs+spireHtml();
-  const cb=live?run.s.coinBonus:valAt(SK.coinBonus,0,save.ws.coinBonus||0),ch=spawnChance(w),boss=w%CFG.bossEvery===0,nextBoss=Math.ceil(w/CFG.bossEvery)*CFG.bossEvery,tm=CFG.tier(t);
-  const rows=TYPES.map(k=>{const d=ET[k],e=enemyStats(k,w,t),on=d.r===3?boss:w>=(d.from||1);
-    const when=d.r===3?(boss?'this wave':`wave ${nextBoss}`):on?'':`from wave ${d.from}`;
+  const cb=live?run.s.coinBonus:valAt(SK.coinBonus,0,save.ws.coinBonus||0),ch=spawnChance(w,t),boss=w%CFG.bossEvery===0,nextBoss=Math.ceil(w/CFG.bossEvery)*CFG.bossEvery,tm=CFG.tier(t);
+  const rows=TYPES.map(k=>{const d=ET[k],e=enemyStats(k,w,t),on=d.r===3?boss:w>=typeFrom(d,t);
+    const when=d.r===3?(boss?'this wave':`wave ${nextBoss}`):on?'':`from wave ${typeFrom(d,t)}`;
     const chance=d.r===3?(boss?'1 boss':'–'):on?pct(ch[k]||0):'–';
     return`<tr class="${on?'':'off'}"><td>${mobIcon(d)}<span>${d.n}${when?`<span class="when">${when}</span>`:''}</span></td><td>${chance}</td><td>${fmt(e.hp)}</td><td>${fmt(e.atk)}</td><td>${fmt(e.spd)}</td><td class="coin">${fmt(e.coins*cb)}</td><td>${fmt(e.weight)}</td></tr>`}).join('');
   const cnt=CFG.spawnCount(w)+(boss?1:0);
   return tabs+`<table class="etab"><thead><tr><th>Enemy</th><th title="Chance per spawn">%</th><th title="Health">♥ HP</th><th title="Attack">⚔ ATK</th><th title="Speed, m/s">» m/s</th><th title="Coins dropped, with your coin bonus">Coins</th><th title="Weight">⚖ WGT</th></tr></thead><tbody>${rows}</tbody></table>
   <div class="grid2 winfo">
-    <div><span>Wave time left</span><b id="wiTime">${live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s</small></div>
+    <div><span>Wave time left</span><b id="wiTime">${live&&run.wave>=CFG.finalWave?'final wave':live?Math.ceil(run.waveLen-run.waveT)+' s':CFG.waveLen+' s'}</b> <small>of ${live?+run.waveLen.toFixed(1):CFG.waveLen} s (spawning for the first ${live?+run.spawnLen.toFixed(1):CFG.spawnLen} s)</small></div>
     <div><span>Spawned this wave</span><b id="wiSpawned">${live?run.spawned:0}</b> <small>of ${cnt}</small></div>
-    <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b></div>
+    <div><span>Enemies on the field</span><b id="wiAlive">${live?enemies.filter(e=>!e.dead).length:0}</b> <small>of ${fmt(CFG.enemyCap)} max</small></div>
     <div><span>Next boss</span><b>${boss?'this wave':'wave '+nextBoss}</b></div>
-    <div><span>Growth per wave</span><b>♥ +${pct(CFG.hpGrow-1)} · ⚔ +${pct(CFG.dmgGrow-1)}</b></div>
-    <div><span>Tier ${t} multiplier</span><b>♥ ×${fmt(tm.hp)} · ⚔ ×${fmt(tm.dmg)} · <span class="coin">coins ×${fmt(tm.coin)}</span></b></div>
+    <div><span>Growth next wave</span><b>♥ +${(100*(CFG.hpMul(w+1)/CFG.hpMul(w)-1)).toFixed(1)}% · ⚔ +${(100*(CFG.dmgMul(w+1)/CFG.dmgMul(w)-1)).toFixed(1)}%</b></div>
+    <div><span>Tier ${t} multiplier</span><b>♥ ×${fmt(tm.hp)} · ⚔ ×${fmt(tm.dmg)} · ⚖ ×${fmt(tm.wt)} · » ×${fmt(tm.spd)} · <span class="coin">coins ×${fmt(tm.coin)}</span></b></div>
   </div>
   <p class="note">% is the chance each regular spawn is that type. Attack is damage per hit before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is metres per second (a new spire's range is ${SK.range.base} m). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside, and knockback moves them less. Coins is what each enemy drops on this wave, tier multiplier (×${fmt(tm.coin)}) and your coin bonus included. Greyed-out types can't spawn yet.</p>`}
 function spireStats(){const live=run&&!run.over;const v={};for(const s of ST)v[s.k]=live?run.s[s.k]:valAt(s,0,save.ws[s.k]||0);return{live,v}}
@@ -238,7 +251,7 @@ function spireHtml(){const {live,v}=spireStats();eSig=JSON.stringify(v)+(live?Ma
   return`<p class="note">${live?'Current values in this run, Workshop and in-run upgrades included.':'Your starting values (Workshop). Start a run to see in-run upgrades added.'}</p>
   <div class="grid2 winfo"><div><span>Damage per second</span><b>${fmt(dps)}</b> <small>average, crits included</small></div><div><span>Health</span><b>${live?fmt(Math.max(0,run.hp))+' / ':''}${fmt(v.health)}</b></div></div>
   ${GROUPS.map(g=>`<div class="gh">${g}</div><div class="grid2 winfo">${ST.filter(s=>s.g===g&&!(s.ws&&live)).map(s=>`<div><span>${s.n}</span><b>${fv(s,v[s.k])}</b></div>`).join('')}</div>`).join('')}`}
-modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();const b=e.target.closest('button');if(!b)return;if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.htab){hTab=b.dataset.htab;mBody.innerHTML=historyHtml();return}if(b.dataset.act)settingsClick(b)});
+modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();const b=e.target.closest('button');if(!b)return;if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.mstier){msTier=+b.dataset.mstier;mBody.innerHTML=historyHtml();return}if(b.dataset.htab){hTab=b.dataset.htab;mBody.innerHTML=historyHtml();return}if(b.dataset.act)settingsClick(b)});
 modal.addEventListener('change',optChange);
 const mobIcon=d=>{const z=d.sz/22*.75+.4,pts=SHAPES[d.sh].map(p=>p.map(v=>(v*z).toFixed(3)).join(',')).join(' ');
   return`<svg viewBox="-1.5 -1.5 3 3" width="34" height="34" aria-hidden="true">${d.shield?`<circle r="${(z*1.4).toFixed(2)}" fill="none" stroke="var(--e6)" stroke-width=".1"/>`:''}<polygon points="${pts}" fill="var(--${d.c})" fill-opacity=".3" stroke="var(--${d.c})" stroke-width=".12" stroke-linejoin="round"/></svg>`};
@@ -246,13 +259,16 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   return`<div class="help">
   <p>Your spire sits in the middle and fires at the closest enemy in range on its own. Enemies come in from every side. The run ends when the spire's health hits 0.</p>
   <h3>Runs and waves</h3><ul>
-  <li>A new wave starts every ${CFG.waveLen} s of game time, with more enemies each time. A boss comes every ${CFG.bossEvery} waves.</li>
-  <li>Each wave, enemies get ${pct(CFG.hpGrow)} more health and ${pct(CFG.dmgGrow)} more damage.</li>
-  <li>Reach wave ${CFG.tierUnlockWave} to unlock the next tier. Each tier up multiplies enemy health by ${t2.hp}, damage by ${t2.dmg} and coins by ${t2.coin}.</li></ul>
+  <li>A new wave starts every ${CFG.waveLen} s of game time: enemies spawn for the first ${CFG.spawnLen} s, then there's a break to clear the field. Every ${CFG.bossEvery} waves brings a boss and 3 more enemies per wave, and higher waves bring more tanks and elites (which pay more coins and drop alloy).</li>
+  <li>Every enemy hits harder each time it attacks: each hit or shot does ${Math.round((CFG.hitRamp-1)*100)}% more than its last, so don't let them linger at the spire.</li>
+  <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. They also get heavier (×${fmt(CFG.wtMul(1000))} weight by wave 1000), so knockback, Shockwave and Gravity Well move them less. Wave ${CFG.finalWave.toLocaleString()} is the last: nothing more spawns, and destroying every enemy left clears the tier.</li>
+  <li><b>Milestones</b> pay coins, alloy, chips (and shards from tier 2) the first time you reach certain waves on each tier, ${MILESTONES.length} per tier from wave ${MILESTONES[0]} to ${CFG.finalWave.toLocaleString()}. See Records → Milestones.</li>
+  <li>Reach wave ${CFG.tierUnlockWave.toLocaleString()} to unlock the next tier. Each tier up multiplies enemy health by ${t2.hp}, damage by ${t2.dmg}, weight by ${t2.wt}, speed by ${t2.spd} and coins by ${t2.coin}.</li></ul>
+  <h3>Respec</h3><p>Every Workshop section, ultimate, piece of equipment and module has a refund button that gives back everything you spent on it, so you can try a different build at no cost. Tap it once to see the amount and again to confirm.</p>
   <h3>Currencies</h3><ul>
   <li><b class="cash">Cash</b> comes from kills and from cash interest, paid at the start of every wave. Spend it on Attack, Defense and Utility upgrades. It resets every run.</li>
   <li><b class="coin">Coins</b> come from kills and are kept forever. Spend them in the Workshop on permanent tower upgrades.</li>
-  <li><b class="shard">Shards</b> are paid when a run ends on tier 2 or higher, based on how many enemies you killed (${CFG.shardPerKill} per kill × the tier's shard multiplier, which grows ×1.5 per tier). Spend them in the Lab.</li>
+  <li><b class="shard">Shards</b> are paid when a run ends on tier 2 or higher, based on how many enemies you killed (${CFG.shardPerKill} per kill × the tier's shard multiplier, which grows with the tier). Spend them in the Lab.</li>
   <li><b class="chip">Chips</b> drop from bosses. Spend them on Equipment.</li>
   <li><b class="alloy">Alloy</b> drops from elites. Spend it on Modules.</li></ul>
   <h3>Equipment and Modules</h3><ul>
@@ -266,12 +282,12 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>
   <h3>Offline earnings</h3>
   <p>Your best coins per game-hour, from a run of at least ${CFG.offlineMinRun/60} game-minutes, keeps paying while you're away, as if the game were running at your fastest unlocked speed (${Math.max(...speeds())}× now; Overdrive in the Lab raises it). Offline speed research multiplies it further, and Offline duration sets how many hours count (${labVal('offCap')} h now). Shorter runs don't set the rate. Shards work the same way: your best shards per game-hour (from tier 2+ runs) is paid while you're away too. The Workshop tab shows your current rates per real hour.</p>
-  <h3>Enemies</h3><p>An enemy's fill shows its health: solid at full, emptying to just an outline as it's worn down. Enemies come in three ranks. Normal enemies make up most of every wave. Elites start turning up from wave ${Math.min(...TYPES.filter(t=>ET[t].r===2).map(t=>ET[t].from))}, a few per wave, and pay out much more. A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart (heavier enemies win), so every enemy stays visible. Tap the Enemy stats in the top bar to see every type's numbers for the current wave.</p>
+  <h3>Enemies</h3><p>An enemy's fill shows its health: solid at full, emptying to just an outline as it's worn down. Enemies come in three ranks. Normal enemies make up most of every wave. Elites start turning up from wave ${Math.min(...TYPES.filter(t=>ET[t].r===2).map(t=>ET[t].from))} on tier 1 and pay out much more. Each type arrives later in a run than the last, and sooner on higher tiers (the arrival wave is divided by tier^${CFG.fromPow}). A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart (heavier enemies win), so every enemy stays visible. Tap the Enemy stats in the top bar to see every type's numbers for the current wave.</p>
   ${[1,2,3].map(rk=>`<div class="gh">${RANKS[rk]}</div><div class="mobs">${TYPES.filter(t=>ET[t].r===rk).map(t=>{const d=ET[t];
-    const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from}`:'from wave 1';
+    const when=rk===3?`every ${CFG.bossEvery} waves`:d.from?`from wave ${d.from} on tier 1 (${typeFrom(d,save.tierMax)} on tier ${save.tierMax})`:'from wave 1';
     return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join('')}
-  <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; ranged enemies stop at ${ET.ranged.stop} m. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so they have to walk in; the arena zooms with your range. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
-  <h3>Ultimate weapons</h3><p>Bought and upgraded with chips in the Ultimates tab. Every one you own is active: ${ULTS.map(u=>`<b>${u.n}</b> (${u.d.charAt(0).toLowerCase()+u.d.slice(1,-1)})`).join('; ')}. Chain Lightning and Frost Field are always working; the others fire on their own cooldown when there's an enemy in range, or set one to Manual and fire it with its button under the arena. Each has 4 upgrades of 40 to 100 small levels that get steadily pricier towards the end of the track, so finishing one takes chips from higher tiers. Tap an ultimate in the tab to open it, and use ×1 / ×10 / Max to buy several levels at once. Max the 2 starred upgrades for <b>Silver</b> (for Gravity Well and Laser that's duration and cooldown, which makes them always on), any 3 for <b>Gold</b> and all 4 for <b>Platinum</b>; each status adds a bonus.</p>
+  <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; Ranged enemies stop at ${Math.round(ET.ranged.stopPct*100)}% of your range. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so they have to walk in; the arena zooms with your range. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
+  <h3>Ultimate weapons</h3><p>Bought and upgraded with chips in the Ultimates tab. Every one you own is active: ${ULTS.map(u=>`<b>${u.n}</b> (${u.d.charAt(0).toLowerCase()+u.d.slice(1,-1)})`).join('; ')}. Chain Lightning and Frost Field are always working; the others fire on their own cooldown when there's an enemy in range, or set one to Manual and fire it with its button under the arena. Strength upgrades (damage, Force, Pull) have ${ULT.levels} levels in bands of ${ULT.band} (one per tier): a band costs about what farming its tier earns in chips, and keeps pace with that tier's enemies. Capped stats (chance, slow, cooldowns, durations) have a few big steps each, and their price climbs fast. Stronger ultimates cost more to unlock and level (${ULTS.map(u=>`${u.n} ×${u.cost}`).join(', ')}), so choose what's worth saving for. Tap an ultimate in the tab to open it, and use ×1 / ×10 / Max to buy several levels at once. Medals come from how complete an ultimate is (the average of its 4 upgrades): <b>Silver</b> at ${Math.round(ULT.medals[0]*100)}%, <b>Gold</b> at ${Math.round(ULT.medals[1]*100)}% and <b>Platinum</b> at ${Math.round(ULT.medals[2]*100)}%; each adds a bonus.</p>
   <h3>Targeting</h3><p>Tap 🎯 <b>Target</b> under the arena to set target priority. Drag enemy types above <b>Closest</b> to have the spire shoot them first, top to bottom (closest first within a type); everything below Closest is shot closest-first. With Closest at the top, it simply shoots the closest enemy.</p>
   <h3>Shot effects</h3><p>At high game speeds, individual shots are too fast to follow, so from ${CFG.cleanFxAt}× up the arena switches to clean effects: a short steady line off each enemy it's shooting at, pointing back at the spire, enemies lighting up when hit, and only crit damage numbers. Change this under Settings → Shot effects.</p>
   <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}

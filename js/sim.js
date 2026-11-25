@@ -22,11 +22,12 @@ function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(con
   const F=loadoutFx();for(const k in F.mul)run.s[k]*=F.mul[k];for(const k in F.add)run.s[k]+=F.add[k];
   for(const s of ST){if(s.max!=null)run.s[s.k]=Math.min(run.s[s.k],s.max);if(s.min!=null)run.s[s.k]=Math.max(run.s[s.k],s.min)}
   run.s.bounceRange=Math.min(run.s.bounceRange,run.s.range*SK.bounceRange.maxOfRange);
-  run.fx=F;run.waveLen=CFG.waveLen*(1-F.rush);
+  run.fx=F;run.waveLen=CFG.waveLen*(1-F.rush);run.spawnLen=CFG.spawnLen*(1-F.rush);
   const oldBar=run.barMax||0;run.barMax=run.s.health*run.s.barrier;run.bar=run.barT>0?0:Math.min(run.barMax,(run.bar||0)+Math.max(0,run.barMax-oldBar)); // upgrades add their extra right away (not while it's recharging)
   if(old)run.hp=Math.max(1,run.hp+run.s.health-old)}
 // ================= state =================
 let run=null,paused=false,GEN=0;
+const typeN={};let aliveN=0; // enemies on the field, per type and in total (for the caps)
 const enemies=[],ePool=[],bullets=[],bPool=[],ebs=[],ebPool=[],dnums=[],parts=[];
 // tracers: visual-only streaks for shots that landed, so hits stay visible at high game speed (faded in real time)
 const tracers=[];
@@ -34,43 +35,63 @@ function trace(x0,y0,x1,y1,k){if(tracers.length<CFG.maxTracers)tracers.push({x0,
 function newRun(tier){
   stopAuto();sepBuilt=false;
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
-  enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;
+  enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;for(const t of TYPES)typeN[t]=0;aliveN=0;
   run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
   run.barT=0;recalc();run.hp=run.s.health;run.bar=run.barMax;ultInit();run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
 // an enemy type's stats on wave w of tier t (same formulas spawn() uses)
-function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpGrow**(w-1)*tm.hp,atk:d.dmg*CFG.dmgGrow**(w-1)*tm.dmg,spd:d.spd,weight:d.weight,coins:d.coin*tm.coin*CFG.killCoin(w)}}
+function enemyStats(t,w,tier){const d=ET[t],tm=CFG.tier(tier);return{hp:d.hp*CFG.hpMul(w)*tm.hp,atk:d.dmg*CFG.dmgMul(w)*tm.dmg,spd:d.spd*tm.spd,weight:d.weight*CFG.wtMul(w)*tm.wt,coins:d.coin*tm.coin*CFG.killCoin(w)}}
 // chance each type is picked for a regular spawn on wave w (mirrors pickType; Basic takes what's left)
-function spawnChance(w){const o={};let left=1;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;const p=Math.min(left,d.freq);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
-function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const d=ET[t];if(!d.freq||w<d.from)continue;acc+=d.freq;if(r<acc)return t}return'basic'}
+// the wave an enemy type first appears on tier t, and its spawn chance on wave w: freq on arrival, building up to fmax by
+// rampTo × the arrival wave
+const typeFrom=(d,t)=>d.from?Math.max(1,Math.round(d.from/t**CFG.fromPow)):1;
+const typeFreq=(d,w,t=run?run.tier:1)=>{if(!d.freq)return 0;const a=typeFrom(d,t);if(w<a)return 0;const mx=d.fmax||d.freq;return d.freq+(mx-d.freq)*Math.min(1,(w-a)/Math.max(1,(CFG.rampTo-1)*a))};
+function spawnChance(w,tier){const o={};let left=1;for(const t of TYPES){const f=typeFreq(ET[t],w,tier);if(!f)continue;const p=Math.min(left,f);o[t]=p;left-=p}o.basic=(o.basic||0)+left;return o}
+function pickType(w){let r=Math.random(),acc=0;for(const t of TYPES){const f=typeFreq(ET[t],w);if(!f)continue;acc+=f;if(r<acc)return t}return'basic'}
+const hasRoom=t=>aliveN<CFG.enemyCap&&(typeN[t]||0)<ET[t].cap;
+// a regular spawn whose type is full becomes another type this wave can have, if any has room
+function roomType(t,w){if(hasRoom(t))return t;const ok=TYPES.filter(k=>ET[k].r<3&&(k==='basic'||typeFreq(ET[k],w)>0)&&hasRoom(k));return ok.length?ok[Math.floor(Math.random()*ok.length)]:null}
 function spawn(t,x,y){
+  if(!hasRoom(t))return; // field (or this type) is full
+  typeN[t]=(typeN[t]||0)+1;aliveN++;
   const d=ET[t],R=run,a=Math.random()*Math.PI*2,wv=R.wave-1,e=ePool.pop()||{};
   const x0given=x!=null;if(!x0given){const sr=spawnDist(a);x=Math.cos(a)*sr;y=Math.sin(a)*sr}
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
-  e.mhp=e.hp=d.hp*CFG.hpGrow**wv*R.tm.hp;e.dmg=d.dmg*CFG.dmgGrow**wv*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
-  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.blk=0;e.fs=0;e.frz1=false;e.frzT=0;
-  enemies.push(e);
+  e.wt=d.weight*CFG.wtMul(R.wave)*R.tm.wt;e.spd=d.spd*R.tm.spd;e.mhp=e.hp=d.hp*CFG.hpMul(R.wave)*R.tm.hp;e.dmg=d.dmg*CFG.dmgMul(R.wave)*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
+  e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.hn=0;e.mh=0;e.still=0;e.onFire=0;e.fireTick=0;e.fireDone=0;e.cs=0;e.ct=0;e.healAt=-1e9;e.ht=d.heal?Math.random()*d.healEvery:0;e.rest=0;e.pend=0;e.gi=-1;e.fs=0;e.frz1=false;e.frzT=0;
+  e.sg=0;enemies.push(e);return e;
 }
 function nextWave(){
-  const R=run;R.wave++;R.waveT=R.spawnT=R.spawned=0;
+  const R=run;R.wave++;milestones();R.waveT=R.spawnT=R.spawned=0;
   const wc=CFG.waveCash(R.wave)*R.s.waveCash;R.cash+=wc;
   if(R.fx.interest){const it=Math.min(R.cash*R.fx.interest,wc*5);R.cash+=it;save.stats.cash+=it}save.stats.cash+=wc;save.stats.waves++;
-  if(R.wave%CFG.bossEvery===0)spawn('boss');
+  if(R.wave>=CFG.finalWave)toast(`Final wave! Nothing more spawns: destroy the ${fmt(aliveN)} enemies left to clear tier ${R.tier}`);
+  else if(R.wave%CFG.bossEvery===0)spawn('boss');
   if((save.best[R.tier]||0)<R.wave)save.best[R.tier]=R.wave;
   if(R.wave>=CFG.tierUnlockWave&&R.tier===save.tierMax){save.tierMax++;persist();toast(`Tier ${save.tierMax} unlocked`)}
 }
+// a smaller Splitter's type data: smaller, and half the coins and cash per split (cached per generation)
+const splitDefs={};
+function splitDef(g){return splitDefs[g]||(splitDefs[g]=Object.assign({},ET.splitter,{sz:ET.splitter.sz*CFG.splitSz**g,cash:ET.splitter.cash/2**g,coin:ET.splitter.coin/2**g}))}
 function kill(e){
-  const R=run;e.dead=true;R.kills++;save.kills++;
+  const R=run;e.dead=true;typeN[e.t]--;aliveN--;R.kills++;save.kills++;
+  if(R.ultSt&&R.ultSt.shock>=2&&e.shakenAt!=null&&R.time-e.shakenAt<ULT.shaken)shakeSpread(e); // Shockwave Gold (Aftershock)
+  if(R.ultSt&&R.ultSt.grav>=2)gravSiphon(e); // Gravity Well Gold (Siphon)
   const c=e.d.cash*R.s.cashBonus*CFG.killCash(R.wave),st=save.stats;R.cash+=c;R.cashEarned+=c;st.cash+=c;if(e.d.r===2)st.elite++;else if(e.d.r===3)st.boss++;
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
   const db=1+R.fx.drop;
   if(e.d.r===3){const v=DROPS.chips(R.wave,R.tier)*db;save.chips+=v;R.chips+=v;st.chips+=v}
-  else if(e.d.r===2){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
-  if(e.d.split)for(let i=0;i<e.d.split;i++)spawn('fast',e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
+  else if(e.d.r===2&&!e.sg){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
+  // Splitters: split into `split` smaller Splitters with half the health, `splits` times over
+  if(e.d.split&&e.sg<e.d.splits){const d=splitDef(e.sg+1);for(let i=0;i<e.d.split;i++){const c=spawn(e.t,e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
+    if(c){c.sg=e.sg+1;c.d=d;c.mhp=c.hp=e.mhp/2;c.wt=e.wt*CFG.splitSz;c.age=CFG.fadeIn}}}
   for(let i=0;i<(cleanFx()?1:4)&&parts.length<CFG.maxParts;i++){const a=Math.random()*6.283,v=30+Math.random()*60;parts.push({x:e.x,y:e.y,px:e.x,py:e.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5})}
 }
-function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over time), 2 = ignores shields
+function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over time), 2 = ignores shields, 4 = can't be redirected
+  // guarded by a Protector (links are refreshed every CFG.guardEvery steps): the Protector
+  // takes protectShare of it instead, with its own damage modifiers
+  if(e.guard&&e.guardStep>=GEN_STEP-CFG.guardEvery&&!e.guard.dead&&!(f&4)){const g=e.guard;g.hitAt=performance.now();return damage(g,v*CFG.protectShare,crit,thorn,f|4)}
   v*=ultDmgMult(e); // silver ultimates make enemies take more damage
   const blocked=e.shield>0&&!(f&2),st=save.stats;
   let a=0;if(blocked){e.shield--;st.blocked++}else{a=Math.min(v,Math.max(0,e.hp));e.hp-=v;st.dmg+=a;if(thorn)st.thorn+=a}
@@ -98,10 +119,18 @@ function nearestOther(x,y,ex,r){let best=null,bd=r*r;forNear(x,y,r,e=>{if(e===ex
 // nearest enemy: looks in the grid around (x,y) first (exact if anything is that close), else scans everything
 function nearest(x,y){if(sepBuilt){const n=nearestOther(x,y,null,CFG.nearR);if(n)return n}
   let best=null,bd=Infinity;for(const e of enemies){if(e.dead)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
+// milestones: paid the first time each wave is reached on this tier (save.ms[tier] = how many are claimed)
+function milestones(){const R=run,t=R.tier;let i=save.ms[t]||0;const i0=i;
+  while(i<MILESTONES.length&&R.wave>=MILESTONES[i]&&(i<MILESTONES.length-1||R.won)){ // the last one is paid for clearing the tier
+    const r=msReward(MILESTONES[i],t,i),st=save.stats;
+    save.coins+=r.coins;st.coins+=r.coins;save.alloy+=r.alloy;st.alloy+=r.alloy;save.chips+=r.chips;st.chips+=r.chips;save.shards+=r.shards;st.shards+=r.shards;
+    R.msCoins=(R.msCoins||0)+r.coins;i++;save.ms[t]=i;
+    toast(`Milestone: wave ${MILESTONES[i-1].toLocaleString()}! +${fmt(r.coins)} coins`+(r.alloy?` · +${fmt(r.alloy)} alloy`:'')+(r.chips?` · +${fmt(r.chips)} chips`:'')+(r.shards?` · +${fmt(r.shards)} shards`:''))}
+  if(i!==i0)persist()}
 // shards earned by this run so far (paid when it ends)
 const runShards=R=>R.kills*CFG.shardPerKill*R.tm.shard*(1+R.fx.drop);
-function gameOver(quit){
-  const R=run;if(R.over)return;R.over=true;R.quit=!!quit;R.hp=0;save.runs++;
+function gameOver(quit,won){
+  const R=run;if(R.over)return;R.over=true;R.quit=!!quit;R.won=!!won;if(won){save.cleared[R.tier]=(save.cleared[R.tier]||0)+1;milestones()}R.hp=0;save.runs++;
   R.shards=runShards(R);save.shards+=R.shards;save.stats.shards+=R.shards;
   R.cph=R.time>0?R.coins/R.time*3600:0;R.newBest=false;
   if(R.time>=CFG.offlineMinRun&&R.cph>save.bestCph){save.bestCph=R.cph;R.newBest=true}
@@ -109,7 +138,7 @@ function gameOver(quit){
   const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;
   if(prevBest<R.wave)save.best[R.tier]=R.wave;
   {const T=save.stats.tiers[R.tier]||(save.stats.tiers[R.tier]={runs:0,coins:0,cph:0});T.runs++;T.coins+=R.coins;if(R.time>=CFG.offlineMinRun)T.cph=Math.max(T.cph,R.cph)}
-  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,df:R.defies||0,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,best:R.newBestWave});
+  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,df:R.defies||0,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,won:!!won,best:R.newBestWave});
   save.hist.length=Math.min(save.hist.length,CFG.histMax);
   persist();ovTier=R.tier;if(!quit)startAuto(); // a run you end yourself doesn't auto-restart
   showOv('over');buildPanel();
@@ -123,6 +152,12 @@ function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:
   tgt.shotAt=performance.now(); // render-only: targeting beam
   b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
   b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
+// one step of walking towards the spire, up to `stop`: small moves are saved up until they reach walkMin, and an enemy that
+// managed under a quarter of its move (the crowd ahead leaves no room) rests restSteps before checking again
+function advance(e,dist,stop,m0){e.pend+=m0;if(e.rest>0){e.rest--;return}if(e.pend<CFG.walkMin&&e.pend<dist-stop)return;
+  const m=Math.min(e.pend,dist-stop);e.pend=0;if(walk(e,-e.x/dist,-e.y/dist,m)<m*.25)e.rest=CFG.restSteps}
+// where an enemy stops walking: at the spire, or at a fixed distance (stop) and/or a share of your range (stopPct), whichever is closer
+function stopOf(d,range){const touch=CFG.towerR+d.sz;if(!d.stop&&!d.stopPct)return touch;let r=d.stop||Infinity;if(d.stopPct)r=Math.min(r,range*d.stopPct);return Math.max(touch,r)}
 // multishot's extra targets: the best k in range after the main target (same order as targeting). Picked once per step
 // with a small insertion list instead of sorting every enemy on every shot.
 let multiStep=-1;const multiList=[],healers=[];
@@ -136,30 +171,48 @@ function multiPicks(tgt,pr,k){
 let GEN_STEP=0;
 function update(dt){GEN_STEP++;
   const R=run,s=R.s,tr=CFG.towerR;R.time+=dt;save.stats.time+=dt;R.waveT+=dt;R.spawnT+=dt;
-  const cnt=CFG.spawnCount(R.wave),iv=R.waveLen*.9/cnt;
-  while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;spawn(pickType(R.wave))}
-  if(R.waveT>=R.waveLen)nextWave();
+  const cnt=CFG.spawnCount(R.wave),iv=R.spawnLen/cnt; // all of a wave spawns in its first spawnLen s; the rest is a break
+  // the final wave spawns nothing and never ends on its own: the tier is cleared once every enemy left is destroyed
+  if(R.wave>=CFG.finalWave){if(aliveN<=0)return gameOver(false,true)}
+  else{while(R.spawnT>=iv&&R.spawned<cnt){R.spawnT-=iv;R.spawned++;const t=roomType(pickType(R.wave),R.wave);if(t)spawn(t)}
+    if(R.waveT>=R.waveLen)nextWave()}
   R.hp=Math.min(s.health,R.hp+s.regen*dt);
   if(R.invT>0)R.invT=Math.max(0,R.invT-dt);
   if(R.barT>0&&(R.barT-=dt)<=0){R.barT=0;R.bar=R.barMax} // barrier back at full
   // targeting: Closest, or by your type priority (then closest within a type)
   const pr=targetRank();let tgt=null,td=Infinity,tp=Infinity;
-  for(let i=enemies.length-1;i>=0;i--){
-    const e=enemies[i];
-    if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e);continue}
-    e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=d.stop||tr+d.sz;e.dist=dist;
-    let sp=d.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;if(e.fs&&R.frostCap)sp*=1-Math.min(R.frostCap,e.fs*ULT.frostPer); // frost stacks
+  for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(e.dead){enemies[i]=enemies[enemies.length-1];enemies.pop();ePool.push(e)}}
+  sepBuild(); // the grid comes first: walking enemies check it so they never step into each other
+  for(let i=0,n0=enemies.length;i<n0;i++){
+    const e=enemies[i];if(e.dead)continue;
+    e.still=Math.abs(e.x-e.px)+Math.abs(e.y-e.py)<1e-3?e.still+dt:0; // how long it has stood still (Firebomb's target)
+    e.px=e.x;e.py=e.y;if(e.age<CFG.fadeIn)e.age+=dt;const d=e.d,dist=Math.hypot(e.x,e.y),stop=stopOf(d,s.range);e.dist=dist;
+    let sp=e.spd;if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF}if(R.fx.slowAura&&dist<=s.range)sp*=1-R.fx.slowAura;if(e.fs&&R.frostCap)sp*=1-Math.min(R.frostCap,e.fs*ULT.frostPer); // frost stacks
     if(e.frzT>0)e.frzT-=dt; // frozen: no moving, no attacking
     else if(e.stunT>0)e.stunT-=dt; // stunned: no moving, no attacking
-    else if(dist>stop){const m=Math.min(sp*dt,dist-stop)*(1-e.blk);e.x-=e.x/dist*m;e.y-=e.y/dist*m} // blk: held back by the crowd ahead
+    // Charger: walks in until it's chargeAt of the way inside your range, charges for d.charge s, then rams the spire for
+    // d.ram × its attack and stays there attacking like anyone else (cs: 0 walking in, 1 charging, 2 ramming, 3 at the spire)
+    else if(d.charge&&e.cs<3){const hit=tr+d.sz;
+      if(e.cs===0){const at=Math.max(hit,s.range*CFG.chargeAt);if(dist>at)advance(e,dist,at,sp*dt);else{e.cs=1;e.ct=0}}
+      else if(e.cs===1){if((e.ct+=dt)>=d.charge)e.cs=2}
+      else{const m=Math.min(d.ramSpd*dt,dist-hit);e.x-=e.x/dist*m;e.y-=e.y/dist*m; // rams straight through the crowd (Chargers ignore collision)
+        if(dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e);if(R.over)return}}}
+    else if(dist>stop)advance(e,dist,stop,sp*dt) // walks in, resting while the crowd ahead leaves it little room
     else{e.atk+=dt;
-      if(d.stop){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg;ebs.push(b)}}
-      else if(e.atk>=1){e.atk=0;hitTower(e.dmg,e);if(R.over)return}}
-    if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=1){e.ht=0;e.hf=.4;healers.push(e)}} // healed below, once the grid is built
+      if(!d.dmg){} // Healers never attack
+      else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;ebs.push(b)}}
+      else if(e.atk>=1){e.atk=0;hitTower(e.dmg*CFG.hitRamp**e.hn++,e);if(R.over)return}}  // each attack an enemy lands hits CFG.hitRamp × harder than its last
+    if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=d.healEvery){e.ht=0;e.hf=.4;healers.push(e)}} // healed below, once the grid is built
     if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}
   }
   separate();
-  for(const h of healers){const r2=h.d.healR**2,f=h.d.heal;forNear(h.x,h.y,h.d.healR,o=>{if(o!==h&&(o.x-h.x)**2+(o.y-h.y)**2<=r2)o.hp=Math.min(o.mhp,o.hp+o.mhp*f)})}
+  // Protectors guard everyone within protectR (not other Protectors); the nearest one wins
+  if(typeN.protector&&GEN_STEP%CFG.guardEvery===0)for(const p of enemies){if(p.dead||!p.d.protect)continue;const r2=CFG.protectR**2;
+    forNear(p.x,p.y,CFG.protectR,o=>{if(o.d.protect)return;const d2=(o.x-p.x)**2+(o.y-p.y)**2;if(d2>r2)return;
+      if(o.guardStep===GEN_STEP&&o.guard&&(o.x-o.guard.x)**2+(o.y-o.guard.y)**2<=d2)return;o.guard=p;o.guardStep=GEN_STEP})}
+  // healers pulse every healEvery s and heal a flat amount (a share of their own max health, so huge pools like bosses barely notice),
+  // capped at healMax of the target's max health; each enemy at most once every CFG.healCd s, and healers never heal each other
+  for(const h of healers){const r2=h.d.healR**2,amt=h.mhp*h.d.heal,cap=h.d.healMax,now=R.time;forNear(h.x,h.y,h.d.healR,o=>{if(o.d.heal||now-o.healAt<CFG.healCd-.01||(o.noHealAt!=null&&now-o.noHealAt<ULT.noHeal)||o.hp>=o.mhp||(o.x-h.x)**2+(o.y-h.y)**2>r2)return;o.healAt=now;o.hp=Math.min(o.mhp,o.hp+Math.min(amt,o.mhp*cap))})} // never more than healMax of the target's max health
   healers.length=0;
   ultTick(dt,tgt);if(R.over)return;
   const fi=1/s.aspd;R.fireT+=dt;
@@ -173,7 +226,7 @@ function update(dt){GEN_STEP++;
     if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
     if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
       if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=2?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(R.chainP&&Math.random()<R.chainP)chainBolt(e);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
-        if(!e.dead&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/e.d.weight,spawnMax()-d);if(k>0){e.x+=e.x/d*k;e.y+=e.y/d*k;e.px=e.x;e.py=e.y;save.stats.kbs++}}
+        if(!e.dead&&!e.d.immov&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/wtOf(e),spawnMax()-d);if(k>0){walk(e,e.x/d,e.y/d,k);e.px=e.x;e.py=e.y;e.rest=0;save.stats.kbs++}}
         if(b.bn>0){const n=nearestOther(e.x,e.y,e,s.bounceRange);if(n){b.bn--;b.rx=b.x=b.px=e.x;b.ry=b.y=b.py=e.y;b.e=n;b.g=n.gen;b.l=2;drop=false;save.stats.bounces++}}}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
     if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
   }
@@ -184,37 +237,74 @@ function update(dt){GEN_STEP++;
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.px=p.x;p.py=p.y;p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;if(p.l<=0){parts[i]=parts[parts.length-1];parts.pop()}}
   for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}
 }
-// ---- crowding: enemies push each other apart (spatial grid, so it stays cheap with hundreds) ----
-// grid cell (m): about one enemy wide, so crowded cells stay small
+// ---- crowding: enemies never get closer than sepGap × their combined size ----
+// Walking enemies stop at that distance (or slide sideways into a gap), so crowds form a wall instead of piling up.
+// separate() then pushes apart anything shoved together by other means (Shockwave, knockback, splits, new spawns).
+// grid cell (m): about one enemy wide, so crowded cells stay small. Bosses ("big": their reach is wider than a cell)
+// are listed separately and checked over a wider area.
 const SEPC=24;let sepBuilt=false,SEPN=16,SEPO=SEPC*SEPN/2,sepHead=new Int32Array(SEPN*SEPN),sepNext=new Int32Array(256);
 const sepCell=v=>Math.max(0,Math.min(SEPN-1,Math.floor((v+SEPO)/SEPC)));
-const SEPDX=[0,1,-1,0,1],SEPDY=[0,0,1,1,1];
+const SEPDX=[0,1,-1,0,1],SEPDY=[0,0,1,1,1],bigs=[];
+const BIG_SZ=SEPC/(2*CFG.sepGap),MAX_SZ=Math.max(...Object.values(ET).map(d=>d.sz)),BIG_CELLS=Math.ceil((MAX_SZ*2*CFG.sepGap+1)/SEPC);
 let sepFlip=0,SX=new Float32Array(256),SY=new Float32Array(256),SS=new Float32Array(256),SW=new Float32Array(256);
-function separate(){
-  sepBuilt=false;const n=enemies.length;if(n<2)return;
+function sepBuild(){
+  sepBuilt=false;bigs.length=0;const n=enemies.length;if(n<2)return;
   if(sepNext.length<n){sepNext=new Int32Array(n*2);SX=new Float32Array(n*2);SY=new Float32Array(n*2);SS=new Float32Array(n*2);SW=new Float32Array(n*2)}
   const N=Math.ceil(2*(spawnMax()+60)/SEPC);if(N!==SEPN){SEPN=N;SEPO=SEPC*N/2;sepHead=new Int32Array(N*N)} // grid grows with the arena
   sepHead.fill(-1);sepBuilt=true;
-  // flat copies of position/size/weight: much faster to read in the pair loop than enemy objects
-  for(let i=0;i<n;i++){const e=enemies[i];if(e.dead){SS[i]=-1;continue}SX[i]=e.x;SY[i]=e.y;SS[i]=e.d.sz;SW[i]=e.d.weight;
-    const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i}
-  // with a huge crowd, push every other step (it still settles, just over two steps)
+  // flat copies of position/size/weight (much faster to read than enemy objects); walk() keeps SX/SY in step with moves
+  // ghosts (Chargers) get size -1: they ignore collision and nobody checks against them
+  for(let i=0;i<n;i++){const e=enemies[i];e.gi=i;SX[i]=e.x;SY[i]=e.y;SS[i]=e.dead||e.d.ghost?-1:e.d.sz;SW[i]=e.wt;
+    const c=sepCell(e.y)*SEPN+sepCell(e.x);sepNext[i]=sepHead[c];sepHead[c]=i;if(e.d.sz>BIG_SZ)bigs.push(i)}}
+// move e up to m along the unit vector (ux,uy), stopping where it would come closer than the allowed distance to
+// anyone ahead of it; if blocked, it slides along the blocker with the rest of the step. Long moves (Shockwave,
+// knockback) go in cell-sized chunks so they stop at the crowd too. Returns how far it actually moved.
+function walk(e,ux,uy,m){
+  if(!sepBuilt||enemies[e.gi]!==e||e.d.ghost){e.x+=ux*m;e.y+=uy*m;return m} // not in this step's grid, or ignores collision: moves freely // not in this step's grid (just spawned): moves freely
+  let moved=0;while(m>1e-9){const c=Math.min(m,SEPC*.5),d=walk1(e,ux,uy,c);moved+=d;m-=c;if(d<c*.5)break}return moved}
+function walk1(e,ux,uy,m){
+  const i=e.gi,x0=e.x,y0=e.y;let t=clampT(i,x0,y0,ux,uy,m),x=x0+ux*t,y=y0+uy*t;
+  if(t<m-1e-6&&walkBy>=0){ // slide: drop the part of the step that heads into the blocker
+    let nx=x-SX[walkBy],ny=y-SY[walkBy];const nl=Math.hypot(nx,ny)||1;nx/=nl;ny/=nl;const dn=ux*nx+uy*ny;
+    let sx=ux-nx*dn,sy=uy-ny*dn;const sl=Math.hypot(sx,sy);
+    if(sl>1e-3){sx/=sl;sy/=sl;const t2=clampT(i,x,y,sx,sy,(m-t)*sl);x+=sx*t2;y+=sy*t2}}
+  e.x=SX[i]=x;e.y=SY[i]=y;return Math.hypot(x-x0,y-y0)}
+let walkBy=-1;
+// how far enemy i at (ex,ey) can go along (ux,uy), up to m, before it is closer than (size + size) × sepGap to a
+// neighbour ahead of it (walkBy = the one that stops it). Bosses look over a wider area; everyone checks the bosses.
+function clampT(i,ex,ey,ux,uy,m){
+  const g=CFG.sepGap,sa=SS[i],big=sa>BIG_SZ,rc=big?BIG_CELLS:1,cx=sepCell(ex),cy=sepCell(ey);let t=m;walkBy=-1;
+  for(let gy=Math.max(0,cy-rc),gy1=Math.min(SEPN-1,cy+rc);gy<=gy1;gy++)for(let gx=Math.max(0,cx-rc),gx1=Math.min(SEPN-1,cx+rc);gx<=gx1;gx++)
+    for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){const sb=SS[j];if(j===i||sb<0||(!big&&sb>BIG_SZ))continue;
+      const D=(sa+sb)*g,dx=SX[j]-ex,dy=SY[j]-ey,b=ux*dx+uy*dy;if(b<=1e-6||b-t>D)continue; // behind it, or too far ahead to reach
+      const c=dx*dx+dy*dy-D*D;if(c<=0){walkBy=j;return 0} // already touching and heading into it
+      const disc=b*b-c;if(disc>0){const t0=b-Math.sqrt(disc);if(t0<t){t=t0>0?t0:0;walkBy=j}}}
+  if(!big)for(const j of bigs){const sb=SS[j];if(j===i||sb<0)continue;
+    const D=(sa+sb)*g,dx=SX[j]-ex,dy=SY[j]-ey,b=ux*dx+uy*dy;if(b<=1e-6||b-t>D)continue;
+    const c=dx*dx+dy*dy-D*D;if(c<=0){walkBy=j;return 0}
+    const disc=b*b-c;if(disc>0){const t0=b-Math.sqrt(disc);if(t0<t){t=t0>0?t0:0;walkBy=j}}}
+  return t}
+function separate(){
+  const n=enemies.length;if(!sepBuilt||n<2)return;
+  for(let i=0;i<n;i++){const e=enemies[i];if(e.dead){SS[i]=-1;continue}SX[i]=e.x;SY[i]=e.y} // positions moved since the grid was built
+  // with a huge crowd, push every other step (walking already keeps them apart; this only fixes shoves)
   if(n>CFG.sepEveryOther&&(sepFlip^=1))return;
   const k=CFG.sepPush,g=CFG.sepGap,cap=CFG.sepChecks;
-  // each pair is visited once: the rest of i's own cell (list entries after i), then 4 of the 8 neighbouring cells
-  for(let i=0;i<n;i++){const sa=SS[i];if(sa<0)continue;const cx=sepCell(SX[i]),cy=sepCell(SY[i]),wa0=SW[i];let chk=0;
+  const pair=(i,j,wa0)=>{const min=(SS[i]+SS[j])*g;let dx=SX[j]-SX[i],dy=SY[j]-SY[i];const d2=dx*dx+dy*dy;if(d2>=min*min)return;
+    let d=Math.sqrt(d2);if(d<1e-3){const r=Math.random()*6.283;dx=Math.cos(r);dy=Math.sin(r);d=1}else{dx/=d;dy/=d}
+    const p=(min-d)*k,wb0=SW[j],wa=wb0/(wa0+wb0),wb=1-wa; // heavier enemies get shoved less
+    SX[i]-=dx*p*wa;SY[i]-=dy*p*wa;SX[j]+=dx*p*wb;SY[j]+=dy*p*wb};
+  // each pair is visited once: the rest of i's own cell (list entries after i), then 4 of the 8 neighbouring cells.
+  // Pairs with a boss are left to the boss's own wider pass below.
+  for(let i=0;i<n;i++){const sa=SS[i];if(sa<0||sa>BIG_SZ)continue;const cx=sepCell(SX[i]),cy=sepCell(SY[i]),wa0=SW[i];let chk=0;
     for(let c=0;c<5;c++){let j;
       if(c===0)j=sepNext[i];else{const gx=cx+SEPDX[c],gy=cy+SEPDY[c];if(gx<0||gx>=SEPN||gy>=SEPN)continue;j=sepHead[gy*SEPN+gx]}
-      for(;j!==-1;j=sepNext[j]){if(++chk>cap)break;
-        const min=(sa+SS[j])*g;let dx=SX[j]-SX[i],dy=SY[j]-SY[i];const d2=dx*dx+dy*dy;if(d2>=min*min)continue;
-        let d=Math.sqrt(d2);if(d<1e-3){const r=Math.random()*6.283;dx=Math.cos(r);dy=Math.sin(r);d=1}else{dx/=d;dy/=d}
-        const p=(min-d)*k,wb0=SW[j],wa=wb0/(wa0+wb0),wb=1-wa; // heavier enemies get shoved less
-        SX[i]-=dx*p*wa;SY[i]-=dy*p*wa;SX[j]+=dx*p*wb;SY[j]+=dy*p*wb}}}
+      for(;j!==-1;j=sepNext[j]){if(++chk>cap)break;if(SS[j]<0||SS[j]>BIG_SZ)continue;pair(i,j,wa0)}}}
+  for(const i of bigs){if(SS[i]<0)continue;const cx=sepCell(SX[i]),cy=sepCell(SY[i]);
+    for(let gy=Math.max(0,cy-BIG_CELLS);gy<=Math.min(SEPN-1,cy+BIG_CELLS);gy++)for(let gx=Math.max(0,cx-BIG_CELLS);gx<=Math.min(SEPN-1,cx+BIG_CELLS);gx++)
+      for(let j=sepHead[gy*SEPN+gx];j!==-1;j=sepNext[j]){if(j===i||SS[j]<0||(SS[j]>BIG_SZ&&j<i))continue;pair(i,j,SW[i])}}
   const tr=CFG.towerR;
-    // an enemy shoved back outward by the crowd is blocked: it presses forward less next step, so packed crowds stop
-  // overlapping (which is also what makes them expensive)
-  for(let i=0;i<n;i++){if(SS[i]<0)continue;const e=enemies[i];let x=SX[i],y=SY[i];const m=tr+SS[i],d=Math.hypot(x,y);if(d<m&&d>0){x*=m/d;y*=m/d}
-    const back=d>0?((x-e.x)*x+(y-e.y)*y)/d:0,step=e.d.spd*CFG.step;e.blk=back>0?Math.min(CFG.sepHold,back/step):e.blk*.5;e.x=x;e.y=y} // never inside the spire
+  for(let i=0;i<n;i++){if(SS[i]<0)continue;const e=enemies[i];let x=SX[i],y=SY[i];const m=tr+SS[i],d=Math.hypot(x,y);if(d<m&&d>0){x*=m/d;y*=m/d}e.x=SX[i]=x;e.y=SY[i]=y} // never inside the spire
 }
 // ---- in-run purchase: each level rolls its section's free-upgrade chance and costs nothing on a hit ----
 function buyRun(s,n){const r=run.lv[s.k]||0,ch=run.s['free'+s.g]||0;let paid=0,free=0;

@@ -1,7 +1,146 @@
 # What's new in Spire
 
-## 1.25.1 — 2026-11-25
+## 1.48.3 — 2026-11-25
 - The Chips and ×1 / ×10 / Max bar at the top of the Ultimates tab now stays in view while you scroll through the ultimates.
+- Ultimate descriptions no longer show their price multiplier (prices are unchanged).
+
+## 1.48.2 — 2026-11-21
+- **Chargers ignore the crowd:** they walk and ram straight through other enemies, and nothing bumps into them, so every ram reaches the spire. (1.48.1's shoving is gone.) Every other enemy still keeps its distance.
+
+## 1.48.1 — 2026-11-21
+- **Smoother with big crowds:** with 3,500 enemies and every ultimate the game now runs almost twice as fast (game speeds up to about 23× hold steady, was about 12×), and about a third faster with 2,000 enemies. Enemies stuck behind the crowd wait instead of re-checking for room every frame, Chargers walk in the same efficient way as everyone else, Protectors refresh who they guard a few times a second instead of every frame, and the Laser looks for its target 10 times a second.
+- **Chargers shove the crowd aside:** a ramming Charger now pushes enemies in its way out to the sides instead of ploughing through them. If the crowd is too packed to give way, or another Charger is in the way, the ram stops there and the Charger walks in on foot without its ram hit. Enemies no longer end up overlapping around Chargers.
+
+## 1.48.0 — 2026-11-21
+- **🔥 New ultimate, Firebomb:** lobs a firebomb at the enemy that has **stood still the longest**. Where it lands it leaves a **flaming carpet**, and anything standing on it burns harder the longer it stays: +25% damage for every second on it, reset when it steps off. It punishes Ranged enemies, parked Healers, charging Chargers and crowds held up at the spire.
+  - Upgrades: **Fire damage** (100 levels, 5 per tier), **Carpet radius** (15 → 50 m), **Cooldown** (12 → 2 s) and **Carpet duration** (4 → 12 s).
+  - Medals: **Silver, Spreading flames**, an enemy that dies on the carpet sets the ground where it fell alight · **Gold, Searing**, burning builds up twice as fast · **Platinum, Carpet bombing**, 2 firebombs per launch.
+
+## 1.47.0 — 2026-11-21
+- **A fresh spire starts with 30 m of range** (was 110 m), on a smaller field: the view starts at 100 m across and enemies spawn about 110 m out (was 320 m and 335 m). The view still zooms out as your range grows. Range upgrades matter a lot more now.
+- **Ranged enemies stop at 90% of your range** (27 m for a fresh spire) instead of a fixed 125 m, so they're always just inside your reach (once one has found its spot it stays there, even if your range grows). To make up for it, their shots hit **70% harder** (2.04× a Basic's attack instead of 1.2×).
+- **Healers** stop at 50 m or 90% of your range, whichever is closer, so a short-range spire can still reach them.
+
+## 1.46.0 — 2026-11-21
+- **Enemy types arrive much further apart:** on tier 1, Fast from wave 10, Tank 40, Ranged 100, Shielded 250, Healer 500, Splitter 800, Charger 1,200 and Protector 1,800 (they all used to arrive by wave 25). Bosses still come every 10 waves.
+- **Higher tiers bring them sooner:** arrival waves are divided by tier^1.2 (÷2.3 on tier 2, ÷7 on tier 5, ÷36 on tier 20), so Protectors show up around wave 780 on tier 2 and wave 50 on tier 20.
+- Each type now ramps in gradually after it arrives, reaching its full share by triple its arrival wave. Full shares are trimmed so every type fits: at the deepest waves a wave is about 20% Tanks, 15% Fast, 12% each Ranged, Shielded and Splitters, 10% Chargers, 8% each Healers and Protectors. The enemy table and Help show the arrival wave for your tier.
+
+## 1.45.0 — 2026-11-21
+- **🛡 New elite, Protector** (from wave 25): guards its friends. Damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half of it. A faint ring shows the area it guards. Protectors don't guard each other, and Missiles' Execute still goes straight through. Kill it first to get at the rest.
+
+## 1.44.0 — 2026-11-21
+- **⚡ New elite, Charger** (from wave 22): **immovable**, so knockback, Shockwave, Gravity Well and crowds can't move it (Shockwave still shakes it). It walks into your range, **charges up for 3 s** (a ring fills around it), then **rams the spire for 10× its attack** and keeps hitting from there. Kill it while it charges.
+- **Healers no longer attack:** they stop 50 m from the spire and sit there healing, so they can't die to Thorns.
+- **Shielded** enemies hit a little softer (1.3 instead of 2).
+
+## 1.43.0 — 2026-11-21
+- **🚀 New ultimate, Missiles:** fires a missile that homes in on the enemy with the **least health** and hits harder the more of its health is missing. Everything within the blast radius takes the same damage. Built for finishing off the wounded.
+  - Upgrades: **Missile damage** (100 levels, 5 per tier), **Cooldown** (15 → 3 s), **Blast radius** (20 → 70 m) and **Low-health bonus** (up to +100% → +500% damage on a target at 0% health).
+  - Medals: **Silver, Cluster**, each blast throws 2 bomblets at the next weakest enemies nearby for 50% damage · **Gold, Execute**, a missile kills any non-boss target below 15% health outright · **Platinum, Salvo**, 3 missiles at once at the 3 weakest enemies, and every missile hit on an enemy makes the next one against it 25% stronger (compounding).
+  - Prices ×1.25.
+
+## 1.42.0 — 2026-11-21
+- **🔴 Laser is the boss killer:** when fully charged it fires at the enemy with the **most health** (the biggest number, not the biggest share), and burns everything along the beam.
+  - **Silver, Tracking:** while firing, the beam turns to follow whichever living enemy has the most health.
+  - **Gold, Cauterize:** enemies the beam hits can't be healed for 5 s.
+  - **Platinum, Lock-on:** the beam turns 3× faster, and enemies inside it are slowed by 50%.
+  - Gone: always firing at Silver, ignoring shields, +50% damage and the second beam. Duration and Charge time now always matter.
+
+## 1.41.0 — 2026-11-21
+- **Splitters split into Splitters:** when one dies it breaks into **2 smaller Splitters with half its health**, and each of those splits once more into 2 with half again (7 in all), instead of 3 Fast enemies. Each split is smaller and pays half the coins and cash, and only the first one drops alloy. Chain Lightning is the answer.
+
+## 1.40.0 — 2026-11-21
+- **🌀 Gravity Well reworked:**
+  - **No more always-on at Silver.** Its cooldown now starts when a well opens, so Duration and Cooldown matter: once Duration matches Cooldown (both 60 s at max) there's always a well up.
+  - **Up to 3 wells at once,** each on a different cluster of enemies.
+  - **Silver, Collapse:** when a well ends, it yanks every enemy within twice its radius towards its centre.
+  - **Gold, Siphon:** every enemy that dies inside a well adds 0.5 s to it, up to double its duration, so wells overlap and a 2nd or 3rd can open.
+  - **Platinum, Heavy core:** enemies inside a well count as 50% heavier: Shockwave shakes them harder and knockback can't push them back out.
+  - The old Silver (+20% damage inside), Gold (2× spire damage per second) and Platinum (enemies held in place) are gone.
+
+## 1.39.0 — 2026-11-21
+- **Shockwave reworked into a utility ultimate:**
+  - The blast is now a **ring that travels out from the spire** to its radius, catching each enemy as it passes.
+  - It no longer stuns. Every enemy the ring reaches is **shaken for 5 s**: it takes damage × (the **Shake multiplier** × its weight) from everything. A ×3 multiplier on a weight-30 enemy means it takes 90× damage from your shots and ultimates. Tanks that shrug off knockback are exactly what it's for. **Bosses resist:** only 10% of a boss's weight counts.
+  - Cooldown now goes down to **15 s** (was 20 s), in 15 steps of 5 s.
+  - The Stun upgrade is replaced by the **Shake multiplier** (×0.5 → ×5 in 18 steps); chips you spent on Stun are refunded.
+  - New medals: **Silver, Crush**: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn't move at all · **Gold, Aftershock**: when a shaken enemy dies, the shake spreads to enemies within 25 m for the time it had left, so kills snowball · **Platinum, Echo**: a second ring follows 1 s later (the old aftershock).
+
+## 1.38.0 — 2026-11-21
+- **Enemies hit harder the longer they live:** every hit or shot an enemy lands does **3% more** than its previous one (×1.34 by its 10th attack, ×18 by its 100th). Enemies parked at the spire, or kept alive by Healers or a stalled fight, get dangerous fast, so kill them quickly.
+
+## 1.37.0 — 2026-11-21
+- **Frost Field medals reworked:** destroying every enemy shot made Ranged enemies harmless, so:
+  - **Gold** is now *frozen enemies take double brittle damage* (was Platinum).
+  - **Platinum** is now *enemy shots inside the field have a 2% chance to melt for every 10 m they travel* (was Gold, where every shot was destroyed). A shot crossing 100 m of field melts about 18% of the time.
+
+## 1.36.0 — 2026-11-21
+- **Stronger ultimates cost more:** each ultimate now has its own price, for unlocking and for every level. **Chain Lightning** and **Laser** ×1.5, **Frost Field** ×1.25, **Gravity Well** ×1, **Shockwave** ×0.75. Save up for a big one, or spread your chips across cheaper ones to push higher sooner. Each ultimate shows its price multiplier when you open it.
+
+## 1.35.0 — 2026-11-21
+- **Ultimate upgrades come in natural steps:** capped stats no longer share the same long track. Each has a handful of big steps, and the price climbs fast:
+  - Max slow 30% → 95% in 13 steps of 5% · Proc chance and Bounce multiplier in 5% steps · Bounce targets +0.5 a step · Tick rate +0.25/s · Frost radius +10% of range · Brittle +0.1% per stack.
+  - Shockwave: Stun +0.25 s, Radius +5% of range, Cooldown −5 s · Gravity Well: Radius +10 m, Duration +5 s, Cooldown −20 s · Laser: Width +2.5 m, Duration +1 s, Charge time −4 s.
+  - Strength upgrades (Chain Lightning and Laser damage, Shockwave Force, Gravity Well Pull) keep their 100 levels, 5 per tier.
+- **Medals by how complete an ultimate is** (the average of its 4 upgrades): **Silver at 10%, Gold at 30%, Platinum at 60%**.
+- Your levels convert so every ultimate stays at least as strong as before.
+
+## 1.34.0 — 2026-11-21
+- **Ultimate upgrades hit harder:** each upgrade now has **100 levels** (5 per tier) instead of 400, so every level does 4× as much: proc chance +0.5 points a level instead of +0.125, damage upgrades about +25% a level early on instead of +6%. Each level costs more to match (a tier's band costs about 65% more than before).
+- Percentages on ultimate upgrades show a decimal, so every level visibly changes.
+- Medals scale with the shorter tracks: **Silver at 40, Gold at 120, Platinum at 240** total levels (of 400).
+- Your levels convert so every ultimate stays at least as strong as before.
+
+## 1.33.0 — 2026-11-21
+- **⚡ Ultimates rebuilt for the long game:** every upgrade now has **400 levels**, in bands of 20 (one per tier, 20 tiers for now). A band costs about what farming its tier earns in chips, so your ultimates grow with the tier you farm instead of maxing out early.
+  - Strength upgrades (Chain Lightning and Laser damage, Shockwave Force, Gravity Well Pull) keep growing band after band to keep up with each tier's tougher, heavier enemies.
+  - Other upgrades (chances, slow, radius, durations, cooldowns) move evenly towards their final value over all 400 levels.
+  - **Medals no longer need maxed upgrades:** they come from the total levels across an ultimate's 4 upgrades: **Silver at 160, Gold at 480, Platinum at 960** (of 1,600).
+  - Your current levels convert so every ultimate is exactly as strong as before.
+- **Tier scaling that lasts to tier 20 and beyond:** tier multipliers now grow as powers of the tier instead of multiplying every tier. Enemy health tier^3.5 (×11 on tier 2, ×128 on tier 4, ×36k on tier 20), attack tier³, weight tier^1.2, speed +3% per tier, chip and alloy drops tier^1.5, shards (tier − 1)^1.5.
+
+## 1.32.0 — 2026-11-21
+- **Next tier at wave 2,500** (was 5,000). Farming a lower tier to get stronger, then pushing a higher one, is part of the game.
+- **Higher tiers pay much more, sooner:** the tier coin multiplier is now tier³ instead of ×2.2 per tier: ×8 coins on tier 2 (was ×2.2), ×27 on tier 3 (×4.8), ×125 on tier 5 (×23), ×1,000 on tier 10. It keeps growing without running away exponentially, so it still makes sense at tier 20 and beyond.
+
+## 1.31.0 — 2026-11-21
+- **Healers reworked:** a big pack of Healers could keep a crowd alive forever. Now:
+  - They pulse **every 15 s** (was every second) and reach **25 m** (was 70 m).
+  - Each pulse heals a **flat amount**, half of the Healer's own max health, instead of 10% of the target's, and **never more than a quarter** of the target's max health. Tanks and bosses with huge health pools barely notice a heal.
+  - Each enemy can be healed **at most once every 5 s**, however many Healers are around.
+  - Healers **can't heal each other** (or themselves).
+
+## 1.30.0 — 2026-11-21
+- **♻ Respec anything, free:** try a build, and if it doesn't work out, get everything back.
+  - **Workshop:** each section (Attack, Defense, Utility) has a *Refund all* button that resets its upgrades and returns all the coins.
+  - **Ultimates:** each ultimate has *Refund upgrades*, which returns every chip spent on its levels (it stays unlocked).
+  - **Equipment** and **Modules:** each owned item has a *Refund* button that returns everything spent on it.
+  - Tap once to see the amount, tap again to confirm. Works any time, even mid-run.
+
+## 1.29.0 — 2026-11-21
+- **Tiers unlock much later:** the next tier now unlocks at **wave 5,000** (half way to a tier's final wave) instead of wave 25, so each tier is a long climb and pushing deep is how you earn: higher waves spawn more enemies, more of them are tanks and elites, and every kill pays more. Tiers you've already unlocked stay unlocked.
+
+## 1.28.0 — 2026-11-21
+- **🏁 Every tier has a finish line:** **wave 10,000** is the last. Once you reach it nothing more spawns, and you clear the tier by **destroying every enemy left** on the field (the top bar counts them down). Holding the crowd off isn't enough. The run ends as a win, and cleared tiers are marked in your records.
+- **🏆 Milestones:** 30 per tier, from wave 10 to wave 10,000 (most of them in the first 1,000 waves). The first time you reach one on a tier, you get coins, alloy and chips, plus shards from tier 2. Later milestones pay more, and the final one, paid for clearing the tier, pays 5× extra. See **Records → Milestones**.
+- **New difficulty curve:** enemies get tougher quickly at first and more gently later (polynomial instead of a fixed % per wave), so a stronger spire keeps pushing further instead of hitting a sudden wall. The wave info shows how much tougher the next wave is.
+- **Enemies get heavier:** weight now grows with the wave too (×2.4 by wave 100, ×10 by wave 1,000, ×53 by wave 10,000), so knockback, Shockwave and Gravity Well push high-wave enemies around much less. A strong spire can no longer keep a crowd at bay forever with knockback alone.
+- **Higher tiers bring heavier, faster enemies:** each tier up multiplies enemy weight by 1.6 and speed by 1.08 (×10 weight and ×1.47 speed at tier 6), on top of health and attack.
+- **Push power keeps up:** Shockwave **Force** and Gravity Well **Pull** now have 100 levels that each add 4% (×50 by the last level), and **Knockback force** grows 4% per Workshop level with no cap (it used to stop at 120 m), so it stays useful however heavy enemies get on high tiers. To balance that, its price climbs faster than other stats (×1.28 per Workshop level instead of ×1.22, ×1.2 per run level instead of ×1.16), so high knockback levels take high-tier earnings. Heavier enemies need these pushed further, which is part of moving up a tier. Your current levels convert so nothing gets weaker.
+- **Gentler wave sizes:** waves still grow every 10 waves, but by less and less: 29 enemies at wave 100, 70 at wave 1,000, 200 at wave 10,000.
+- **Enemy limit:** at most 5,000 enemies on the field, and each type has its own limit (e.g. 1,700 Basic, 200 Healers, 25 Bosses). A spawn whose type is full becomes another type, and nothing spawns while the field is full.
+
+## 1.27.0 — 2026-11-21
+- **Waves have a break:** each wave now spawns its enemies over **15 s**, followed by a **15 s break** to clear the field before the next one (30 s per wave in all). The wave bar dims during the break.
+- **Fewer enemies, tougher mix:** waves start at 10 enemies and add **3 more every 10 waves** (instead of one or two more every wave). Higher waves bring more Tanks and elites instead: by wave 100 there are no Basic enemies left, and elites make up about 40% of a wave.
+- **Better rewards:** each kill pays twice the cash and about 3.5× the coins it used to, growing faster with the wave, and wave cash is up 50%. Since elites pay more and drop alloy, pushing to higher waves pays off much more.
+- **Bosses hit less hard:** boss health 250 → 150 and attack 12 → 6 (before wave and tier scaling), so the first bosses are no longer a wall for a new spire.
+
+## 1.26.0 — 2026-11-21
+- **Enemies no longer pile on top of each other.** They always keep at least 90% of their combined size apart: an enemy walking into a crowd stops at the wall, or slides sideways into a gap if there is one, instead of pushing into the pack.
+- Gravity Well, Shockwave and knockback move enemies only as far as the crowd lets them, so they can't shove enemies through each other either. Shockwave pushes the outermost enemies first, so each one has room to be pushed back.
+- Bosses are kept apart from everything around them too (their size used to let some neighbours slip through).
 
 ## 1.25.0 — 2026-11-21
 - **Runs end on the main screen:** when a run ends (you end it or the spire falls) you're back on the same screen as when the game starts, with the tier picker, tier details and shortcuts, plus a compact summary of the run you just played at the top. Auto-restart still counts down on the Start button after the spire falls.
