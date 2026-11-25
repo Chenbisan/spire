@@ -32,7 +32,7 @@ function cardsHtml(){
   return h+`</div><p class="note">More equipment is on the way.</p>`;
 }
 function modsHtml(){
-  let h=`<p class="note">Modules are gear for the spire, bought and levelled with <b class="alloy">alloy</b>, which elites drop. One per slot. Every ${MOD.per} levels a module ranks up (${RARITY.join(' → ')}), making its special effect stronger.</p>
+  let h=`<p class="note">Modules are gear for the spire, bought and levelled with <b class="alloy">alloy</b>, which elites drop. One per slot. Every ${MOD.per} levels a module ranks up (${RARITY.join(' → ')}), raising its special effect to the next value shown on it.</p>
   <div class="lhead"><span>Alloy <b class="alloy">${fmt(save.alloy)}</b></span></div>`;
   for(const sl of MOD_SLOTS){const cur=MK[save.modEq[sl.k]];
     h+=`<div class="gh ghx"><span>${sl.n}</span><span class="note" style="margin:0">${cur&&modLv(cur.k)?cur.n:'empty'}</span></div>`;

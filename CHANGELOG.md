@@ -1,5 +1,12 @@
 # What's new in Spire
 
+## 1.49.0 — 2026-11-25
+- **No more vague descriptions:** everything now says exactly what it does, with numbers.
+  - Every ultimate's description is built from your current upgrades (e.g. Laser: "Every 60 s, fires a 10 m wide beam for 3 s … takes ×3 spire damage per second"), and their Silver / Gold / Platinum bonuses give exact figures (turn speeds, ranges, sizes).
+  - Fast, Tank and Boss descriptions give their exact speed, health, attack and weight compared with a Basic; Splitter and Shielded say exactly how they pay out and break.
+  - Lab research, the start screen, Modules and the help say exactly how much each thing changes, instead of "faster", "cheaper", "much more" or "a few".
+  - The help no longer lists the ultimates' price multipliers.
+
 ## 1.48.4 — 2026-11-25
 - **Chain Lightning says exactly what it does:** its description now shows your current proc chance and how much less damage each bounce deals (e.g. "Each bounce deals 60% less damage than the one before"), and the Bounce multiplier upgrade reads "60% less damage per bounce".
 

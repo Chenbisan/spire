@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.48.4';
+const APP_VERSION='1.49.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -79,10 +79,10 @@ const ST=[
 const SK=Object.fromEntries(ST.map(s=>[s.k,s]));
 // Lab: meta upgrades, paid in shards, applied instantly
 const LAB=[
- {k:'offSpd',n:'Offline speed',d:'Multiplies your offline earnings.',max:10,c:[20,1.6],val:l=>1+.15*l,f:v=>'×'+v.toFixed(2)},
- {k:'offCap',n:'Offline duration',d:'How long offline earnings keep counting.',max:12,c:[15,1.5],val:l=>24+4*l,f:v=>v+'h'},
- {k:'speed',n:'Overdrive',d:'Unlocks faster game speeds.',max:3,c:[200,5],val:l=>[8,12,16,24][l],f:v=>'up to '+v+'×'},
- {k:'disc',n:'Workshop discount',d:'Cheaper workshop upgrades.',max:15,c:[30,1.5],val:l=>.02*l,f:v=>'−'+Math.round(v*100)+'%'},
+ {k:'offSpd',n:'Offline speed',d:'Multiplies your offline earnings: +15% per level.',max:10,c:[20,1.6],val:l=>1+.15*l,f:v=>'×'+v.toFixed(2)},
+ {k:'offCap',n:'Offline duration',d:'Offline earnings count for up to 24 h, plus 4 h per level.',max:12,c:[15,1.5],val:l=>24+4*l,f:v=>v+'h'},
+ {k:'speed',n:'Overdrive',d:'Each level unlocks the next game speed: 12×, then 16×, then 24×.',max:3,c:[200,5],val:l=>[8,12,16,24][l],f:v=>'up to '+v+'×'},
+ {k:'disc',n:'Workshop discount',d:'Every Workshop upgrade costs 2% fewer coins per level (up to 30% at level 15).',max:15,c:[30,1.5],val:l=>.02*l,f:v=>'−'+Math.round(v*100)+'%'},
  {k:'auto',n:'Auto-buyer',d:'Adds an auto-buy toggle to each section (Attack, Defense, Utility) of the Upgrades tab. Buys the cheapest upgrade first.',max:1,c:[150,1],val:l=>l,f:v=>v?'unlocked':'locked'},
 ];
 const LK=Object.fromEntries(LAB.map(l=>[l.k,l]));
@@ -106,17 +106,22 @@ const RANKS=['','Normal','Elite','Boss'];
 // when it arrives, growing to fmax by CFG.rampTo × its arrival wave (higher waves bring more tanks and elites) · weight: resists being pushed (crowds now, knockback later) · n/d: shown in Help
 const ET={
  basic:{n:'Basic',r:1,d:'Walks straight in and hits the spire once a second.',hp:4,dmg:1,spd:24,weight:1,sz:7,cash:1,coin:2,sh:'square',c:'e1',cap:1700},
- fast:{n:'Fast',r:1,d:'Twice as quick and fragile. Comes in numbers.',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:10,freq:.15,cap:1000},
+ fast:{n:'Fast',r:1,d:'',hp:2.5,dmg:.8,spd:46,weight:0.6,sz:6,cash:1,coin:3,sh:'triangle',rot:'face',c:'e2',from:10,freq:.15,cap:1000},
  ranged:{n:'Ranged',r:1,d:'Stops at 90% of your range, just inside your reach, and fires a shot at the spire every 2 s.',hp:3.5,dmg:2.04,spd:20,weight:0.9,sz:7,cash:2,coin:3,sh:'diamond',c:'e4',from:100,freq:.08,fmax:0.12,stopPct:.9,shoot:1,cap:500},
- tank:{n:'Tank',r:1,d:'Slow, with lots of health and a hard hit.',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:40,freq:.08,fmax:0.2,cap:800},
- shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Fast attack speed breaks it quickest.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,freq:.03,fmax:0.12,shield:3,cap:400},
+ tank:{n:'Tank',r:1,d:'',hp:18,dmg:2.5,spd:13,weight:3,sz:12,cash:4,coin:3,sh:'pentagon',c:'e3',from:40,freq:.08,fmax:0.2,cap:800},
+ shielded:{n:'Shielded',r:2,d:'Its shield (the ring) blocks the first 3 hits completely, crits included. Every hit removes one charge however strong it is, so more shots per second break it faster.',hp:10,dmg:1.3,spd:18,weight:2,sz:10,cash:6,coin:5,sh:'octagon',c:'e6',from:250,freq:.03,fmax:0.12,shield:3,cap:400},
  healer:{n:'Healer',r:2,d:'Never attacks: it stops 50 m from the spire (or at 90% of your range if that\'s closer) and sits there. Every 15 s, heals enemies within 25 m for half its own max health, but never more than a quarter of the target\'s max health. Each enemy can be healed once every 5 s, and Healers can\'t heal each other.',hp:8,dmg:0,stop:50,stopPct:.9,spd:20,weight:1.2,sz:9,cash:6,coin:5,sh:'cross',c:'e7',from:500,freq:.03,fmax:0.08,heal:.5,healR:25,healEvery:15,healMax:.25,cap:200},
- splitter:{n:'Splitter',r:2,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Smaller ones pay less and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,freq:.03,fmax:0.12,split:2,splits:2,cap:400},
+ splitter:{n:'Splitter',r:2,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Each smaller one pays half the coins and cash of the one it split from, and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,coin:5,sh:'star',c:'e8',from:800,freq:.03,fmax:0.12,split:2,splits:2,cap:400},
  charger:{n:'Charger',r:2,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there. It ignores the crowd: it walks and rams straight through other enemies.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,coin:5,sh:'chevron',rot:'face',c:'e9',from:1200,freq:.03,fmax:0.1,immov:1,ghost:1,charge:3,ram:10,ramSpd:160,cap:300},
  protector:{n:'Protector',r:2,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,coin:5,sh:'crest',c:'e10',from:1800,freq:.03,fmax:0.08,protect:1,cap:200},
- boss:{n:'Boss',r:3,d:'Arrives every 10th wave. Huge health and damage.',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',cap:25}
+ boss:{n:'Boss',r:3,d:'',hp:150,dmg:6,spd:9,weight:10,sz:22,cash:60,coin:10,sh:'hexagon',rot:'spin',c:'e5',cap:25}
 };
 const TYPES=Object.keys(ET);
+// descriptions with exact ratios to a Basic (the same on every wave and tier, since both scale alike)
+{const B=ET.basic,x=v=>+v.toFixed(2)+'×',pc=v=>Math.round(v*100)+'%';
+  ET.fast.d=`Moves ${x(ET.fast.spd/B.spd)} as fast as a Basic, with ${pc(ET.fast.hp/B.hp)} of its health and ${pc(ET.fast.dmg/B.dmg)} of its attack.`;
+  ET.tank.d=`Moves at ${pc(ET.tank.spd/B.spd)} of a Basic's speed, with ${x(ET.tank.hp/B.hp)} its health, ${x(ET.tank.dmg/B.dmg)} its attack and ${x(ET.tank.weight/B.weight)} its weight.`;
+  ET.boss.d=`Arrives every ${CFG.bossEvery}th wave, with ${x(ET.boss.hp/B.hp)} a Basic's health and ${x(ET.boss.dmg/B.dmg)} its attack, moving at ${pc(ET.boss.spd/B.spd)} of its speed.`}
 // ================= Cards and Modules =================
 const PC=v=>{const p=+(v*100).toFixed(1);return(p<10?p:Math.round(p))+'%'};
 // drops: chips from bosses (Cards), alloy from elites (Modules); both grow with wave and tier
@@ -172,37 +177,37 @@ const ULTS=[
   icon:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   t:[{k:'chance',lv:10,n:'Proc chance (to start and to split)',base:.1,end:.6,f:v=>PC1(v)},{k:'jumps',lv:8,n:'Bounce targets',base:2,end:6,f:v=>`splits into ${+v.toFixed(1)}`},
      {k:'mult',lv:10,n:'Bounce multiplier',base:.4,end:.9,f:v=>PC1(1-v)+' less damage per bounce'},{k:'dmg',n:'Damage',base:2,pow:1.2,f:v=>`×${fmt(v)} spire damage`}],
-  sb:'bolts can crit and super crit', gb:'strikes twice', pb:'bolts slow what they hit by 50% for 2 s'},
- {k:'frost',cost:1.25,n:'Frost Field',col:'alloy',d:'Always on. On every tick, each enemy touching the field around the spire gains a frost stack. Each stack slows it by 5% (up to your max slow) and makes it brittle: it takes more damage for every stack it carries. Stacks never wear off.',passive:1,aura:1,
+  sb:'bolts can crit and super crit, using your spire\'s crit chance, crit damage, super crit chance and super crit damage', gb:'every bolt hits each enemy twice (double bolt damage)', pb:'bolts slow what they hit by 50% for 2 s'},
+ {k:'frost',cost:1.25,n:'Frost Field',col:'alloy',d:()=>`Always on. ${+uv('frost','rate').toFixed(2)} times a second, every enemy inside the field (${PC1(uv('frost','radius'))} of your range around the spire) gains a frost stack. Each stack slows it by ${PC1(ULT.frostPer)}, up to ${PC1(uv('frost','slow'))} in total, and makes it take +${(v=>+(v*100).toFixed(3)+'%')(uv('frost','brittle'))} damage from everything. Stacks never wear off.`,passive:1,aura:1,
   icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
   t:[{k:'slow',lv:13,n:'Max slow',base:.3,end:.95,f:v=>PC1(v)+` (${Math.ceil(v/ULT.frostPer-1e-9)} stacks)`},{k:'rate',lv:14,n:'Tick rate',base:.5,end:4,f:v=>(+v.toFixed(2))+' ticks/s'},
      {k:'radius',lv:14,n:'Radius',base:.6,end:2,f:v=>PC1(v)+' of range'},{k:'brittle',lv:18,n:'Brittle',base:.002,end:.02,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
   sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'frozen enemies take double brittle damage', pb:'enemy shots inside the field have a 2% chance to melt for every 10 m they travel'},
- {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:'A ring bursts out from the spire, shoving enemies outward (heavier ones move less) and shaking them for 5 s: a shaken enemy takes damage × (the multiplier × its weight) from everything, so the heavier the enemy, the more it takes. The answer to Tanks that shrug off knockback. Bosses resist: only 10% of their weight counts.',
+ {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:()=>`Every ${S1(uv('shock','cd'))}, a ring bursts out from the spire to ${PC1(uv('shock','radius'))} of your range. Each enemy it reaches is shoved ${fmt(uv('shock','force'))} m outward, divided by the enemy's weight (the crowd can stop it), and shaken for ${ULT.shaken} s: a shaken enemy takes damage × (${+uv('shock','dmg').toFixed(2)} × its weight) from everything, never less than ×1. Bosses count only ${PC1(ULT.bossWt)} of their weight.`,
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
   t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:18,n:'Shake multiplier',base:.5,end:5,f:v=>`×${+v.toFixed(2)} × enemy weight damage taken`},
      {k:'radius',lv:8,n:'Radius',base:.6,end:1,f:v=>PC1(v)+' of range'},{k:'cd',lv:15,n:'Cooldown',base:90,end:15,f:S1}],  // 5 s steps, fastest 15 s
   sb:'Crush: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn\'t move at all', gb:'Aftershock: when a shaken enemy dies, the shake spreads to enemies within 25 m for the time it had left', pb:'Echo: a second ring follows 1 s later'},
- {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:'Opens on the biggest cluster of enemies in range and pulls everything nearby into it. Its cooldown starts when it opens, so once Duration matches Cooldown there\'s always a well up. Up to 3 can be open at once, each on a different cluster.',
+ {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:()=>`Every ${S1(uv('grav','cd'))} (counted from when the last well opened), opens a well on the spot in your range with the most enemies within ${fmt(uv('grav','radius'))} m that aren't already in a well. For ${S1(uv('grav','dur'))} it pulls every enemy within ${fmt(uv('grav','radius'))} m towards its centre at ${fmt(uv('grav','pull'))} m/s, divided by the enemy's weight. Up to ${ULT.maxWells} wells can be open at once; once Duration reaches Cooldown there's always one up.`,
   icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',
   t:[{k:'radius',lv:10,n:'Radius',base:50,end:150,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,pow:2,f:v=>fmt(v)+' m/s (÷ weight)'},
      {k:'dur',lv:10,n:'Duration',base:10,end:60,f:S1},{k:'cd',lv:12,n:'Cooldown',base:300,end:60,f:S1}],
-  sb:'Collapse: when a well ends, it yanks every enemy within twice its radius towards its centre', gb:'Siphon: every enemy that dies inside a well adds 0.5 s to it (up to double its duration), so wells can overlap', pb:'Heavy core: enemies inside a well count as 50% heavier, so Shockwave shakes them harder and knockback can\'t push them back out'},
- {k:'laser',cost:1.5,n:'Laser',col:'hot',d:'Charges up, then fires a beam at the enemy with the most health (the biggest number, not the biggest share) and burns every enemy along it. Built for bosses.',
+  sb:`Collapse: when a well ends, it yanks every enemy within twice its radius towards its centre, as far as ${ULT.collapse} s of its pull would move them`, gb:'Siphon: every enemy that dies inside a well adds 0.5 s to it (up to double its duration), so wells can overlap', pb:'Heavy core: enemies inside a well count as 50% heavier, so Shockwave shakes them harder and knockback can\'t push them back out'},
+ {k:'laser',cost:1.5,n:'Laser',col:'hot',d:()=>`Every ${S1(uv('laser','cd'))}, fires a ${fmt(uv('laser','width'))} m wide beam for ${S1(uv('laser','dur'))} at the enemy with the most health (the biggest number, not the biggest share). Every enemy the beam touches takes ×${fmt(uv('laser','dmg'))} spire damage per second.`,
   icon:'<circle cx="5" cy="12" r="2.5"/><path d="M8 12h14"/><path d="M8 9.5l3 1M8 14.5l3-1"/>',
   t:[{k:'dmg',n:'Damage',base:3,pow:1.2,f:v=>`×${fmt(v)} spire damage /s`},{k:'width',lv:12,n:'Width',base:10,end:40,f:v=>(+v.toFixed(1))+' m'},
      {k:'dur',lv:12,n:'Duration',base:3,end:15,f:S1},{k:'cd',lv:12,n:'Charge time',base:60,end:12,f:S1}],
-  sb:'Tracking: while firing, the beam turns to follow whichever living enemy has the most health', gb:'Cauterize: enemies the beam hits can\'t be healed for 5 s', pb:'Lock-on: the beam turns 3× faster, and enemies inside it are slowed by 50%'},
- {k:'missile',cost:1.25,n:'Missiles',col:'chip',d:'Fires a missile that homes in on the enemy with the least health and hits harder the more of its health is missing. Everything within the blast radius takes the same damage. Built for finishing off the wounded.',
+  sb:`Tracking: while firing, the beam turns up to ${Math.round(ULT.laserTurn*180/Math.PI)}° per second to follow whichever living enemy has the most health`, gb:'Cauterize: enemies the beam hits can\'t be healed for 5 s', pb:`Lock-on: the beam turns ${Math.round(ULT.laserTurnFast*180/Math.PI)}° per second (3× faster), and enemies inside it are slowed by 50%`},
+ {k:'missile',cost:1.25,n:'Missiles',col:'chip',d:()=>`Every ${S1(uv('missile','cd'))}, fires a missile at the enemy with the least health. It deals ×${fmt(uv('missile','dmg'))} spire damage to every enemy within ${fmt(uv('missile','radius'))} m of where it hits, plus a bonus for the health its target is missing: +${PC1(uv('missile','low'))} at 0% health, +${PC1(uv('missile','low')/2)} at 50%, scaling evenly in between.`,
   icon:'<path d="M14.5 4.5c2.5-1 4.6-1 5 .1.4 1-.6 3.2-3 5.5l-6 6-3-3z"/><path d="M8.5 10.5 5 11l-2 3 3.5.5M13.5 15.5 13 19l-3 2-.5-3.5"/><path d="m6.5 17.5-2 2"/>',
   t:[{k:'dmg',n:'Missile damage',base:5,pow:1.2,f:v=>`×${fmt(v)} spire damage`},{k:'cd',lv:12,n:'Cooldown',base:15,end:3,f:S1},
      {k:'radius',lv:10,n:'Blast radius',base:20,end:70,f:v=>(+v.toFixed(1))+' m'},{k:'low',lv:10,n:'Low-health bonus',base:1,end:5,f:v=>`up to +${Math.round(v*100)}% at 0% health`}],
-  sb:'Cluster: each blast throws 2 bomblets at the next weakest enemies nearby, for 50% damage', gb:'Execute: a missile kills any non-boss target below 15% health outright', pb:'Salvo: fires 3 missiles at once, at the 3 weakest enemies, and every missile hit on an enemy makes the next one against it 25% stronger (compounding)'},
- {k:'firebomb',cost:1,n:'Firebomb',col:'fire',d:'Lobs a firebomb at the enemy that has stood still the longest. Where it lands it leaves a flaming carpet, and anything standing on it burns harder the longer it stays (+25% for every second on it, reset when it steps off). Punishes Ranged enemies, parked Healers, charging Chargers and crowds held up at the spire.',
+  sb:`Cluster: each blast throws ${ULT.bomblets} bomblets at the ${ULT.bomblets} weakest other enemies within ${ULT.bombletR} m, each for 50% of the missile damage`, gb:'Execute: a missile kills any non-boss target below 15% health outright', pb:'Salvo: fires 3 missiles at once, at the 3 weakest enemies, and every missile hit on an enemy makes the next one against it 25% stronger (compounding)'},
+ {k:'firebomb',cost:1,n:'Firebomb',col:'fire',d:()=>`Every ${S1(uv('firebomb','cd'))}, lobs a firebomb at the enemy that has stood still the longest. It leaves a flaming carpet with a ${fmt(uv('firebomb','radius'))} m radius for ${S1(uv('firebomb','dur'))}. Anything on it takes ×${fmt(uv('firebomb','dmg'))} spire damage per second, +${PC1(ULT.heat)} for every second it has stayed on the carpet (reset when it steps off).`,
   icon:'<path d="M12 21c-4 0-6.5-2.6-6.5-6 0-3.2 2.2-5 3.5-7.5.6 1.6 1.6 2.6 2.6 3 .2-2.8 1.4-5.6 3.9-7.5-.3 2.8.8 4.6 2 6.3 1 1.5 1.5 3 1.5 4.7 0 4-2.9 7-7 7z"/><path d="M12 21c-1.7 0-3-1.2-3-3 0-1.6 1.3-2.6 2-4 .9 1.6 4 2.4 4 4.2 0 1.6-1.3 2.8-3 2.8z"/>',
   t:[{k:'dmg',n:'Fire damage',base:1,pow:1.2,f:v=>`×${fmt(v)} spire damage /s`},{k:'radius',lv:7,n:'Carpet radius',base:15,end:50,f:v=>(+v.toFixed(1))+' m'},
      {k:'cd',lv:10,n:'Cooldown',base:12,end:2,f:S1},{k:'dur',lv:8,n:'Carpet duration',base:4,end:12,f:S1}],
-  sb:'Spreading flames: an enemy that dies on the carpet sets the ground where it fell alight (a smaller carpet for half as long)', gb:'Searing: burning builds up twice as fast (+50% for every second on the carpet)', pb:'Carpet bombing: 2 firebombs per launch, at the 2 stillest enemies'}
+  sb:`Spreading flames: an enemy that dies on the carpet sets the ground where it fell alight (a carpet with ${PC1(ULT.spreadFire)} of the radius, for ${PC1(ULT.spreadFire)} of the time)`, gb:'Searing: burning builds up twice as fast (+50% for every second on the carpet)', pb:'Carpet bombing: 2 firebombs per launch, at the 2 stillest enemies'}
 ];
 const MEDALS=['','Silver','Gold','Platinum'];
 for(const u of ULTS)for(const t of u.t){if(!t.lv)t.lv=ULT.levels;t.cm=u.cost} // lv: strength tracks get the full banded length; cm: the ultimate's price multiplier
