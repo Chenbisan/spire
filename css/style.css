@@ -65,6 +65,7 @@ button.on{background:var(--acc);color:var(--arena);border-color:var(--acc)}
 .itop{display:flex;gap:10px;align-items:center}.itop svg{flex:none;padding:6px;border-radius:10px;background:color-mix(in srgb,var(--c) 14%,transparent);box-sizing:content-box}
 .itop b{display:block}.item .stars{display:block}.item p{margin:0;font-size:13px;color:var(--mute);flex:1}
 .ibtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:4px}.ibtns button{min-height:34px;padding:0 6px}.ibtns button:only-child{grid-column:1/-1}
+.lhead.usticky{position:sticky;top:-10px;z-index:3;background:var(--panel);margin:-10px -10px 8px;padding:10px 12px 8px;border-bottom:1px solid var(--line);box-shadow:0 6px 10px -8px rgba(0,0,0,.4)} /* stays put while the ultimates scroll */
 .lhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin:0 2px 6px;font-size:13px;color:var(--mute)}.lhead b{font:500 15px 'Chakra Petch',sans-serif}.lhead button{margin-left:auto;min-height:34px;font-family:'Chakra Petch',sans-serif}
 .lrow{grid-template-columns:minmax(0,1fr) 112px}.lrow.eq{background:color-mix(in srgb,var(--acc) 8%,transparent)}.lbtns{display:grid;gap:4px}.lbtns button{min-height:34px}
 .stars{color:var(--gold);font-size:13px;letter-spacing:1px}.row.lrow .v{display:block;white-space:normal;line-height:1.35}.row.lrow .stars{display:block}.row.lrow .sp{color:var(--ink);font-family:Inter,sans-serif;white-space:normal;margin-top:2px}.lrow .nx{color:var(--mute)}

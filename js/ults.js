@@ -116,7 +116,7 @@ function ultBuyPlan(k,t){const l=ultLv(k,t.k),lim=ui.mult==='Max'?t.lv:ui.mult;l
 const ultDone=k=>UK[k].t.reduce((a,t)=>a+ultLv(k,t.k),0),ultTotal=k=>UK[k].t.reduce((a,t)=>a+t.lv,0);
 function ultsHtml(){
   if(!ultOpen||!ultOwned(ultOpen))ultOpen=(ULTS.find(u=>ultOwned(u.k))||{}).k||null;
-  let h=`<div class="lhead"><span>Chips <b class="chip">${fmt(save.chips)}</b></span><div class="mults sm">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div></div><div class="ulist">`;
+  let h=`<div class="lhead usticky"><span>Chips <b class="chip">${fmt(save.chips)}</b></span><div class="mults sm">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div></div><div class="ulist">`;
   for(const u of ULTS){const own=ultOwned(u.k),open=own&&ultOpen===u.k,done=own?ultDone(u.k):0,tot=ultTotal(u.k);
     h+=`<div class="urow${open?' open':''}${own?'':' locked'}" style="--c:var(--${u.col})">`;
     h+=`<button class="uhead" ${own?`data-uopen="${u.k}" aria-expanded="${open}"`:'tabindex="-1"'}>${ultIcon(u)}<span class="un"><b>${u.n}</b> ${medal(u.k)}<i class="uprog"><i style="transform:scaleX(${done/tot})"></i></i></span><span class="ul">${own?`${Math.round(done/tot*100)}%`:''}</span></button>`;

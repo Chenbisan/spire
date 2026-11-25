@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.25.1 — 2026-11-25
+- The Chips and ×1 / ×10 / Max bar at the top of the Ultimates tab now stays in view while you scroll through the ultimates.
+
 ## 1.25.0 — 2026-11-21
 - **Runs end on the main screen:** when a run ends (you end it or the spire falls) you're back on the same screen as when the game starts, with the tier picker, tier details and shortcuts, plus a compact summary of the run you just played at the top. Auto-restart still counts down on the Start button after the spire falls.
 
