@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.48.3';
+const APP_VERSION='1.48.4';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -168,10 +168,10 @@ const PC1=v=>(v*100).toFixed(1).replace(/\.0$/,'')+'%'; // ultimate percentages 
 const ULT_OLD_LV={chain:{chance:10,jumps:4,mult:10,dmg:20},frost:{slow:10,radius:10,dur:10,cd:12},shock:{force:10,stun:12,radius:10,cd:10},grav:{radius:10,pull:10,dur:10,cd:12},laser:{dmg:20,width:10,dur:12,cd:12}};
 const S1=v=>(+v.toFixed(1))+' s';
 const ULTS=[
- {k:'chain',cost:1.5,n:'Chain Lightning',col:'bolt',d:'Your shots have a chance to spark a bolt that splits from enemy to enemy like lightning, weaker with every bounce.',passive:1,
+ {k:'chain',cost:1.5,n:'Chain Lightning',col:'bolt',d:()=>`Your shots have a ${PC1(uv('chain','chance'))} chance to spark a bolt that splits from enemy to enemy like lightning. Each bounce deals ${PC1(1-uv('chain','mult'))} less damage than the one before.`,passive:1, // d can be a function: descriptions show your current numbers
   icon:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   t:[{k:'chance',lv:10,n:'Proc chance (to start and to split)',base:.1,end:.6,f:v=>PC1(v)},{k:'jumps',lv:8,n:'Bounce targets',base:2,end:6,f:v=>`splits into ${+v.toFixed(1)}`},
-     {k:'mult',lv:10,n:'Bounce multiplier',base:.4,end:.9,f:v=>PC1(v)+' damage per bounce'},{k:'dmg',n:'Damage',base:2,pow:1.2,f:v=>`×${fmt(v)} spire damage`}],
+     {k:'mult',lv:10,n:'Bounce multiplier',base:.4,end:.9,f:v=>PC1(1-v)+' less damage per bounce'},{k:'dmg',n:'Damage',base:2,pow:1.2,f:v=>`×${fmt(v)} spire damage`}],
   sb:'bolts can crit and super crit', gb:'strikes twice', pb:'bolts slow what they hit by 50% for 2 s'},
  {k:'frost',cost:1.25,n:'Frost Field',col:'alloy',d:'Always on. On every tick, each enemy touching the field around the spire gains a frost stack. Each stack slows it by 5% (up to your max slow) and makes it brittle: it takes more damage for every stack it carries. Stacks never wear off.',passive:1,aura:1,
   icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',

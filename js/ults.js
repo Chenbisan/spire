@@ -1,4 +1,5 @@
 // Spire — Ultimate weapons: run-time behaviour, effects, the Ultimates tab and manual fire buttons. Data in config.js.
+const ultDesc=u=>typeof u.d==='function'?u.d():u.d; // some descriptions are built from your current upgrade values
 const ultLv=(k,t)=>(save.ults[k]||{})[t]||0, ultOwned=k=>!!save.ults[k];
 // strength tracks grow base × (1 + level/band)^pow; the rest move evenly from base to end over all levels
 const trackVal=(t,l)=>{const n=Math.min(l,t.lv);return t.pow?t.base*(1+n/ULT.band)**t.pow:t.base+(t.end-t.base)*n/t.lv};
@@ -239,7 +240,7 @@ function ultsHtml(){
     h+=`<button class="uhead" ${own?`data-uopen="${u.k}" aria-expanded="${open}"`:'tabindex="-1"'}>${ultIcon(u)}<span class="un"><b>${u.n}</b> ${medal(u.k)}<i class="uprog"><i style="transform:scaleX(${own?ultProg(u.k):0})"></i></i></span><span class="ul">${own?`${Math.round(ultProg(u.k)*100)}%`:''}</span></button>`;
     if(!own)h+=`<button class="buy chip ubuy" data-ubuy="${u.k}" ${save.chips>=ultUnlock(u)?'':'disabled'}>Unlock ${fmt(ultUnlock(u))}</button>`;
     if(open){const stt=ultStatus(u.k),M=ULT.medals,pr=ultProg(u.k),lvl=m=>`${Math.min(Math.round(m*100),Math.floor(pr*100))}/${Math.round(m*100)}% complete`;
-      h+=`<div class="ubody"><p class="note">${u.d}</p><div class="ustat"><span class="medal s${stt>=1?' on':''}">Silver</span><span>${lvl(M[0])}: <b>${u.sb}</b></span><span class="medal g${stt>=2?' on':''}">Gold</span><span>${lvl(M[1])}: <b>${u.gb}</b></span><span class="medal p${stt>=3?' on':''}">Platinum</span><span>${lvl(M[2])}: <b>${u.pb}</b></span></div>`;
+      h+=`<div class="ubody"><p class="note">${ultDesc(u)}</p><div class="ustat"><span class="medal s${stt>=1?' on':''}">Silver</span><span>${lvl(M[0])}: <b>${u.sb}</b></span><span class="medal g${stt>=2?' on':''}">Gold</span><span>${lvl(M[1])}: <b>${u.gb}</b></span><span class="medal p${stt>=3?' on':''}">Platinum</span><span>${lvl(M[2])}: <b>${u.pb}</b></span></div>`;
       for(const t of u.t){const l=ultLv(u.k,t.k),mx=l>=t.lv,cur=ultVal(u,t.k,l),{n,c}=mx?{n:0,c:0}:ultBuyPlan(u.k,t),nx=ultVal(u,t.k,l+n);
         h+=`<div class="utr"><div><b>${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${l/t.lv})"></i></i><span class="v">Lv ${l}/${t.lv}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
       h+=respecBtn('ult:'+u.k,'Refund upgrades');

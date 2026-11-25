@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.48.4 — 2026-11-25
+- **Chain Lightning says exactly what it does:** its description now shows your current proc chance and how much less damage each bounce deals (e.g. "Each bounce deals 60% less damage than the one before"), and the Bounce multiplier upgrade reads "60% less damage per bounce".
+
 ## 1.48.3 — 2026-11-25
 - The Chips and ×1 / ×10 / Max bar at the top of the Ultimates tab now stays in view while you scroll through the ultimates.
 - Ultimate descriptions no longer show their price multiplier (prices are unchanged).
