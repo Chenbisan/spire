@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.57.0';
+const APP_VERSION='1.58.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -36,6 +36,7 @@ const CFG={
   shardPerKill:.2,           // shards paid when a run ends = kills × this × tier shard multiplier (tier 2+ only)
   offlineMinRun:120,         // a run must last this many game seconds to set the offline rate
   offlineMinAway:60,          // offline cap and speed come from the Lab
+  offlineEff:.6,              // offline earnings pay this share of what the same time playing at your best rate would
   histMax:30,                // battle history keeps this many runs
   bossEvery:10, maxDmgNums:50, maxParts:240,
   defyFx:900,  // death defied effect length (real ms)

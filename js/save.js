@@ -17,8 +17,8 @@ function persist(){save.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.st
 
 // ---- offline earnings ----
 function awayText(s){const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h}h ${m}m`:`${m}m`}
-// offline coins/real hour: best coins per game-hour, as if the game ran at your fastest unlocked speed, × Lab Offline speed
-const offMult=()=>Math.max(...speeds())*labVal('offSpd');
+// offline coins/real hour: best coins per game-hour, as if the game ran at your fastest unlocked speed, × CFG.offlineEff × Lab Offline speed
+const offMult=()=>Math.max(...speeds())*CFG.offlineEff*labVal('offSpd');
 // shards and chips: best shards / boss chips per game-hour, same rules
 const offlineRate=()=>save.bestCph*offMult(), offlineShardRate=()=>save.bestSph*offMult(), offlineChipRate=()=>(save.bestChph||0)*offMult();
 function offline(){

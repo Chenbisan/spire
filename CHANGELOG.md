@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.58.0 — 2026-11-25
+- **Offline earnings at 60%:** coins, shards and chips earned while the game is closed now pay 60% of what the same time playing at your best rate would (still at your fastest unlocked speed, × Offline speed research), so playing stays worth more than being away hour for hour, until Offline speed research is well along.
+
 ## 1.57.0 — 2026-11-25
 - **Runs keep going in the background:** a run no longer pauses when you switch tabs or minimise the window; it keeps playing at your chosen speed while the game is open. Offline earnings now cover only the time the game is closed. While the game is open (in a background tab, on the menu or between runs) it earns nothing offline, and offline earnings are paid when you open the game again. On a huge late-game crowd the background run may fall a little behind your chosen speed, as it can on screen.
 
