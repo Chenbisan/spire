@@ -148,8 +148,8 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     if(t.dead||t.gen!==m.g){t=weakest(1)[0];if(!t){M.splice(i,1);continue}m.t=t;m.g=t.gen;m.k=0}
     const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);
     if(d<=step+t.d.sz){M.splice(i,1);missileHit(m,t,S);continue}
-    // steer: turns towards the target at most missileTurn rad/s, a little sharper every second it chases (so it can never circle forever)
-    m.k=(m.k||0)+dt;let da=Math.atan2(dy,dx)-m.a;da=Math.atan2(Math.sin(da),Math.cos(da));const tn=ULT.missileTurn*(1+m.k)*dt;
+    // steer: turns towards the target at most missileTurn rad/s (wide, sweeping arcs), sharpening by missileSharpen every second it chases
+    m.k=(m.k||0)+dt;let da=Math.atan2(dy,dx)-m.a;da=Math.atan2(Math.sin(da),Math.cos(da));const tn=ULT.missileTurn*(1+ULT.missileSharpen*m.k)*dt;
     m.a+=Math.max(-tn,Math.min(tn,da));m.x+=Math.cos(m.a)*step;m.y+=Math.sin(m.a)*step;
     // smoke trail: the last missileTrail positions
     const tr=m.tr||(m.tr=[]);tr.push(m.x,m.y);if(tr.length>ULT.missileTrail*2)tr.splice(0,2)}}

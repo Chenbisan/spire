@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.59.0 — 2026-11-25
+- **Missiles swing round in wide arcs:** when a missile has to change target it now turns at about 57° per second (was about 200°), sweeping round in a wide curve roughly 45 m across, and only tightens slowly the longer it chases. Its smoke trail is a third longer so the arc shows.
+
 ## 1.58.0 — 2026-11-25
 - **Offline earnings at 60%:** coins, shards and chips earned while the game is closed now pay 60% of what the same time playing at your best rate would (still at your fastest unlocked speed), so playing stays worth more than being away hour for hour.
 - **Offline speed research removed:** it would have pushed offline earnings past what playing earns. Any shards you spent on it are refunded.
