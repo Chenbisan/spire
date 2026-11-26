@@ -34,7 +34,7 @@ function shots(list,col,h){
 }
 let viewR=0,viewT=0;
 // the radius the view zooms to (m from the spire to the nearest screen edge): fits the spawn ring, which follows your range
-function viewFit(){const [v0,v1,vAt]=CFG.viewRatio,rg=run&&run.s?run.s.range:0,vk=Math.max(0,Math.min(1,(rg-SK.range.base)/(vAt-SK.range.base)));return Math.max(CFG.arenaR,rg*(v0+(v1-v0)*vk))}
+function viewFit(){const [v0,v1,vAt]=CFG.viewRatio,rg=run&&run.s?run.s.range:0,vk=Math.max(0,Math.min(1,(rg-SK.range.base)/(vAt-SK.range.base)));return Math.max(CFG.arenaR,rg*(v0+(v1-v0)*vk),(run&&run.frostR||0)*CFG.frostView)} // Frost Field bigger than range: zoom out to fit it
 function draw(){
   const W=cv.width,H=cv.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C.arena;ctx.fillRect(0,0,W,H);
   // the view zooms smoothly to fit the spawn ring, which follows your range

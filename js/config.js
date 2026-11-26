@@ -1,11 +1,11 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.67.1';
+const APP_VERSION='1.68.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
   step:1/60, waveLen:30, spawnLen:15,  // a wave lasts waveLen game s: enemies spawn during the first spawnLen s, then a break until the next wave
-  arenaR:100, spawnR:110, spawnRatio:1.35, viewRatio:[1.15,1.5,510], fadeIn:.5,  // viewRatio: the view fits range × this, growing from [0] at the base range to [1] at [2] m so there's room to see enemies walk in
+  arenaR:100, spawnR:110, spawnRatio:1.35, viewRatio:[1.15,1.5,510], frostView:1.1, fadeIn:.5,  // viewRatio: the view fits range × this, growing from [0] at the base range to [1] at [2] m so there's room to see enemies walk in; frostView: the view also fits Frost Field's radius × this, and enemies spawn outside it
   offscreen:25,  // offscreen: how far past the screen edge enemies spawn (m)
    // spawn ring 35% beyond your range; the view fits range ×1.12 so enemies walk in from off-screen; new enemies fade in (game s)
   towerR:14, bulletSpd:420, ebSpd:120,
@@ -215,10 +215,10 @@ const ULTS=[
   t:[{k:'chance',lv:10,n:'Proc chance (to start and to split)',base:.1,end:.6,f:v=>PC1(v)},{k:'jumps',lv:8,n:'Bounce targets',base:2,end:6,f:v=>`splits into ${+v.toFixed(1)}`},
      {k:'mult',lv:10,n:'Bounce multiplier',base:.4,end:.9,f:v=>PC1(1-v)+' less damage per bounce'},{k:'dmg',n:'Damage',base:2,pow:1.2,f:v=>`×${fmt(v)} spire damage`}],
   sb:'bolts can crit and super crit, using your spire\'s crit chance, crit damage, super crit chance and super crit damage', gb:'every bolt hits each enemy twice (double bolt damage)', pb:'bolts slow what they hit by 50% for 2 s'},
- {k:'frost',cost:1.25,n:'Frost Field',col:'alloy',d:()=>`Always on. ${+uv('frost','rate').toFixed(2)} times a second, every enemy inside the field (${PC1(uv('frost','radius'))} of your range around the spire) gains a frost stack. Each stack slows it by ${PC1(ULT.frostPer)}, up to ${PC1(uv('frost','slow'))} in total, and makes it take +${(v=>+(v*100).toFixed(3)+'%')(uv('frost','brittle'))} damage from everything. Stacks never wear off.`,passive:1,aura:1,
+ {k:'frost',cost:1.25,n:'Frost Field',col:'alloy',d:()=>`Always on. ${+uv('frost','rate').toFixed(2)} times a second, every enemy inside the field (${fmt(uv('frost','radius'))} m around the spire; the view zooms out to fit it) gains a frost stack. Each stack slows it by ${PC1(ULT.frostPer)}, up to ${PC1(uv('frost','slow'))} in total, and makes it take +${(v=>+(v*100).toFixed(3)+'%')(uv('frost','brittle'))} damage from everything. Stacks never wear off.`,passive:1,aura:1,
   icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
   t:[{k:'slow',lv:13,n:'Max slow',base:.3,end:.95,f:v=>PC1(v)+` (${Math.ceil(v/ULT.frostPer-1e-9)} stacks)`},{k:'rate',lv:14,n:'Tick rate',base:.5,end:4,f:v=>(+v.toFixed(2))+' ticks/s'},
-     {k:'radius',lv:14,n:'Radius',base:.6,end:2,f:v=>PC1(v)+' of range'},{k:'brittle',lv:18,n:'Brittle',base:.002,end:.02,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
+     {k:'radius',lv:14,n:'Radius',base:20,end:300,f:v=>fmt(v)+' m'},{k:'brittle',lv:18,n:'Brittle',base:.002,end:.02,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
   sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'frozen enemies take double brittle damage', pb:'enemy shots inside the field have a 2% chance to melt for every 10 m they travel'},
  {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:()=>`Every ${S1(uv('shock','cd'))}, a ring bursts out from the spire to ${PC1(uv('shock','radius'))} of your range. Each enemy it reaches is shoved ${fmt(uv('shock','force'))} m outward, divided by the enemy's weight (the crowd can stop it), and shaken for ${ULT.shaken} s: a shaken enemy takes damage × (${+uv('shock','dmg').toFixed(2)} × its weight) from everything, never less than ×1. Bosses count only ${PC1(ULT.bossWt)} of their weight.`,
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',

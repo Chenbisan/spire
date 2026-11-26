@@ -8,7 +8,7 @@ const curRange=()=>run&&run.s&&run.s.range!=null?run.s.range:valAt(SK.range,0,sa
 const statMax=s=>s.maxOfRange?curRange()*s.maxOfRange:s.max;
 function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;const m=statMax(s);if(m!=null)v=Math.min(v,m);return s.min!=null?Math.max(v,s.min):v}
 // enemies always spawn beyond your range
-const spawnRadius=()=>run&&run.s?Math.max(CFG.spawnR,run.s.range*CFG.spawnRatio):CFG.spawnR;
+const spawnRadius=()=>run&&run.s?Math.max(CFG.spawnR,run.s.range*CFG.spawnRatio,(run.frostR||0)*CFG.frostView):CFG.spawnR; // enemies start outside the Frost Field too
 // the renderer publishes how far the screen reaches (m); spawns start just past the screen edge in their direction,
 // never closer than spawnRadius() and never farther than 2× it
 const VIEW={hx:0,hy:0};

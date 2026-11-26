@@ -113,7 +113,7 @@ const wtOf=e=>e.wt*(run&&run.ultSt&&run.ultSt.grav>=3&&e.heavyAt!=null&&run.time
 // Frost Field: always on. Every 1/rate s, enemies touching the field gain a frost stack. Stacks never wear off and have
 // no limit; slow is stacks × ULT.frostPer up to the Max slow track (95% at most), brittle adds damage taken per stack.
 function frostTick(dt,st){const R=run;if(!ultLive('frost')){R.frostR=R.frostCap=R.brittle=0;return}
-  R.frostR=R.s.range*uv('frost','radius');R.frostCap=Math.min(.95,uv('frost','slow'));R.brittle=uv('frost','brittle');
+  R.frostR=uv('frost','radius');R.frostCap=Math.min(.95,uv('frost','slow'));R.brittle=uv('frost','brittle');
   const F=R.ult.frost,maxSt=Math.ceil(R.frostCap/ULT.frostPer-1e-9);F.tick+=dt;
   if(F.tick>=1/uv('frost','rate')){F.tick=0;const r=R.frostR;
     for(const e of enemies){if(e.dead||e.dist>r+e.d.sz)continue;e.fs++;

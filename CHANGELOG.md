@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.68.0 — 2026-11-26
+- **Frost Field has its own radius:** 20 m to start, up to 300 m at max (was 60% to 200% of your range), so it no longer depends on how much range you've bought. Your Radius levels carry over. These numbers are placeholders until the Ultimate pricing pass.
+- **The view zooms out to fit the Frost Field** when it reaches past your range, and enemies spawn just outside it, so they always walk in through the whole field.
+
 ## 1.67.1 — 2026-11-26
 - **How to play is split into topics:** Basics, Upgrades, Currencies, Equipment, Enemies and Ultimates. Pick one from the list on the left (a row of buttons on phones) instead of scrolling through everything. The game remembers the last topic you opened.
 - **Bigger windows on computers:** How to play and the Enemy stats window now use up to 980 × 760 px (was 620 px wide), and the enemy list in How to play shows in two columns.
