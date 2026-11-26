@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.64.0';
+const APP_VERSION='1.65.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -44,7 +44,7 @@ const CFG={
   defyFx:900,  // death defied effect length (real ms)
   hpFill:[.6,.4,.22,.06],  // enemy fill opacity by health band: >75%, >50%, >25%, below
   // hit flash length (real ms)
-  hitFlash:180,
+  hitFlash:180, beamFade:350,
   tracerLife:.12, maxTracers:300, streakMax:90,   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
   sepGap:.9, sepPush:.8, restSteps:3, walkMin:.3, sepChecks:400, sepEveryOther:800, simBudget:20,
   // background running (tab hidden): tick every bgTick ms, at most bgBudget ms of work per tick, and at most bgMaxGap s caught up per tick
@@ -109,10 +109,11 @@ const SHAPES={
  chevron:[[1.3,0],[-.6,1],[-.15,0],[-.6,-1]], // points along +x (an arrowhead)
  crest:[[0,-1.15],[1,-.75],[.85,.45],[0,1.2],[-.85,.45],[-1,-.75]], // a heater shield
  fork:[[-1.3,-.12],[-.15,-.12],[-.15,-.62],[1.3,-.62],[1.3,-.38],[.2,-.38],[.2,-.11],[1.3,-.11],[1.3,.11],[.2,.11],[.2,.38],[1.3,.38],[1.3,.62],[-.15,.62],[-.15,.12],[-1.3,.12]], // a three-tined fork, tines along +x
+ star4:Array.from({length:8},(_,i)=>{const a=i*Math.PI/4,r=i%2?.42:1.35;return[Math.cos(a)*r,Math.sin(a)*r]}), // a four-pointed star, points along ±x and ±y
  star:Array.from({length:10},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,r=i%2?.55:1.3;return[Math.cos(a)*r,Math.sin(a)*r]}),
  hexagon:regPoly(6,1),
 };
-// enemy ranks (ET r): 1 Normal (Basic), 2 Veteran (Fast, Ranged, Tank), 3 Elite (Shielded, Healer, Splitter, Charger, Protector), 4 Super Elite (none yet), 6 Special Elite (Hacker), and Boss on its own
+// enemy ranks (ET r): 1 Normal (Basic), 2 Veteran (Fast, Ranged, Tank), 3 Elite (Shielded, Healer, Splitter, Charger, Protector), 4 Super Elite (Lancer), 6 Special Elite (Hacker), and Boss on its own
 const RK={NORMAL:1,VETERAN:2,ELITE:3,SUPER:4,BOSS:5,SPECIAL:6};
 const RANKS=['','Normal','Veteran','Elite','Super Elite','Boss','Special Elite'];
 // display order (Special Elites sit between Super Elites and the Boss); a rank with no types yet is skipped
@@ -143,6 +144,7 @@ const ET={
  splitter:{n:'Splitter',r:3,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Each smaller one pays half the coins and cash of the one it split from, and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,sh:'star',c:'e8',from:800,split:2,splits:2,cap:400},
  charger:{n:'Charger',r:3,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there. It ignores the crowd: it walks and rams straight through other enemies.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,sh:'chevron',rot:'face',c:'e9',from:1200,immov:1,ghost:1,charge:3,ram:10,ramSpd:160,cap:300},
  protector:{n:'Protector',r:3,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,sh:'crest',c:'e10',from:1800,protect:1,cap:200},
+ lancer:{n:'Lancer',r:4,d:'Heavy and hard to push, and ignores the crowd. It walks in to just inside your range (like Ranged), then charges a beam for 4 s (a line to the spire thickens as it charges) and fires it for 12× its attack. It charges again every 8 s. The beam triggers your Thorns on it.',hp:30,dmg:3,spd:14,weight:6,sz:12,cash:8,sh:'star4',rot:'face',c:'e12',from:2400,stopPct:.9,ghost:1,beam:12,beamCharge:4,beamEvery:8,cap:40},
  hacker:{n:'Hacker',r:6,d:'Very fast, light and fragile, and ignores the crowd. When it reaches the spire it doesn\'t attack: it hacks one of your Ultimates (each Hacker picks a different one), draining 1 random level of it per second while it stays at the spire, until the Ultimate has none left and shuts off. The more levels an Ultimate has, the longer it holds out. Kill it and every level comes back at once. If every Ultimate is already being hacked, it attacks instead. Rare, and at most 4 on the field.',hp:3,dmg:.5,spd:60,weight:.4,sz:8,cash:8,sh:'fork',rot:'face',c:'e11',from:1500,ghost:1,hack:1,hackRate:1,cap:4},
  boss:{n:'Boss',r:5,d:'',hp:150,dmg:6,spd:9,weight:20,stop:30,edge:1,barrage:10,barrageEvery:10,spike:.25,spikeFlight:1.6,spikeFan:75,spikeOut:50,sz:22,cash:60,sh:'hexagon',rot:'spin',c:'e5',cap:25}
 };

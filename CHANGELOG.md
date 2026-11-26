@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.65.0 — 2026-11-26
+- **New Super Elite: the Lancer** (violet four-pointed star, from tier 5). It's heavy and hard to push, and walks through the crowd to just inside your range. There it charges a beam for 4 s, shown as a line to the spire that thickens as it charges, then fires for 12× its attack. It charges again every 8 s, and the beam triggers your Thorns.
+
 ## 1.64.0 — 2026-11-26
 - **New rank, Special Elite, and its first enemy: the Hacker** (cyan fork, from tier 5). Special Elites are meant to be very strong, so they're rare (0.5% of spawns, building to 2%) and capped at a few on the field (4 Hackers). It's very fast, light and fragile, and ignores the crowd. When it reaches the spire it doesn't attack. Instead it hacks one of your Ultimates, draining 1 random level of it per second until none are left and the Ultimate shuts off. An Ultimate with more levels holds out longer: one with 300 levels lasts 300 s, one with 50 lasts 50 s. Each Hacker picks a different Ultimate. Kill it and every level comes back at once. A dashed line links each Hacker to the spire, and a chip under the arena shows which Ultimate is being drained and how many levels it has left. If every Ultimate is already being hacked, extra Hackers attack instead.
 - **Charger and Protector are Elites again** (from tier 3), since they didn't warrant Super Elite status this early.

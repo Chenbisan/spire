@@ -3,7 +3,7 @@
 const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
 let C={},A=1;const IX=o=>o.px+(o.x-o.px)*A,IY=o=>o.py+(o.y-o.py)*A;
 let SPR={},sprKey='',colorVer=0;
-function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','e9','e10','e11','barrier','bolt','alloy','shard','chip','fire']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}colorVer++;}
+function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','e9','e10','e11','e12','barrier','bolt','alloy','shard','chip','fire']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}colorVer++;}
 // ---- enemy sprites: each type × health band (× facing, for types that turn) is pre-drawn once per zoom level, then stamped ----
 const SPR_ROT=16;
 function sprite(t,b,rot,d=ET[t]){const k=t+d.sz+'_'+b+'_'+rot;let s=SPR[k];if(s)return s; // keyed by size too (smaller Splitters)
@@ -68,6 +68,14 @@ function draw(){
     for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=HF[band(e)]*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
     // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
     shots(bullets,C.acc,2);shots(ebs,C.e4,2.5);
+    // Lancers: while charging, a line to the spire that thickens and brightens with the charge; when the beam fires, a wide
+    // bright beam that fades over beamFade real ms (real time, so it reads the same at any speed)
+    {const nowR=performance.now();ctx.strokeStyle=C.e12;ctx.lineCap='round';
+      for(const e of enemies){const d=e.d;if(!d.beam||e.dead)continue;const x=IX(e),y=IY(e),L=Math.hypot(x,y)||1,ex=x/L*CFG.towerR,ey=y/L*CFG.towerR;
+        const ch=e.atk>0&&e.dist<=stopOf(d,run.s.range)+1?Math.min(1,e.atk/d.beamCharge):0,fd=e.bfAt?1-(nowR-e.bfAt)/CFG.beamFade:0;
+        if(ch>0){ctx.globalAlpha=.25+.5*ch;ctx.lineWidth=.6+2.4*ch;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke()}
+        if(fd>0){ctx.globalAlpha=fd;ctx.lineWidth=2+7*fd;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke()}}
+      ctx.globalAlpha=1;ctx.lineCap='butt'}
     // Boss spikes: long thin spikes in the boss colour, pointing at the spire
     {let any=false;ctx.fillStyle=C.e5;ctx.beginPath();
       for(const b of ebs){if(!b.sp)continue;any=true;const x=IX(b),y=IY(b);let ux=x-b.rx,uy=y-b.ry,d=Math.hypot(ux,uy);if(d<1e-3){ux=-x;uy=-y;d=Math.hypot(ux,uy)||1}ux/=d;uy/=d;b.rx=x;b.ry=y;
