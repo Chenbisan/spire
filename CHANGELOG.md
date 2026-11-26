@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.63.1 — 2026-11-25
+- **Missiles no longer pile up:** missiles fly faster (60 m/s, was 45). When more than 10 are in the air (bomblets don't count), the oldest stop chasing the weakest enemy and head for the enemy nearest them instead. This stops missiles from circling endlessly when other damage keeps killing their targets first, which could slow the game down.
+
 ## 1.63.0 — 2026-11-25
 - **Rebalanced early game, tuned with a simulated player:** enemies now grow far more gently within a tier (health ×23 by wave 100, ×28,000 by wave 1,000, ×580,000 by wave 2,500, instead of ×14,000, ×100 million and ×4 billion). A new player who keeps the game running now unlocks tier 2 after about 5 hours instead of being stuck around wave 100.
 - **Ultimates unlock more gradually:** the first unlock costs 600 chips × its price multiplier (about 5 minutes of play), and each one after that costs 1.6× more than the last, so they arrive one by one over the first two to three hours instead of all within a few minutes.

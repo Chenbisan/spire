@@ -143,11 +143,17 @@ function weakest(n,skip,x,y,r){const out=[];for(const e of enemies){if(e.dead||e
     if(r!=null&&(e.x-x)**2+(e.y-y)**2>r*r)continue;
     if(out.length<n||e.hp<out[out.length-1].hp){out.push(e);out.sort((a,b)=>a.hp-b.hp);if(out.length>n)out.pop()}}return out}
 function launchMissiles(S){const R=run,M=R.missiles||(R.missiles=[]);for(const t of weakest(S>=3?ULT.salvo:1))M.push({x:0,y:0,px:0,py:0,t,g:t.gen,m:1,a:Math.atan2(t.y,t.x)})}
+// the live enemy closest to (x,y), for missiles over the cap
+function closestTo(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead||e.age<CFG.fadeIn)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
 function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;const step=ULT.missileSpd*dt;
+  // cap: with more than missileCap missiles in the air (bomblets don't count), the oldest ones give up on the weakest enemy and
+  // dive at the enemy nearest to them (n), so missiles can't pile up chasing targets that keep dying before they arrive
+  let over=-ULT.missileCap;for(const m of M)if(!m.b)over++;
+  for(const m of M){if(over<=0)break;if(m.b)continue;over--;if(!m.n){m.n=1;const t=closestTo(m.x,m.y);if(t){m.t=t;m.g=t.gen;m.k=0}}}
   for(let i=M.length-1;i>=0;i--){const m=M[i];m.px=m.x;m.py=m.y;let t=m.t;
-    // its target died: find the next weakest (k, the time spent chasing this target, starts again). A bomblet (b) only looks
-    // within bombletR of the blast that threw it, and explodes where it is if nothing's there
-    if(t.dead||t.gen!==m.g){t=m.b?weakest(1,null,m.ox,m.oy,ULT.bombletR)[0]:weakest(1)[0];
+    // its target died: find the next weakest, or the nearest for a missile over the cap (k, the time spent chasing this target,
+    // starts again). A bomblet (b) only looks within bombletR of the blast that threw it, and explodes where it is if nothing's there
+    if(t.dead||t.gen!==m.g){t=m.b?weakest(1,null,m.ox,m.oy,ULT.bombletR)[0]:m.n?closestTo(m.x,m.y):weakest(1)[0];
       if(!t){M.splice(i,1);if(m.b)blastAt(m,m.x,m.y,S);continue}m.t=t;m.g=t.gen;m.k=0}
     // a bomblet never flies further than bombletR in all: past that it explodes where it is
     if(m.b&&(m.tv=(m.tv||0)+step)>ULT.bombletR){M.splice(i,1);blastAt(m,m.x,m.y,S);continue}
