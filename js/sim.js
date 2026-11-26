@@ -275,7 +275,8 @@ function update(dt){GEN_STEP++;
 // grid cell (m): about one enemy wide, so crowded cells stay small. Bosses ("big": their reach is wider than a cell)
 // are listed separately and checked over a wider area.
 const SEPC=24;let sepBuilt=false,SEPN=16,SEPO=SEPC*SEPN/2,sepHead=new Int32Array(SEPN*SEPN),sepNext=new Int32Array(256);
-const sepCell=v=>Math.max(0,Math.min(SEPN-1,Math.floor((v+SEPO)/SEPC)));
+// grid cell of a coordinate, clamped to the grid (|0 truncates toward 0, which the clamp makes the same as floor here)
+const SEPI=1/SEPC,sepCell=v=>{const c=((v+SEPO)*SEPI)|0;return c<0?0:c>=SEPN?SEPN-1:c};
 const SEPDX=[0,1,-1,0,1],SEPDY=[0,0,1,1,1],bigs=[];
 const BIG_SZ=SEPC/(2*CFG.sepGap),MAX_SZ=Math.max(...Object.values(ET).map(d=>d.sz)),BIG_CELLS=Math.ceil((MAX_SZ*2*CFG.sepGap+1)/SEPC);
 let sepFlip=0,SX=new Float32Array(256),SY=new Float32Array(256),SS=new Float32Array(256),SW=new Float32Array(256);

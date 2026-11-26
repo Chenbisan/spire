@@ -145,16 +145,23 @@ let chainStamp=0;const chainQ=[],chainV=[],chainD=[],chainNear=[],chainNd=[];
 function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),nf=uv('chain','jumps'),mul=uv('chain','mult'),jr=ULT.chainJump**2,hits=S.chain>=2?2:1;
   const stamp=++chainStamp,fx=ultFx.length<80,segs=fx?[]:null;let hitN=1;e0.cz=stamp;save.stats.ultUses++;
   chainQ.length=chainV.length=chainD.length=0;chainQ.push(e0);chainV.push(R.s.damage*uv('chain','dmg'));chainD.push(0);
-  const strike=(e,v0)=>{for(let h=0;h<hits;h++){let c=0,v=v0;if(S.chain>=1&&Math.random()<R.s.crit){c=1;v*=R.s.critMult;if(Math.random()<R.s.superCrit){c=2;v*=R.s.superMult}}damage(e,v,c)}
+  // Gold strikes twice: each strike rolls its own crit, but they land as one damage call (half the work) unless the target has
+  // a shield, where each strike must take off a shield of its own
+  const crit=S.chain>=1,cc=R.s.crit,cm=R.s.critMult,sc=R.s.superCrit,sm=R.s.superMult;
+  const strike=(e,v0)=>{let tot=0,cmax=0;for(let h=0;h<hits;h++){let c=0,v=v0;if(crit&&Math.random()<cc){c=1;v*=cm;if(Math.random()<sc){c=2;v*=sm}}
+      if(e.shield>0){damage(e,v,c);continue}tot+=v;if(c>cmax)cmax=c}if(tot>0)damage(e,tot,cmax)
     if(S.chain>=3){e.slowT=2;e.slowF=Math.max(e.slowF||0,.5)}};
   for(let qi=0;qi<chainQ.length;qi++){const e=chainQ[qi],v=chainV[qi],dp=chainD[qi];strike(e,v);
     if(dp>=ULT.chainDepth||hitN>=ULT.chainMax||Math.random()>=ch)continue;
     // the n nearest unhit enemies within the jump range, kept in a short sorted list
     const n=Math.floor(nf)+(Math.random()<nf%1?1:0); // fractional targets: the remainder is the chance of one more
     chainNear.length=chainNd.length=0;
-    forNear(e.x,e.y,ULT.chainJump,o=>{if(o.cz===stamp)return;const d=(o.x-e.x)**2+(o.y-e.y)**2;if(d>jr)return;
-      if(chainNear.length===n&&d>=chainNd[n-1])return;let i=chainNear.length===n?n-1:chainNear.length;
-      while(i>0&&chainNd[i-1]>d){chainNear[i]=chainNear[i-1];chainNd[i]=chainNd[i-1];i--}chainNear[i]=o;chainNd[i]=d});
+    // scans the crowd grid directly, with no callback (this runs thousands of times a second with big multishot/bounce builds)
+    const ex=e.x,ey=e.y,jd=ULT.chainJump,all=!sepBuilt,c0x=all?0:sepCell(ex-jd),c1x=all?0:sepCell(ex+jd),c0y=all?0:sepCell(ey-jd),c1y=all?0:sepCell(ey+jd);
+    if(n>0)for(let gy=c0y;gy<=c1y;gy++)for(let gx=c0x;gx<=c1x;gx++)for(let j=all?0:sepHead[gy*SEPN+gx];all?j<enemies.length:j!==-1;j=all?j+1:sepNext[j]){
+      const o=enemies[j];if(!o||o.dead||o.cz===stamp)continue;const d=(o.x-ex)**2+(o.y-ey)**2;if(d>jr)continue;
+      if(chainNear.length===n&&d>=chainNd[n-1])continue;let i=chainNear.length===n?n-1:chainNear.length;
+      while(i>0&&chainNd[i-1]>d){chainNear[i]=chainNear[i-1];chainNd[i]=chainNd[i-1];i--}chainNear[i]=o;chainNd[i]=d}
     for(const o of chainNear){if(hitN>=ULT.chainMax)break;o.cz=stamp;hitN++;if(segs)segs.push([e.x,e.y,o.x,o.y,Math.random()-.5,Math.random()-.5,dp]);chainQ.push(o);chainV.push(v*mul);chainD.push(dp+1)}}
   if(fx)ultFx.push({k:'chain',x:e0.x,y:e0.y,segs,at:performance.now()})}
 // Missiles: each homes in on the enemy with the least health (retargeting if it dies first). On impact it deals spire damage ×
@@ -167,6 +174,12 @@ function weakest(n,skip,x,y,r){const out=[];for(const e of enemies){if(e.dead||e
 function launchMissiles(S){const R=run,M=R.missiles||(R.missiles=[]);for(const t of weakest(S>=3?ULT.salvo:1))M.push({x:0,y:0,px:0,py:0,t,g:t.gen,m:1,a:Math.atan2(t.y,t.x)})}
 // the live enemy closest to (x,y), for missiles over the cap
 function closestTo(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead||e.age<CFG.fadeIn)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
+// a missile with no target flies a lazy circle around the spire at missileOrbit of the view radius (steering back onto it if it's
+// further in or out), so missiles in the air when the field clears stay on screen and wait for the next enemy
+function missileLoiter(m,dt,step){const r=Math.hypot(m.x,m.y)||1,rr=viewFit()*ULT.missileOrbit,ux=m.x/r,uy=m.y/r,k=Math.max(-1,Math.min(1,(rr-r)/(rr*.3)));
+  const dx=-uy+ux*k,dy=ux+uy*k;let da=Math.atan2(dy,dx)-m.a;da=Math.atan2(Math.sin(da),Math.cos(da));const tn=ULT.missileTurn*3*dt;
+  m.a+=Math.max(-tn,Math.min(tn,da));m.x+=Math.cos(m.a)*step;m.y+=Math.sin(m.a)*step;
+  const tr=m.tr||(m.tr=[]);tr.push(m.x,m.y);if(tr.length>ULT.missileTrail*2)tr.splice(0,2)}
 function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;const step=ULT.missileSpd*dt;
   for(let i=M.length-1;i>=0;i--){const m=M[i];m.px=m.x;m.py=m.y;let t=m.t;
     // give up: a missile (not a bomblet) still flying after missileGiveUp game seconds stops chasing the weakest enemy and dives at
@@ -174,8 +187,11 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     if(!m.b&&!m.n&&(m.f=(m.f||0)+dt)>=ULT.missileGiveUp){m.n=1;const c=closestTo(m.x,m.y);if(c){t=m.t=c;m.g=c.gen;m.k=0}}
     // its target died: find the next weakest, or the nearest for a missile that gave up (k, the time spent chasing this target,
     // starts again). A bomblet (b) only looks within bombletR of the blast that threw it, and explodes where it is if nothing's there
-    if(t.dead||t.gen!==m.g){t=m.b?weakest(1,null,m.ox,m.oy,ULT.bombletR)[0]:m.n?closestTo(m.x,m.y):weakest(1)[0];
-      if(!t){M.splice(i,1);if(m.b)blastAt(m,m.x,m.y,S);continue}m.t=t;m.g=t.gen;m.k=0}
+    if(!t||t.dead||t.gen!==m.g){t=m.b?weakest(1,null,m.ox,m.oy,ULT.bombletR)[0]:m.n?closestTo(m.x,m.y):weakest(1)[0];
+      if(!t&&m.b){M.splice(i,1);blastAt(m,m.x,m.y,S);continue}
+      // nothing left to chase (the field is clear): circle the spire until an enemy shows up, then go for it
+      if(!t){m.t=null;missileLoiter(m,dt,step);continue}
+      m.t=t;m.g=t.gen;m.k=0}
     // a bomblet never flies further than bombletR in all: past that it explodes where it is
     if(m.b&&(m.tv=(m.tv||0)+step)>ULT.bombletR){M.splice(i,1);blastAt(m,m.x,m.y,S);continue}
     const dx=t.x-m.x,dy=t.y-m.y,d=Math.hypot(dx,dy);

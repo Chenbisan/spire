@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.69.0 — 2026-11-26
+- **Faster with big builds and crowds:** with heavy multishot, bounce shots and Chain Lightning against a few hundred enemies, each game step now takes about 40% less work, so the game holds a higher frame rate at high speeds. Chain Lightning finds its next targets without extra overhead, Gold's double strike lands as one hit (each strike still rolls its own crit, and shields still take one strike each), and the crowd grid lookups are cheaper. Shot streaks are drawn in a few batches instead of one at a time.
+- **Missiles wait for the next enemy:** when the field is clear, missiles in the air circle the spire instead of vanishing, and dive at the next enemy that appears.
+
 ## 1.68.0 — 2026-11-26
 - **Frost Field has its own radius:** 20 m to start, up to 300 m at max (was 60% to 200% of your range), so it no longer depends on how much range you've bought. Your Radius levels carry over. These numbers are placeholders until the Ultimate pricing pass.
 - **The view zooms out to fit the Frost Field** when it reaches past your range, and enemies spawn just outside it, so they always walk in through the whole field.

@@ -83,9 +83,13 @@ function draw(){
         ctx.moveTo(x+ux*5,y+uy*5);ctx.lineTo(x-ux*6-uy*2,y-uy*6+ux*2);ctx.lineTo(x-ux*6+uy*2,y-uy*6-ux*2);ctx.closePath()}
       if(any)ctx.fill()}
     ctx.lineCap='round';
-    for(const t of tracers){ctx.strokeStyle=t.k===1?C.e4:t.k===3?C.hot:t.k===2?C.gold:C.acc;ctx.globalAlpha=.55*t.l/CFG.tracerLife;ctx.lineWidth=2.5;
-      let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}
-      ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1);ctx.stroke()}
+    // tracers, batched: one path per colour and fade step (4 steps) instead of one stroke per tracer (up to maxTracers a frame)
+    ctx.lineWidth=2.5;const TRC=[C.acc,C.e4,C.gold,C.hot];
+    for(let k=0;k<4;k++)for(let a=0;a<4;a++){let any=false;ctx.beginPath();
+      for(const t of tracers){if(t.k!==k||Math.min(3,Math.floor(t.l/CFG.tracerLife*4))!==a)continue;any=true;
+        let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}
+        ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1)}
+      if(any){ctx.strokeStyle=TRC[k];ctx.globalAlpha=.55*(a+.5)/4;ctx.stroke()}}
     ctx.globalAlpha=1;ctx.lineCap='butt';
     // hit flash: hit enemies light up solid in their colour (real time, so it reads the same at any speed); one path per type
     {const now=performance.now();ctx.strokeStyle=C.ink;ctx.lineWidth=2.5;
