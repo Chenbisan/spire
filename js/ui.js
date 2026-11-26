@@ -166,7 +166,7 @@ $('panel').addEventListener('change',optChange);
 // ---- modals: settings (gear) and help (?) ----
 const modal=$('modal'),mBody=$('mBody');let modalKind=null;
 function openModal(kind){modalKind=kind;$('mTitle').textContent={help:'How to play',settings:'Settings',enemies:'Enemies this wave',history:'Records',target:'Target priority'}[kind];
-  modal.querySelector('.card').classList.toggle('fixh',kind==='enemies');mBody.innerHTML=kind==='help'?helpHtml():kind==='enemies'?enemyHtml():kind==='history'?historyHtml():kind==='target'?targetHtml():settingsHtml();modal.hidden=false;mBody.scrollTop=0;$('mClose').focus()}
+  modal.querySelector('.card').classList.toggle('fixh',kind==='enemies'||kind==='help');mBody.innerHTML=kind==='help'?helpView():kind==='enemies'?enemyHtml():kind==='history'?historyHtml():kind==='target'?targetHtml():settingsHtml();modal.hidden=false;mBody.scrollTop=0;$('mClose').focus()}
 function closeModal(){modal.hidden=true;modalKind=null}
 function refreshHistory(){if(modalKind==='history')mBody.innerHTML=historyHtml()}
 function statsHtml(){const S=save.stats,H=save.hist.slice(0,10),recent=H.length?H.reduce((a,h)=>a+h.cph,0)/H.length:0,day=new Date(S.since);
@@ -257,10 +257,23 @@ function spireHtml(){const {live,v}=spireStats();eSig=JSON.stringify(v)+(live?Ma
 function togglePool(r){const rk=+r.dataset.rk,o=save.set.eOpen||(save.set.eOpen=[]),i=o.indexOf(rk);if(i<0)o.push(rk);else o.splice(i,1);persist();
   const st=mBody.scrollTop;mBody.innerHTML=enemyHtml();mBody.scrollTop=st;const n=mBody.querySelector(`tr[data-rk="${rk}"]`);if(n)n.focus()}
 mBody.addEventListener('keydown',e=>{const r=e.target.closest&&e.target.closest('tr[data-rk]');if(r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();togglePool(r)}});
-modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();{const r=e.target.closest('tr[data-rk]');if(r&&modalKind==='enemies'){togglePool(r);return}}const b=e.target.closest('button');if(!b)return;if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.mstier){msTier=+b.dataset.mstier;mBody.innerHTML=historyHtml();return}if(b.dataset.htab){hTab=b.dataset.htab;mBody.innerHTML=historyHtml();return}if(b.dataset.act)settingsClick(b)});
+modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();{const r=e.target.closest('tr[data-rk]');if(r&&modalKind==='enemies'){togglePool(r);return}}const b=e.target.closest('button');if(!b)return;if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.mstier){msTier=+b.dataset.mstier;mBody.innerHTML=historyHtml();return}if(b.dataset.htab){hTab=b.dataset.htab;mBody.innerHTML=historyHtml();return}if(b.dataset.help){helpTab=b.dataset.help;try{localStorage.setItem('spireHelpTab',helpTab)}catch(e){}mBody.innerHTML=helpView();mBody.scrollTop=0;return}if(b.dataset.act)settingsClick(b)});
 modal.addEventListener('change',optChange);
 const mobIcon=d=>{const z=d.sz/22*.75+.4,pts=SHAPES[d.sh].map(p=>p.map(v=>(v*z).toFixed(3)).join(',')).join(' ');
   return`<svg viewBox="-1.5 -1.5 3 3" width="34" height="34" aria-hidden="true">${d.shield?`<circle r="${(z*1.4).toFixed(2)}" fill="none" stroke="var(--e6)" stroke-width=".1"/>`:''}<polygon points="${pts}" fill="var(--${d.c})" fill-opacity=".3" stroke="var(--${d.c})" stroke-width=".12" stroke-linejoin="round"/></svg>`};
+// How to play: the full text is split at its <h3> headings and grouped into topics; one topic shows at a time
+// (a side list on wide screens, a row of buttons on narrow ones), so nobody has to scroll through everything
+const HELP_TOPICS=[['basics','Basics',['','Runs and waves','Targeting','Controls']],['upgrades','Upgrades',['Upgrades','Respec']],
+  ['currencies','Currencies',['Currencies','Offline earnings']],['gear','Equipment',['Equipment and Modules']],['enemies','Enemies',['Enemies']],['ults','Ultimates',['Ultimate weapons']]];
+let helpTab=null;
+function helpView(){const html=helpHtml().replace(/^<div class="help">|<\/div>$/g,''),parts=html.split('<h3>'),sec={'':parts[0]};
+  for(const p of parts.slice(1)){const i=p.indexOf('</h3>');sec[p.slice(0,i)]=p.slice(i+5)}
+  if(!helpTab)try{helpTab=localStorage.getItem('spireHelpTab')}catch(e){}
+  if(!HELP_TOPICS.some(t=>t[0]===helpTab))helpTab='basics';
+  const T=HELP_TOPICS.find(t=>t[0]===helpTab);
+  const body=T[2].filter(h=>sec[h]!=null).map(h=>(h&&h!==T[1]?`<h3>${h}</h3>`:'')+sec[h]).join('');
+  return`<div class="hwrap"><nav class="hnav" aria-label="Help topics">${HELP_TOPICS.map(t=>`<button data-help="${t[0]}" class="${t[0]===helpTab?'on':''}"${t[0]===helpTab?' aria-current="true"':''}>${t[1]}</button>`).join('')}</nav>
+  <div class="help hsec"><h3 class="htitle">${T[1]}</h3>${body}</div></div>`}
 function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=v=>Math.round((v-1)*100)+'%',rng=SK.range.base;
   return`<div class="help">
   <p>Your spire sits in the middle and fires at the closest enemy in range on its own. Enemies come in from every side. The run ends when the spire's health hits 0.</p>
@@ -269,7 +282,7 @@ function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=
   <li>Every enemy hits harder each time it attacks: each hit or shot does ${Math.round((CFG.hitRamp-1)*100)}% more than its last, so don't let them linger at the spire.</li>
   <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. They also get heavier (×${fmt(CFG.wtMul(1000))} weight by wave 1000), so knockback, Shockwave and Gravity Well move them less. Wave ${CFG.finalWave.toLocaleString()} is the last: nothing more spawns, and destroying every enemy left clears the tier.</li>
   <li><b>Milestones</b> pay coins, alloy, chips (and shards from tier 2) the first time you reach certain waves on each tier, ${MILESTONES.length} per tier from wave ${MILESTONES[0]} to ${CFG.finalWave.toLocaleString()}. See Records → Milestones.</li>
-  <li>Reach wave ${CFG.tierUnlockWave.toLocaleString()} to unlock the next tier. Each tier up multiplies enemy health by ${t2.hp}, damage by ${t2.dmg}, weight by ${t2.wt}, speed by ${t2.spd} and coins by ${t2.coin}.</li></ul>
+  <li>Reach wave ${CFG.tierUnlockWave.toLocaleString()} to unlock the next tier. Each tier up multiplies enemy health by ${rel(t2.hp)}, damage by ${rel(t2.dmg)}, weight by ${rel(t2.wt)}, speed by ${rel(t2.spd)} and coins by ${rel(t2.coin)}.</li></ul>
   <h3>Respec</h3><p>Every Workshop section, ultimate, piece of equipment and module has a refund button that gives back everything you spent on it, so you can try a different build at no cost. Tap it once to see the amount and again to confirm.</p>
   <h3>Currencies</h3><ul>
   <li><b class="cash">Cash</b> comes from kills and from cash interest, paid at the start of every wave. Spend it on Attack, Defense and Utility upgrades. It resets every run.</li>

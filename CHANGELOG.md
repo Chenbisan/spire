@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.67.1 — 2026-11-26
+- **How to play is split into topics:** Basics, Upgrades, Currencies, Equipment, Enemies and Ultimates. Pick one from the list on the left (a row of buttons on phones) instead of scrolling through everything. The game remembers the last topic you opened.
+- **Bigger windows on computers:** How to play and the Enemy stats window now use up to 980 × 760 px (was 620 px wide), and the enemy list in How to play shows in two columns.
+- **Fixed:** How to play showed the tier multipliers with long decimals (×11.31372…); they're rounded now.
+
 ## 1.67.0 — 2026-11-26
 - **Super Elites now arrive from tier 6** (was tier 5), and **Special Elites from tier 9** (was tier 5).
 - **Bigger rewards for the strongest enemies:**
