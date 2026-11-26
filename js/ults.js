@@ -273,7 +273,7 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
       ctx.globalAlpha=1;ctx.beginPath();ctx.arc(x,y,4.5*dpr/sc,0,6.283);ctx.fill()}}
   // missiles: a body with a pointed nose and tail fins, facing where it flies, with a flickering exhaust flame behind it
   if(R.missiles&&R.missiles.length){const fl=.75+.25*Math.sin(now/45);
-    for(const m of R.missiles){const L=(m.m<1?15:24)*dpr/sc,w=L*.13,tr=m.tr;
+    for(const m of R.missiles){const L=Math.max((m.m<1?.62:1)*ULT.missileLen,(m.m<1?4:6)*dpr/sc),w=L*.13,tr=m.tr; // world size (shrinks as the view zooms out, like enemies), never under 6 screen px
       // smoke trail: fades out towards its tail
       if(tr&&tr.length>=4){ctx.strokeStyle=C.chip;ctx.lineCap='round';const n=tr.length/2;
         for(let j=1;j<n;j++){ctx.globalAlpha=.55*j/n;ctx.lineWidth=w*(.7+1.3*j/n);ctx.beginPath();ctx.moveTo(tr[2*j-2],tr[2*j-1]);ctx.lineTo(tr[2*j],tr[2*j+1]);ctx.stroke()}

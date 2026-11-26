@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.69.1 — 2026-11-26
+- **How to play rewritten for skimming:** every topic is now short bullet points under clear headings instead of long paragraphs. Currencies and enemy ranks are tables, and each Ultimate has its own card listing what it does and its Silver, Gold and Platinum bonuses.
+- **Fixed:** How to play said chips are spent on Equipment only; they buy Ultimates and Equipment.
+- **Missiles shrink as the view zooms out,** like everything else (they stayed the same size on screen before). They never get smaller than a few pixels.
+
 ## 1.69.0 — 2026-11-26
 - **Faster with big builds and crowds:** with heavy multishot, bounce shots and Chain Lightning against a few hundred enemies, each game step now takes about 40% less work, so the game holds a higher frame rate at high speeds. Chain Lightning finds its next targets without extra overhead, Gold's double strike lands as one hit (each strike still rolls its own crit, and shields still take one strike each), and the crowd grid lookups are cheaper. Shot streaks are drawn in a few batches instead of one at a time.
 - **Missiles wait for the next enemy:** when the field is clear, missiles in the air circle the spire instead of vanishing, and dive at the next enemy that appears.

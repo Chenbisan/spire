@@ -152,6 +152,9 @@ textarea{width:100%;min-height:80px;font:12px/1.4 monospace;background:var(--are
 .hnav button{text-align:left;min-height:36px;padding:0 12px;border-radius:8px;background:transparent;border:1px solid transparent;color:var(--mute);font:600 14px Inter,sans-serif}
 .hnav button.on{background:color-mix(in srgb,var(--acc) 14%,transparent);border-color:var(--acc);color:var(--ink)}
 .hsec{max-width:78ch}.hsec .htitle{font-size:20px;margin:0 0 10px}
+.hsec .lead{font-size:15px;margin:0 0 6px}.hsec h3{margin:18px 0 6px}.hsec ul{padding-left:18px}.hsec li{margin:0 0 6px;line-height:1.45}
+.htab{border-collapse:collapse;width:100%;max-width:640px;margin:4px 0 8px;font-size:14px}.htab th{font:600 12px Inter,sans-serif;color:var(--mute);text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid var(--line)}.htab td{padding:6px 10px 6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.uico{width:34px;height:34px;display:block}.uico svg{width:34px;height:34px}.medals{list-style:none;padding:0!important;margin:6px 0 0;font-size:13px;color:var(--mute)}.medals li{margin:0 0 3px}.medals b{color:var(--ink)}
 .hsec .mobs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));column-gap:20px}
 @media(max-width:700px){.hwrap{grid-template-columns:1fr;gap:12px}.hnav{flex-direction:row;flex-wrap:wrap;position:static}.hnav button{min-height:32px;padding:0 10px;font-size:13px}}
 .upd{flex:none;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;padding:6px 12px;background:color-mix(in srgb,var(--acc) 14%,var(--bg));border-bottom:1px solid var(--acc)}

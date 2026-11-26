@@ -261,56 +261,78 @@ modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();{cons
 modal.addEventListener('change',optChange);
 const mobIcon=d=>{const z=d.sz/22*.75+.4,pts=SHAPES[d.sh].map(p=>p.map(v=>(v*z).toFixed(3)).join(',')).join(' ');
   return`<svg viewBox="-1.5 -1.5 3 3" width="34" height="34" aria-hidden="true">${d.shield?`<circle r="${(z*1.4).toFixed(2)}" fill="none" stroke="var(--e6)" stroke-width=".1"/>`:''}<polygon points="${pts}" fill="var(--${d.c})" fill-opacity=".3" stroke="var(--${d.c})" stroke-width=".12" stroke-linejoin="round"/></svg>`};
-// How to play: the full text is split at its <h3> headings and grouped into topics; one topic shows at a time
-// (a side list on wide screens, a row of buttons on narrow ones), so nobody has to scroll through everything
-const HELP_TOPICS=[['basics','Basics',['','Runs and waves','Targeting','Controls']],['upgrades','Upgrades',['Upgrades','Respec']],
-  ['currencies','Currencies',['Currencies','Offline earnings']],['gear','Equipment',['Equipment and Modules']],['enemies','Enemies',['Enemies']],['ults','Ultimates',['Ultimate weapons']]];
+// How to play: topics, one shown at a time (a side list on wide screens, a row of buttons on narrow ones). Each topic is short
+// bulleted sections under their own headings, so nothing reads as one block of text. Numbers come live from the config.
+const HELP_TOPICS=[['basics','Basics'],['upgrades','Upgrades'],['currencies','Currencies'],['gear','Equipment'],['enemies','Enemies'],['ults','Ultimates']];
 let helpTab=null;
-function helpView(){const html=helpHtml().replace(/^<div class="help">|<\/div>$/g,''),parts=html.split('<h3>'),sec={'':parts[0]};
-  for(const p of parts.slice(1)){const i=p.indexOf('</h3>');sec[p.slice(0,i)]=p.slice(i+5)}
-  if(!helpTab)try{helpTab=localStorage.getItem('spireHelpTab')}catch(e){}
+function helpView(){if(!helpTab)try{helpTab=localStorage.getItem('spireHelpTab')}catch(e){}
   if(!HELP_TOPICS.some(t=>t[0]===helpTab))helpTab='basics';
   const T=HELP_TOPICS.find(t=>t[0]===helpTab);
-  const body=T[2].filter(h=>sec[h]!=null).map(h=>(h&&h!==T[1]?`<h3>${h}</h3>`:'')+sec[h]).join('');
   return`<div class="hwrap"><nav class="hnav" aria-label="Help topics">${HELP_TOPICS.map(t=>`<button data-help="${t[0]}" class="${t[0]===helpTab?'on':''}"${t[0]===helpTab?' aria-current="true"':''}>${t[1]}</button>`).join('')}</nav>
-  <div class="help hsec"><h3 class="htitle">${T[1]}</h3>${body}</div></div>`}
-function helpHtml(){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),pct=v=>Math.round((v-1)*100)+'%',rng=SK.range.base;
-  return`<div class="help">
-  <p>Your spire sits in the middle and fires at the closest enemy in range on its own. Enemies come in from every side. The run ends when the spire's health hits 0.</p>
-  <h3>Runs and waves</h3><ul>
-  <li>A new wave starts every ${CFG.waveLen} s of game time: enemies spawn for the first ${CFG.spawnLen} s, then there's a break to clear the field. Every ${CFG.bossEvery}th wave brings a boss. Each block of ${CFG.bossEvery} waves spawns more enemies per wave, growing more slowly as you go: ${[1,11,21,101,1001].map(w=>`${CFG.spawnCount(w)} from wave ${w.toLocaleString()}`).join(', ')}, then it stays at ${CFG.spawnCount(CFG.lateWave)} from wave ${CFG.lateWave.toLocaleString()} on. As waves climb, Veterans and Elites make up a larger share of each wave (the Enemy panel's % column shows the share on the current wave); elites drop alloy.</li>
-  <li>Every enemy hits harder each time it attacks: each hit or shot does ${Math.round((CFG.hitRamp-1)*100)}% more than its last, so don't let them linger at the spire.</li>
-  <li>Enemies get tougher every wave, quickly at first and more gently later: ×${fmt(CFG.hpMul(100))} health by wave 100, ×${fmt(CFG.hpMul(1000))} by wave 1000. They also get heavier (×${fmt(CFG.wtMul(1000))} weight by wave 1000), so knockback, Shockwave and Gravity Well move them less. Wave ${CFG.finalWave.toLocaleString()} is the last: nothing more spawns, and destroying every enemy left clears the tier.</li>
-  <li><b>Milestones</b> pay coins, alloy, chips (and shards from tier 2) the first time you reach certain waves on each tier, ${MILESTONES.length} per tier from wave ${MILESTONES[0]} to ${CFG.finalWave.toLocaleString()}. See Records → Milestones.</li>
-  <li>Reach wave ${CFG.tierUnlockWave.toLocaleString()} to unlock the next tier. Each tier up multiplies enemy health by ${rel(t2.hp)}, damage by ${rel(t2.dmg)}, weight by ${rel(t2.wt)}, speed by ${rel(t2.spd)} and coins by ${rel(t2.coin)}.</li></ul>
-  <h3>Respec</h3><p>Every Workshop section, ultimate, piece of equipment and module has a refund button that gives back everything you spent on it, so you can try a different build at no cost. Tap it once to see the amount and again to confirm.</p>
-  <h3>Currencies</h3><ul>
-  <li><b class="cash">Cash</b> comes from kills and from cash interest, paid at the start of every wave. Spend it on Attack, Defense and Utility upgrades. It resets every run.</li>
-  <li><b class="coin">Coins</b> come from kills and are kept forever. Spend them in the Workshop on permanent tower upgrades.</li>
-  <li><b class="shard">Shards</b> are paid when a run ends on tier 2 or higher, based on how many enemies you killed (${CFG.shardPerKill} per kill × the tier's shard multiplier, which grows with the tier). Spend them in the Lab.</li>
-  <li><b class="chip">Chips</b> drop from bosses. Spend them on Equipment.</li>
-  <li><b class="alloy">Alloy</b> drops from elites. It buys Modules, which are under maintenance for now, so it's saved for when they return.</li></ul>
-  <h3>Equipment and Modules</h3><ul>
-  <li><b>Equipment</b> adds new abilities: ${CARDS.map(c=>`${c.n} (${c.f(c.v[0])} at 1 star)`).join('; ')}. Buy it, equip it in a slot and level it up to 5 stars.</li>
-  <li><b>Modules</b> (under maintenance for now: they give no bonuses until they return) are gear for the spire's ${MOD_SLOTS.length} slots (${MOD_SLOTS.map(s=>s.n).join(', ')}). Each adds a stat per level and has a special effect that steps up to its next value every ${MOD.per} levels as it ranks up: ${RARITY.join(', ')}.</li>
-  <li>Both are bought directly, with no random draws, and you can swap them any time, even mid-run.</li></ul>
-  <h3>Upgrades</h3><ul>
-  <li>The <b>Upgrades</b> and <b>Workshop</b> tabs each have three sections; switch between them with the Attack / Defense / Utility buttons. <b>Attack</b>: damage, attack speed, crits and super crits (a chance for a crit to be multiplied again), range, damage per distance (more damage for every metre between the spire and its target), multishot (a chance to also fire at more enemies in range) and bounce shots (a chance for a shot to hop on to more enemies within bounce range after it hits; bounce range can't exceed 40% of your range). <b>Defense</b>: health, regen, a barrier (a shield that soaks up damage before your health, shown in the blue bar next to it; once it breaks it comes back at full after a recharge timer, 5:00 to start and shorter with upgrades), damage reduction, thorns (hits back for part of the attacker's max health; every enemy attack triggers it, Ranged shots and Charger rams included, except Boss spikes; Super Elites resist 50% of it, Special Elites and Bosses 70%; capped at 99%), lifesteal (heals the spire by a share of the damage its shots deal), death defy (a chance to shrug off a hit that would kill you; the spire flashes gold and shows DEFIED) and knockback (a chance for hits to shove enemies away; heavier enemies move less). <b>Utility</b>: more cash and coins, and a chance for each in-run Attack, Defense or Utility level you buy to be free.</li>
-  <li><b>Workshop</b> levels are your starting values in every run. In-run levels stack on top.</li>
-  <li><b>Lab</b> research extends how long offline earnings count (+4 h per level from 24 h), unlocks the 12×, 16× and 24× game speeds, takes 2% per level off Workshop prices and adds auto-buy toggles.</li>
-  <li>Use ×1, ×10 or Max at the top of a tab to buy several levels at once.</li></ul>
-  <h3>Offline earnings</h3>
-  <p>A run keeps going while the game is open, even in a background tab or a minimised window, so you can leave it to push waves. Offline earnings only cover the time the game is closed: an open game earns nothing offline, even on the menu or between runs.</p>
-  <p>Your best coins per game-hour, from a run of at least ${CFG.offlineMinRun/60} game-minutes, keeps paying while you're away, as if the game were running at your fastest unlocked speed (${Math.max(...speeds())}× now; Overdrive in the Lab raises it) at ${Math.round(CFG.offlineEff*100)}% efficiency. Offline duration sets how many hours count (${labVal('offCap')} h now). Shorter runs don't set the rate. Shards and chips work the same way: your best shards per game-hour (from tier 2+ runs) and your best boss chips per game-hour (milestone chips don't count) are paid while you're away too. The Workshop tab shows your current rates per real hour.</p>
-  <h3>Enemies</h3><p>An enemy's fill shows its health: solid at full, emptying to just an outline as it's worn down. Enemies come in ranks: Normal (the Basic), Veteran (Fast, Ranged and Tank), Elite (Shielded, Healer, Splitter, Charger and Protector), Super Elite (the Lancer), Special Elite (the Hacker: rare, very strong, and only a few on the field at once), and Boss. The % column in the Enemy panel shows the exact mix. From wave ${CFG.lateWave.toLocaleString()} the number per wave stops growing and the mix shifts towards Elites instead, step by step until wave ${CFG.finalWave.toLocaleString()}: Normal and Veteran spawn chances fall to ${PC1(CFG.lateNormal)} of what they were and Elite, Super Elite and Special Elite chances rise to ${PC1(CFG.lateElite)}. Elites only appear from tier ${POOLS[RK.ELITE].tier}, Super Elites from tier ${POOLS[RK.SUPER].tier} and Special Elites from tier ${POOLS[RK.SPECIAL].tier}. All of them drop alloy (Super Elites ${ALLOY_RANK[RK.SUPER]}× as much, Special Elites ${ALLOY_RANK[RK.SPECIAL]}×) and pay ${+(Math.min(...TYPES.filter(t=>isElite(ET[t])).map(t=>ET[t].coin))/ET.basic.coin).toFixed(2)}× a Basic's coins or more (Super Elites ${RANK_COIN[RK.SUPER]/RANK_COIN[RK.NORMAL]}×, Special Elites ${RANK_COIN[RK.SPECIAL]/RANK_COIN[RK.NORMAL]}×). Each type arrives later in a run than the last, and sooner on higher tiers (the arrival wave is divided by tier^${CFG.fromPow}). A boss arrives every ${CFG.bossEvery} waves. Crowds push each other apart (heavier enemies win), so every enemy stays visible. Tap the Enemy stats in the top bar to see every type's numbers for the current wave; tap a rank to show or hide its types.</p><p>In that panel, % is the chance each regular spawn comes from that rank, shared equally by the rank's types that have arrived. Attack is damage per hit before your Defense: once a second up close, or one shot every 2 s for Ranged. Speed is metres per second (a new spire's range is ${SK.range.base} m). Weight is how hard an enemy is to push: heavier ones shove lighter ones aside, and knockback moves them less. Coins is what each enemy of a rank drops on the current wave (smaller Splitters pay less), with the tier multiplier and your coin bonus included. Greyed-out types can't spawn yet.</p>
-  ${RANK_ORDER.filter(rk=>TYPES.some(t=>ET[t].r===rk)).map(rk=>`<div class="gh">${RANKS[rk]}</div><div class="mobs">${TYPES.filter(t=>ET[t].r===rk).map(t=>{const d=ET[t];
-    const when=rk===RK.BOSS?`every ${CFG.bossEvery} waves`:rankTier(d)>1?`from tier ${rankTier(d)} (wave ${typeFrom(d,Math.max(rankTier(d),save.tierMax))} on tier ${Math.max(rankTier(d),save.tierMax)})`:d.from?`from wave ${d.from} on tier 1 (${typeFrom(d,save.tierMax)} on tier ${save.tierMax})`:'from wave 1';
-    return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} damage</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join('')}
-  <p class="note">Health and damage are relative to a basic enemy on the same wave. A new spire's range is ${rng} m; Ranged enemies stop at ${Math.round(ET.ranged.stopPct*100)}% of your range. Enemies always spawn ${Math.round((CFG.spawnRatio-1)*100)}% beyond your range (at least ${CFG.spawnR} m out), so they have to walk in; the arena zooms with your range. Knockback pushes an enemy (force ÷ its weight) metres away.</p>
-  <h3>Ultimate weapons</h3><p>Bought and upgraded with chips in the Ultimates tab. Every one you own is active: ${ULTS.map(u=>`<b>${u.n}</b> (${(d=>d.charAt(0).toLowerCase()+d.slice(1,-1))(ultDesc(u))})`).join('; ')}. Chain Lightning and Frost Field are always working; the others fire on their own cooldown when there's an enemy in range, or set one to Manual and fire it with its button under the arena. Strength upgrades (damage, Force, Pull) have ${ULT.levels} levels in bands of ${ULT.band} (one per tier): a band costs about what farming its tier earns in chips, and keeps pace with that tier's enemies. Capped stats (chance, slow, cooldowns, durations) have ${Math.min(...ULTS.flatMap(u=>u.t).filter(t=>t.lv<ULT.levels).map(t=>t.lv))} to ${Math.max(...ULTS.flatMap(u=>u.t).filter(t=>t.lv<ULT.levels).map(t=>t.lv))} levels each, and every level costs more than the one before. Each ultimate's unlock and level prices are on its buttons, so choose what's worth saving for. Tap an ultimate in the tab to open it, and use ×1 / ×10 / Max to buy several levels at once. Medals come from how complete an ultimate is (the average of its 4 upgrades): <b>Silver</b> at ${Math.round(ULT.medals[0]*100)}%, <b>Gold</b> at ${Math.round(ULT.medals[1]*100)}% and <b>Platinum</b> at ${Math.round(ULT.medals[2]*100)}%; each adds a bonus.</p>
-  <h3>Targeting</h3><p>Tap 🎯 <b>Target</b> under the arena to set target priority. Drag enemy types above <b>Closest</b> to have the spire shoot them first, top to bottom (closest first within a type); everything below Closest is shot closest-first. With Closest at the top, it simply shoots the closest enemy.</p>
-
-  <h3>Controls</h3><p>Space pauses. Number keys pick a game speed. Esc closes this window.</p></div>`}
+  <div class="help hsec"><h3 class="htitle">${T[1]}</h3>${helpTopic(T[0])}</div></div>`}
+function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),sec=(h,body)=>`<h3>${h}</h3>${body}`,ul=a=>`<ul>${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  if(k==='basics')return`<p class="lead">Your spire sits in the middle and shoots the closest enemy in range on its own. Enemies walk in from every side. The run ends when the spire's health hits 0.</p>`+
+    sec('Waves',ul([`A new wave every <b>${CFG.waveLen} s</b> of game time: enemies spawn for ${CFG.spawnLen} s, then a break to clear the field.`,
+      `A <b>boss</b> every ${CFG.bossEvery}th wave.`,
+      `More enemies per wave as you go: ${[1,101,1001].map(w=>`${CFG.spawnCount(w)} at wave ${w.toLocaleString()}`).join(', ')}, up to ${CFG.spawnCount(CFG.lateWave)} from wave ${CFG.lateWave.toLocaleString()}.`,
+      `Wave <b>${CFG.finalWave.toLocaleString()}</b> is the last. Destroy every enemy left to clear the tier.`]))+
+    sec('Enemies get tougher',ul([`Every wave: ${rel(CFG.hpMul(100))} health by wave 100, ${rel(CFG.hpMul(1000))} by wave 1,000. They get heavier too, so knockback, Shockwave and Gravity Well move them less.`,
+      `Every attack that lands hits <b>${Math.round((CFG.hitRamp-1)*100)}% harder</b> than that enemy's last one, so don't let them linger at the spire.`]))+
+    sec('Tiers',ul([`Reach wave <b>${CFG.tierUnlockWave.toLocaleString()}</b> to unlock the next tier.`,
+      `Each tier up: enemy health ${rel(t2.hp)}, attack ${rel(t2.dmg)}, weight ${rel(t2.wt)}, coins ${rel(t2.coin)}.`,
+      `<b>Milestones</b> pay a bonus the first time you reach certain waves on each tier (${MILESTONES.length} per tier). See Records → Milestones.`]))+
+    sec('Targeting',ul([`Tap 🎯 <b>Target</b> under the arena to choose who the spire shoots first.`,`Drag enemy types above <b>Closest</b> to shoot them first, top to bottom. Everything below is shot closest-first.`]))+
+    sec('Controls',ul([`<b>Space</b> pauses.`,`<b>Number keys</b> pick a game speed.`,`<b>Esc</b> closes this window.`]));
+  if(k==='upgrades')return sec('Three ways to get stronger',ul([`<b>Upgrades</b> tab: bought with <b class="cash">cash</b> during a run. Gone when the run ends.`,
+      `<b>Workshop</b>: bought with <b class="coin">coins</b>. Permanent: these are your starting levels in every run, and in-run levels stack on top.`,
+      `<b>Lab</b>: bought with <b class="shard">shards</b>. Longer offline earnings, faster game speeds, cheaper Workshop, auto-buy.`]))+
+    sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b>.`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again.`,
+      `<b>Damage per distance</b>: more damage for every metre to the target.`,`<b>Multishot</b>: a chance to also fire at more enemies in range.`,
+      `<b>Bounce shots</b>: a chance for a shot to hop on to more enemies after it hits (bounce range is at most 40% of your range).`]))+
+    sec('Defense',ul([`<b>Health</b> and <b>regen</b>.`,`<b>Barrier</b>: a shield in front of your health (the blue bar). Once broken it comes back full after a timer.`,
+      `<b>Defense</b>: cuts the damage you take.`,`<b>Thorns</b>: every enemy attack hits the attacker back for part of its max health (up to 99%). Super Elites resist 50%, Special Elites and Bosses 70%. Boss spikes don't trigger it.`,
+      `<b>Lifesteal</b>: heals by a share of the damage your shots deal.`,`<b>Death defy</b>: a chance to survive a killing hit.`,`<b>Knockback</b>: a chance for hits to shove enemies away (heavier ones move less).`]))+
+    sec('Utility',ul([`More <b>cash</b> and <b>coins</b> per kill, and cash interest each wave.`,`A chance for in-run levels to be <b>free</b>.`]))+
+    sec('Tips',ul([`Use <b>×1 / ×10 / Max</b> at the top of a tab to buy several levels at once.`,`<b>Respec</b>: every Workshop section, Ultimate and piece of Equipment has a refund button that gives back everything spent on it. Tap once to see the amount, again to confirm.`]));
+  if(k==='currencies')return sec('What each one is for',`<table class="htab"><thead><tr><th>Currency</th><th>Comes from</th><th>Spend it on</th></tr></thead><tbody>
+      <tr><td><b class="cash">Cash</b></td><td>Kills, plus interest each wave</td><td>Upgrades tab (resets every run)</td></tr>
+      <tr><td><b class="coin">Coins</b></td><td>Kills</td><td>Workshop (permanent)</td></tr>
+      <tr><td><b class="shard">Shards</b></td><td>End of a run on tier 2+ (per kill)</td><td>Lab</td></tr>
+      <tr><td><b class="chip">Chips</b></td><td>Bosses and milestones</td><td>Ultimates and Equipment</td></tr>
+      <tr><td><b class="alloy">Alloy</b></td><td>Elites</td><td>Modules (under maintenance: saved for later)</td></tr></tbody></table>`)+
+    sec('Offline earnings',ul([`Only for time the game is <b>closed</b>. While it's open, even in a background tab, the run itself keeps going instead.`,
+      `Pays your best coins per game-hour (from a run of at least ${CFG.offlineMinRun/60} game-minutes) at your fastest speed (${Math.max(...speeds())}× now), at ${Math.round(CFG.offlineEff*100)}% efficiency.`,
+      `Shards and boss chips are paid the same way, from your best rates.`,`Counts up to <b>${labVal('offCap')} h</b> (more with Lab research). The Workshop tab shows your current rates.`]));
+  if(k==='gear')return sec('Equipment',ul([`Bought with <b class="chip">chips</b>, equipped in a slot, and levelled up to 5 stars. Swap any time, even mid-run.`,
+      ...CARDS.map(c=>`<b>${c.n}</b>: ${c.f(c.v[0])} at 1 star.`)]))+
+    sec('Modules',`<p>Under maintenance: they give no bonuses for now. Alloy you collect is kept for when they return.</p>`);
+  if(k==='enemies'){const minE=+(Math.min(...TYPES.filter(t=>isElite(ET[t])).map(t=>ET[t].coin))/ET.basic.coin).toFixed(2);
+    return sec('How they work',ul([`An enemy's fill shows its health: solid at full, just an outline when nearly dead.`,
+      `Each type first shows up at a later wave than the last, and sooner on higher tiers.`,`Crowds push each other apart; heavier enemies win.`,
+      `From wave ${CFG.lateWave.toLocaleString()} the mix shifts towards Elites until wave ${CFG.finalWave.toLocaleString()}.`]))+
+    sec('Ranks',`<table class="htab"><thead><tr><th>Rank</th><th>From</th><th>Coins (× Basic)</th><th>Alloy</th></tr></thead><tbody>
+      <tr><td>Normal, Veteran</td><td>Tier 1</td><td>1×–${RANK_COIN[RK.VETERAN]/RANK_COIN[RK.NORMAL]}×</td><td>—</td></tr>
+      <tr><td>Elite</td><td>Tier ${POOLS[RK.ELITE].tier}</td><td>${minE}×</td><td>1×</td></tr>
+      <tr><td>Super Elite</td><td>Tier ${POOLS[RK.SUPER].tier}</td><td>${RANK_COIN[RK.SUPER]/RANK_COIN[RK.NORMAL]}×</td><td>${ALLOY_RANK[RK.SUPER]}×</td></tr>
+      <tr><td>Special Elite</td><td>Tier ${POOLS[RK.SPECIAL].tier} (rare)</td><td>${RANK_COIN[RK.SPECIAL]/RANK_COIN[RK.NORMAL]}×</td><td>${ALLOY_RANK[RK.SPECIAL]}×</td></tr>
+      <tr><td>Boss</td><td>Every ${CFG.bossEvery} waves</td><td>${RANK_COIN[RK.BOSS]/RANK_COIN[RK.NORMAL]}×</td><td>chips</td></tr></tbody></table>`)+
+    sec('The Enemy panel',ul([`Tap the enemy stats in the top bar for every type's numbers on the current wave. Tap a rank to show or hide it.`,
+      `<b>%</b>: chance a spawn comes from that rank. <b>Attack</b>: damage per hit before your Defense. <b>Speed</b>: metres per second. <b>Weight</b>: how hard it is to push. <b>Coins</b>: what one drops now, bonuses included.`]))+
+    sec('Types',RANK_ORDER.filter(rk=>TYPES.some(t=>ET[t].r===rk)).map(rk=>`<div class="gh">${RANKS[rk]}</div><div class="mobs">${TYPES.filter(t=>ET[t].r===rk).map(t=>{const d=ET[t];
+      const when=rk===RK.BOSS?`every ${CFG.bossEvery} waves`:rankTier(d)>1?`from tier ${rankTier(d)}`:d.from?`from wave ${d.from} on tier 1`:'from wave 1';
+      return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} attack</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join(''))+
+    `<p class="note">Health and attack are relative to a Basic on the same wave.</p>`}
+  if(k==='ults'){const capped=ULTS.flatMap(u=>u.t).filter(t=>t.lv<ULT.levels).map(t=>t.lv);
+    return sec('How they work',ul([`Unlocked and upgraded with <b class="chip">chips</b> in the Ultimates tab. Every one you own is active.`,
+      `<b>Chain Lightning</b> and <b>Frost Field</b> work all the time. The others fire on their cooldown when an enemy is in range, or set one to <b>Manual</b> and fire it from its button under the arena.`,
+      `Each new Ultimate costs more to unlock than the last.`]))+
+    sec('Upgrading',ul([`<b>Strength</b> tracks (damage, Force, Pull) have ${ULT.levels} levels, in bands of ${ULT.band} priced for each tier.`,
+      `Other tracks (chance, slow, cooldowns, durations) have ${Math.min(...capped)}–${Math.max(...capped)} levels, each costing more than the last.`,
+      `Tap an Ultimate to open it; use ×1 / ×10 / Max to buy several levels.`]))+
+    sec('Medals',ul([`From how complete an Ultimate is (the average of its 4 tracks): <b>Silver</b> at ${Math.round(ULT.medals[0]*100)}%, <b>Gold</b> at ${Math.round(ULT.medals[1]*100)}%, <b>Platinum</b> at ${Math.round(ULT.medals[2]*100)}%.`,`Each medal adds a bonus, listed with each Ultimate below.`]))+
+    sec('The Ultimates',`<div class="mobs">${ULTS.map(u=>`<div class="mob"><span class="uico">${ultIcon(u)}</span><div><b>${u.n}</b><p>${ultDesc(u)}</p>
+      <ul class="medals"><li><b>Silver:</b> ${u.sb}</li><li><b>Gold:</b> ${u.gb}</li><li><b>Platinum:</b> ${u.pb}</li></ul></div></div>`).join('')}</div>`)}
+  return''}
 function buildSpeeds(){$('speeds').innerHTML=speeds().map(s=>`<button data-sp="${s}" class="${save.set.speed===s?'on':''}">${s}×</button>`).join('')}
 $('speeds').addEventListener('click',e=>{const b=e.target.closest('button');if(b){save.set.speed=+b.dataset.sp;persist();buildSpeeds()}});
 const setPause=v=>{paused=v;$('pause').textContent=v?'Resume':'Pause';$('pause').classList.toggle('on',v);if(run&&!run.over)showOv(v?'paused':null)};
