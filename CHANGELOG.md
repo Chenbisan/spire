@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.63.3 — 2026-11-26
+- **Fixed: runs after the first were too easy.** Enemies are reused after they die, and four timed Ultimate effects weren't cleared when they came back: Shockwave's shake, Gravity Well's extra weight and Laser's no-heal. Because each run's clock starts at 0, enemies carried over from an earlier run started the new run already shaken, taking Shockwave's damage multiplier for most of the run. Every run after the first in a session was much easier than intended, until the page was reloaded. Runs now play the same whether or not you reload.
+
 ## 1.63.2 — 2026-11-25
 - **Missile cap raised to 100:** the oldest missiles only switch to the nearest enemy once more than 100 are in the air (was 10).
 - **Missiles fire faster at max:** the Cooldown track now goes down to 1 s (was 3 s), in 14 levels of 1 s each (was 12). If you had it maxed, it has 2 new levels to buy.

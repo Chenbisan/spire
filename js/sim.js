@@ -69,6 +69,10 @@ function spawn(t,x,y){
   e.t=t;e.d=d;e.x=x;e.y=y;e.px=x;e.py=y;e.dist=Math.hypot(x,y);
   e.wt=d.weight*CFG.wtMul(R.wave)*R.tm.wt;e.spd=d.spd*R.tm.spd;e.mhp=e.hp=d.hp*CFG.hpMul(R.wave)*R.tm.hp;e.dmg=d.dmg*CFG.dmgMul(R.wave)*R.tm.dmg;e.atk=0;e.gen=++GEN;e.dead=false;
   e.shield=d.shield||0;e.ht=0;e.hf=0;e.slowT=0;e.slowF=0;e.age=x0given?CFG.fadeIn:0;e.stunT=0;e.hn=0;e.mh=0;e.still=0;e.onFire=0;e.fireTick=0;e.fireDone=0;e.cs=0;e.ct=0;e.healAt=-1e9;e.ht=d.heal?Math.random()*d.healEvery:0;e.rest=0;e.pend=0;e.gi=-1;e.fs=0;e.frz1=false;e.frzT=0;
+  // RULE: enemy objects are recycled (ePool), across runs too, so EVERY per-enemy field set anywhere (markers, timestamps,
+  // stacks, multipliers) must be reset here. Run time restarts at 0 each run, so a stale timestamp from an earlier run reads
+  // as still active: that made recycled enemies start out shaken (Shockwave), heavy (Gravity Well) or unhealable (Laser)
+  e.shakenAt=e.heavyAt=e.noHealAt=null;e.shakeM=1;
   e.sg=0;enemies.push(e);return e;
 }
 function nextWave(){
