@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.66.2 — 2026-11-26
+- **Easier-to-read version number:** the version in the bottom-right corner of the arena is bigger and full-strength, on a small panel so it stands out against the arena.
+
 ## 1.66.1 — 2026-11-26
 - **Missiles: no more cap.** Instead of the oldest missiles switching targets once more than 100 are in the air, any missile still flying after 30 s gives up on the weakest enemy and heads for the enemy nearest it. Every missile now finds a target in reasonable time, however many are in the air.
 
