@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.65.0';
+const APP_VERSION='1.66.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -45,6 +45,7 @@ const CFG={
   hpFill:[.6,.4,.22,.06],  // enemy fill opacity by health band: >75%, >50%, >25%, below
   // hit flash length (real ms)
   hitFlash:180, beamFade:350,
+  thornRes:{4:.5,5:.7,6:.7}, // Thorns resistance by rank: Super Elite 50%, Boss and Special Elite 70%
   tracerLife:.12, maxTracers:300, streakMax:90,   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
   sepGap:.9, sepPush:.8, restSteps:3, walkMin:.3, sepChecks:400, sepEveryOther:800, simBudget:20,
   // background running (tab hidden): tick every bgTick ms, at most bgBudget ms of work per tick, and at most bgMaxGap s caught up per tick
@@ -73,7 +74,7 @@ const ST=[
  // barrier recharge: once broken, the barrier comes back at full after this many game seconds (key kept from the old regen stat so saves keep their levels)
  {k:'barrierRegen',g:'Defense',n:'Barrier recharge time',base:300,ra:-4,wa:-3,min:30,c:[10,1.16],w:[25,1.25],t:1},
  {k:'defense',g:'Defense',n:'Defense',base:0,ra:.01,wa:.005,max:.75,c:[10,1.16],w:[25,1.25],p:1},
- {k:'thorns',g:'Defense',n:'Thorns (of attacker max HP)',base:0,ra:.02,wa:.01,max:.5,c:[12,1.17],w:[30,1.25],p:1},
+ {k:'thorns',g:'Defense',n:'Thorns (of attacker max HP)',base:0,ra:.02,wa:.01,max:.99,c:[12,1.17],w:[30,1.25],p:1},
  {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.5,c:[20,1.2],w:[40,1.28],p:1},
  {k:'lifesteal',g:'Defense',n:'Lifesteal (of damage dealt)',base:0,ra:.002,wa:.001,max:.2,c:[20,1.2],w:[40,1.28],p:1},
  {k:'kbChance',g:'Defense',n:'Knockback chance',base:0,ra:.01,wa:.005,max:.8,c:[12,1.16],w:[25,1.25],p:1},

@@ -113,15 +113,17 @@ function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over tim
   if(e.hp<=0&&!e.dead)kill(e);
   return a;
 }
+// Thorns: a share of the attacker's max health, less its rank's resistance (CFG.thornRes)
+const thornDmg=e=>e.mhp*run.s.thorns*(1-(CFG.thornRes[e.d.r]||0));
 function hitTower(v,att){
   const R=run;
-  if(R.invT>0){if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);return} // Second Wind: invincible
+  if(R.invT>0){if(att&&R.s.thorns>0&&!att.dead)damage(att,thornDmg(att),false,true);return} // Second Wind: invincible
   let t=v*(1-R.s.defense);
   if(R.bar>0){const a=Math.min(R.bar,t);R.bar-=a;t-=a;save.stats.absorbed+=a;if(R.bar<=1e-9){R.bar=0;R.barT=R.s.barrierRegen;R.barBrokeAt=performance.now()}} // broken: recharges to full after the timer
   R.hp-=t;save.stats.taken+=t;
   if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.taken-=t;save.stats.defies++;R.defies=(R.defies||0)+1;R.defyAt=performance.now()} // render-only: gold burst + DEFIED
   if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=Math.max(1,R.hp+t);save.stats.taken-=t;R.invT=R.fx.revive;save.stats.winds=(save.stats.winds||0)+1;toast(`Second Wind! Invincible for ${R.fx.revive} s`)}
-  if(att&&R.s.thorns>0&&!att.dead)damage(att,att.mhp*R.s.thorns,false,true);
+  if(att&&R.s.thorns>0&&!att.dead)damage(att,thornDmg(att),false,true);
   if(R.hp<=0)gameOver();
 }
 // enemies near (x,y) within r: uses this step's push-apart grid when it's built, otherwise scans everything

@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.66.0 — 2026-11-26
+- **Thorns resistance:** Super Elites take 50% less Thorns damage, and Special Elites and Bosses take 70% less.
+- **Higher Thorns cap:** Upgrades and Workshop can now raise Thorns to 99% of the attacker's max health (was 50%).
+
 ## 1.65.0 — 2026-11-26
 - **New Super Elite: the Lancer** (violet four-pointed star, from tier 5). It's heavy and hard to push, and walks through the crowd to just inside your range. There it charges a beam for 4 s, shown as a line to the spire that thickens as it charges, then fires for 12× its attack. It charges again every 8 s, and the beam triggers your Thorns.
 
