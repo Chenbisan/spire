@@ -1,5 +1,11 @@
 # What's new in Spire
 
+## 1.67.0 — 2026-11-26
+- **Super Elites now arrive from tier 6** (was tier 5), and **Special Elites from tier 9** (was tier 5).
+- **Bigger rewards for the strongest enemies:**
+  - **Super Elites** (Lancer) pay 10× a Basic's coins (was 4×), 3× an Elite's alloy, and twice the cash (16).
+  - **Special Elites** (Hacker) pay 20× a Basic's coins (was 7.5×), 8× an Elite's alloy, and 20 cash (was 8).
+
 ## 1.66.2 — 2026-11-26
 - **Easier-to-read version number:** the version in the bottom-right corner of the arena is bigger and full-strength, on a small panel so it stands out against the arena.
 

@@ -95,7 +95,7 @@ function kill(e){
   const k=e.d.coin*R.s.coinBonus*R.tm.coin*CFG.killCoin(R.wave);save.coins+=k;R.coins+=k;st.coins+=k;
   const db=1+R.fx.drop;
   if(isBoss(e.d)){const v=DROPS.chips(R.wave,R.tier)*db;save.chips+=v;R.chips+=v;st.chips+=v}
-  else if(isElite(e.d)&&!e.sg){const v=DROPS.alloy(R.wave,R.tier)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
+  else if(isElite(e.d)&&!e.sg){const v=DROPS.alloy(R.wave,R.tier)*(ALLOY_RANK[e.d.r]||1)*db;save.alloy+=v;R.alloy+=v;st.alloy+=v}
   // Splitters: split into `split` smaller Splitters with half the health, `splits` times over
   if(e.d.split&&e.sg<e.d.splits){const d=splitDef(e.sg+1);for(let i=0;i<e.d.split;i++){const c=spawn(e.t,e.x+(Math.random()-.5)*8,e.y+(Math.random()-.5)*8);
     if(c){c.sg=e.sg+1;c.d=d;c.mhp=c.hp=e.mhp/2;c.wt=e.wt*CFG.splitSz;c.age=CFG.fadeIn}}}
