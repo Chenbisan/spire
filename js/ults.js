@@ -168,12 +168,11 @@ function launchMissiles(S){const R=run,M=R.missiles||(R.missiles=[]);for(const t
 // the live enemy closest to (x,y), for missiles over the cap
 function closestTo(x,y){let best=null,bd=Infinity;for(const e of enemies){if(e.dead||e.age<CFG.fadeIn)continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;best=e}}return best}
 function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;const step=ULT.missileSpd*dt;
-  // cap: with more than missileCap missiles in the air (bomblets don't count), the oldest ones give up on the weakest enemy and
-  // dive at the enemy nearest to them (n), so missiles can't pile up chasing targets that keep dying before they arrive
-  let over=-ULT.missileCap;for(const m of M)if(!m.b)over++;
-  for(const m of M){if(over<=0)break;if(m.b)continue;over--;if(!m.n){m.n=1;const t=closestTo(m.x,m.y);if(t){m.t=t;m.g=t.gen;m.k=0}}}
   for(let i=M.length-1;i>=0;i--){const m=M[i];m.px=m.x;m.py=m.y;let t=m.t;
-    // its target died: find the next weakest, or the nearest for a missile over the cap (k, the time spent chasing this target,
+    // give up: a missile (not a bomblet) still flying after missileGiveUp game seconds stops chasing the weakest enemy and dives at
+    // the enemy nearest to it (n), so missiles can't pile up chasing targets that keep dying before they arrive
+    if(!m.b&&!m.n&&(m.f=(m.f||0)+dt)>=ULT.missileGiveUp){m.n=1;const c=closestTo(m.x,m.y);if(c){t=m.t=c;m.g=c.gen;m.k=0}}
+    // its target died: find the next weakest, or the nearest for a missile that gave up (k, the time spent chasing this target,
     // starts again). A bomblet (b) only looks within bombletR of the blast that threw it, and explodes where it is if nothing's there
     if(t.dead||t.gen!==m.g){t=m.b?weakest(1,null,m.ox,m.oy,ULT.bombletR)[0]:m.n?closestTo(m.x,m.y):weakest(1)[0];
       if(!t){M.splice(i,1);if(m.b)blastAt(m,m.x,m.y,S);continue}m.t=t;m.g=t.gen;m.k=0}

@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.66.1 — 2026-11-26
+- **Missiles: no more cap.** Instead of the oldest missiles switching targets once more than 100 are in the air, any missile still flying after 30 s gives up on the weakest enemy and heads for the enemy nearest it. Every missile now finds a target in reasonable time, however many are in the air.
+
 ## 1.66.0 — 2026-11-26
 - **Thorns resistance:** Super Elites take 50% less Thorns damage, and Special Elites and Bosses take 70% less.
 - **Higher Thorns cap:** Upgrades and Workshop can now raise Thorns to 99% of the attacker's max health (was 50%).
