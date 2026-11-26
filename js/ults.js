@@ -1,10 +1,15 @@
 // Spire — Ultimate weapons: run-time behaviour, effects, the Ultimates tab and manual fire buttons. Data in config.js.
 const ultDesc=u=>typeof u.d==='function'?u.d():u.d; // some descriptions are built from your current upgrade values
 const ultLv=(k,t)=>(save.ults[k]||{})[t]||0, ultOwned=k=>!!save.ults[k];
+// Hackers: run.hack[k] = {e: the Hacker, g: its gen, f: share of levels drained (0..1)}. In a run an Ultimate works at its
+// drained level, and at f = 1 it's off (ultLive false) until the Hacker dies
+const hackF=k=>{const h=typeof run!=='undefined'&&run&&!run.over&&run.hack&&run.hack[k];return h?h.f:0};
+const ultLive=k=>ultOwned(k)&&hackF(k)<1;
+const ultLvH=(k,t)=>{const l=ultLv(k,t),f=hackF(k);return f?Math.floor(l*(1-f)):l};
 // strength tracks grow base × (1 + level/band)^pow; the rest move evenly from base to end over all levels
 const trackVal=(t,l)=>{const n=Math.min(l,t.lv);return t.pow?t.base*(1+n/ULT.band)**t.pow:t.base+(t.end-t.base)*n/t.lv};
 function ultVal(u,tr,l){return+trackVal(u.t.find(x=>x.k===tr),l).toFixed(4)}
-const uv=(k,tr)=>ultVal(UK[k],tr,ultLv(k,tr));
+const uv=(k,tr)=>ultVal(UK[k],tr,ultLvH(k,tr));
 // how complete an ultimate is: the average progress of its 4 tracks (0 to 1)
 const ultProg=k=>UK[k].t.reduce((a,t)=>a+Math.min(1,ultLv(k,t.k)/t.lv),0)/UK[k].t.length;
 // a level's price: the 100-level price at the same point in the tier bands, × √(100/lv) for short tracks
@@ -46,10 +51,20 @@ function ultDmgMult(e){const R=run,S=R&&R.ultSt;if(!S)return 1;let m=1;
   if(e.fs&&R.brittle)m*=1+e.fs*R.brittle*(e.frzT>0&&S.frost>=2?2:1); // Frost Field brittle: more damage per frost stack (doubled while frozen at Gold)
   if(e.shakenAt!=null&&R.time-e.shakenAt<ULT.shaken)m*=e.shakeM; // Shockwave: shaken enemies take × (multiplier × weight)
   return m}
-function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();R.ultSt={};for(const u of ULTS)R.ultSt[u.k]=ultStatus(u.k);const S=R.ultSt;
-  R.chainP=ultOwned('chain')?uv('chain','chance'):0; // read on every bullet hit
+// a Hacker at the spire: keep draining its Ultimate, or pick one no other Hacker has (false: none left, so it attacks)
+function hackOn(e,dt){const R=run,H=R.hack||(R.hack={}),h=e.hk&&H[e.hk];
+  if(h&&h.e===e&&h.g===e.gen){h.f=Math.min(1,h.f+dt/e.d.hackTime);return true}
+  const free=ULTS.filter(u=>ultOwned(u.k)&&!H[u.k]);if(!free.length)return false;
+  const u=free[Math.floor(Math.random()*free.length)];H[u.k]={e,g:e.gen,f:0};e.hk=u.k;return true}
+// medal while hacked: from the drained levels (an Ultimate that's fully drained has none)
+function ultStatusH(k){if(!ultLive(k))return 0;if(!hackF(k))return ultStatus(k);const p=UK[k].t.reduce((a,t)=>a+Math.min(1,ultLvH(k,t.k)/t.lv),0)/UK[k].t.length+1e-9;let s=0;for(const m of ULT.medals)if(p>=m)s++;return s}
+function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();
+  // a dead (or recycled) Hacker gives its Ultimate every level back
+  if(R.hack)for(const k in R.hack){const h=R.hack[k];if(h.e.dead||h.e.gen!==h.g)delete R.hack[k]}
+  R.ultSt={};for(const u of ULTS)R.ultSt[u.k]=ultStatusH(u.k);const S=R.ultSt;
+  R.chainP=ultLive('chain')?uv('chain','chance'):0; // read on every bullet hit
   frostTick(dt,S.frost||0);shockRings(dt,S.shock||0);missileTick(dt,S.missile||0);firebombTick(dt,S.firebomb||0);
-  for(const u of ULTS){if(!ultOwned(u.k)||u.passive)continue;const st=R.ult[u.k];
+  for(const u of ULTS){if(!ultLive(u.k)||u.passive)continue;const st=R.ult[u.k];
     if(u.k==='grav'){gravTick(dt,st,S.grav||0);continue} // its own rules: several wells, cooldown from cast
     if(u.k==='shock'&&st.after>0&&(st.after-=dt)<=0)shockBlast(true); // Platinum (Echo): a second ring
     if(st.act>0){st.act-=dt;
@@ -90,7 +105,7 @@ function gravSiphon(e){const W=run.wells;if(!W)return;const r2=uv('grav','radius
 const wtOf=e=>e.wt*(run&&run.ultSt&&run.ultSt.grav>=3&&e.heavyAt!=null&&run.time-e.heavyAt<.25?ULT.heavy:1);
 // Frost Field: always on. Every 1/rate s, enemies touching the field gain a frost stack. Stacks never wear off and have
 // no limit; slow is stacks × ULT.frostPer up to the Max slow track (95% at most), brittle adds damage taken per stack.
-function frostTick(dt,st){const R=run;if(!ultOwned('frost')){R.frostR=R.frostCap=R.brittle=0;return}
+function frostTick(dt,st){const R=run;if(!ultLive('frost')){R.frostR=R.frostCap=R.brittle=0;return}
   R.frostR=R.s.range*uv('frost','radius');R.frostCap=Math.min(.95,uv('frost','slow'));R.brittle=uv('frost','brittle');
   const F=R.ult.frost,maxSt=Math.ceil(R.frostCap/ULT.frostPer-1e-9);F.tick+=dt;
   if(F.tick>=1/uv('frost','rate')){F.tick=0;const r=R.frostR;
@@ -202,7 +217,7 @@ function firebombTick(dt,S){const R=run,Sh=R.shells,C2=R.carpets;
   for(let i=C2.length-1;i>=0;i--)if(C2[i].left<=0)C2.splice(i,1)}
 // the living enemy with the most health (absolute, not %): Laser's target
 function biggest(){let b=null,h=-1;for(const e of enemies)if(!e.dead&&e.age>=CFG.fadeIn&&e.hp>h){h=e.hp;b=e}return b}
-function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[k].passive||st.cd>0||st.act>0||R.over)return false;
+function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultLive(k)||UK[k].passive||st.cd>0||st.act>0||R.over)return false;
   if(k==='grav')return openWell(st);
   const near=inRange();if(!near.length)return false;tgt=tgt&&!tgt.dead?tgt:near.sort((a,b)=>a.dist-b.dist)[0];
   st.cd=uv(k,'cd');save.stats.ultUses++;const S=R.ultSt||{},now=performance.now();
@@ -214,11 +229,14 @@ function fireUlt(k,tgt){const R=run,st=R.ult&&R.ult[k];if(!st||!ultOwned(k)||UK[
   return true}
 // ---- drawing (called from draw()) ----
 function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.now(),dpr=W/(stage.clientWidth||W);
+  // Hackers: a dashed tether from each one to the spire while it drains an Ultimate
+  if(R.hack){ctx.strokeStyle=C.e11;ctx.lineWidth=1.5*dpr/sc;ctx.setLineDash([4*dpr/sc,4*dpr/sc]);ctx.lineDashOffset=-now/40*dpr/sc;ctx.globalAlpha=.8;ctx.beginPath();
+    for(const k in R.hack){const e=R.hack[k].e;if(e.dead)continue;ctx.moveTo(IX(e),IY(e));ctx.lineTo(0,0)}ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
   if(R.frostR){ctx.fillStyle=C.alloy;ctx.globalAlpha=.08;ctx.beginPath();ctx.arc(0,0,R.frostR,0,6.283);ctx.fill();ctx.globalAlpha=.55;ctx.strokeStyle=C.alloy;ctx.lineWidth=2*dpr/sc;ctx.stroke();ctx.globalAlpha=1}
-  if(R.wells&&R.wells.length&&ultOwned('grav')){const r=uv('grav','radius'),a0=now/300;ctx.strokeStyle=C.shard;ctx.lineWidth=2*dpr/sc;
+  if(R.wells&&R.wells.length&&ultLive('grav')){const r=uv('grav','radius'),a0=now/300;ctx.strokeStyle=C.shard;ctx.lineWidth=2*dpr/sc;
     for(const g of R.wells){for(let i=0;i<3;i++){ctx.globalAlpha=.25+.2*i;ctx.beginPath();ctx.arc(g.x,g.y,r*(1-i*.3),a0+i,a0+i+4);ctx.stroke()}
       ctx.globalAlpha=.12;ctx.fillStyle=C.shard;ctx.beginPath();ctx.arc(g.x,g.y,r,0,6.283);ctx.fill()}ctx.globalAlpha=1}
-  const L=R.ult.laser;if(L&&ultOwned('laser')){const len=spawnMax()*1.5,w=uv('laser','width');
+  const L=R.ult.laser;if(L&&ultLive('laser')){const len=spawnMax()*1.5,w=uv('laser','width');
     if(L.act>0){const cx=Math.cos(L.ang)*len,cy=Math.sin(L.ang)*len,fl=.85+.15*Math.sin(now/40),x0=0,y0=0;
       ctx.lineCap='round';ctx.strokeStyle=C.hot;ctx.globalAlpha=.25*fl;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(cx,cy);ctx.stroke();
       ctx.globalAlpha=.9*fl;ctx.lineWidth=Math.max(2*dpr/sc,w*.25);ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt'}
@@ -295,7 +313,11 @@ $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
   persist();loSig='';refreshLoadout();buildUltBar()});
 // ---- manual fire buttons under the arena ----
 function buildUltBar(){const el=$('ultBar');el.innerHTML=ULTS.filter(u=>ultOwned(u.k)&&ultManual(u.k)).map(u=>`<button class="ultb" data-fire="${u.k}" style="--c:var(--${u.col})" title="${u.n}">${ultIcon(u)}<span></span></button>`).join('')}
-function refreshUltBar(){for(const b of $('ultBar').children){const st=run&&!run.over&&run.ult&&run.ult[b.dataset.fire],t=b.querySelector('span');
-  const ready=st&&st.cd<=0&&st.act<=0,txt=!st?'':st.act>0?'on':ready?'ready':Math.ceil(st.cd)+'s';if(t.textContent!==txt)t.textContent=txt;b.classList.toggle('ready',!!ready);b.disabled=!ready}}
+function refreshUltBar(){for(const b of $('ultBar').children){const k=b.dataset.fire,st=run&&!run.over&&run.ult&&run.ult[k],t=b.querySelector('span'),off=st&&!ultLive(k);
+  const ready=st&&!off&&st.cd<=0&&st.act<=0,txt=!st?'':off?'hacked':st.act>0?'on':ready?'ready':Math.ceil(st.cd)+'s';if(t.textContent!==txt)t.textContent=txt;b.classList.toggle('ready',!!ready);b.disabled=!ready}}
+// hacked Ultimates: one chip each with the share of levels drained so far (shut off at 100%)
+function refreshHackBar(){const el=$('hackBar'),H=run&&!run.over&&run.hack,ks=H?Object.keys(H).filter(k=>!H[k].e.dead):[];
+  const html=ks.map(k=>`<span class="hackc" title="${UK[k].n} is being hacked">${ultIcon(UK[k])}${H[k].f>=1?'off':Math.floor(H[k].f*100)+'%'}</span>`).join('');
+  if(el.dataset.h!==html){el.dataset.h=html;el.innerHTML=html}}
 $('ultBar').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&fireUlt(b.dataset.fire))refreshUltBar()});
 buildUltBar();

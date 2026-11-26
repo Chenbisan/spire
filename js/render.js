@@ -3,7 +3,7 @@
 const cv=$('cv'),ctx=cv.getContext('2d'),stage=$('stage');
 let C={},A=1;const IX=o=>o.px+(o.x-o.px)*A,IY=o=>o.py+(o.y-o.py)*A;
 let SPR={},sprKey='',colorVer=0;
-function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','e9','e10','barrier','bolt','alloy','shard','chip','fire']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}colorVer++;}
+function readColors(){const p=$('probe');for(const k of['arena','grid','acc','ink','mute','gold','hot','e1','e2','e3','e4','e5','e6','e7','e8','e9','e10','e11','barrier','bolt','alloy','shard','chip','fire']){p.style.color=`var(--${k})`;C[k]=getComputedStyle(p).color}colorVer++;}
 // ---- enemy sprites: each type × health band (× facing, for types that turn) is pre-drawn once per zoom level, then stamped ----
 const SPR_ROT=16;
 function sprite(t,b,rot,d=ET[t]){const k=t+d.sz+'_'+b+'_'+rot;let s=SPR[k];if(s)return s; // keyed by size too (smaller Splitters)

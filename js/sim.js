@@ -51,7 +51,7 @@ const POOL_TYPES={};for(const k of TYPES){const r=ET[k].r;if(POOLS[r])(POOL_TYPE
 const lateMul=(r,w)=>{if(w<=CFG.lateWave)return 1;const k=Math.min(1,(w-CFG.lateWave)/(CFG.finalWave-CFG.lateWave));return 1+k*((r>=RK.ELITE?CFG.lateElite:CFG.lateNormal)-1)};
 // a pool's types that have arrived by wave w on tier t, and the pool's chance per regular spawn
 const poolTypes=(r,w,t)=>POOL_TYPES[r].filter(k=>typeOn(ET[k],w,t));
-function poolChance(r,w,t){const P=POOLS[r];if(t<(P.tier||1))return 0;const a=Math.min(...POOL_TYPES[r].map(k=>typeFrom(ET[k],t)));if(w<a)return 0;
+function poolChance(r,w,t){const P=POOLS[r];if(t<(P.tier||1)||!POOL_TYPES[r])return 0;const a=Math.min(...POOL_TYPES[r].map(k=>typeFrom(ET[k],t)));if(w<a)return 0;
   const full=Math.max(a+1,Math.round(P.full/t**CFG.fromPow));return(P.freq+(P.fmax-P.freq)*Math.min(1,(w-a)/(full-a)))*lateMul(r,w)}
 // chance per regular spawn for each pool (rank → chance; Normal takes what's left) and for each type
 function poolChances(w,t){const o={};let left=1;for(const r in POOLS){const p=Math.min(left,poolChance(+r,w,t));if(p>0){o[r]=p;left-=p}}o[RK.NORMAL]=left;return o}
@@ -72,7 +72,7 @@ function spawn(t,x,y){
   // RULE: enemy objects are recycled (ePool), across runs too, so EVERY per-enemy field set anywhere (markers, timestamps,
   // stacks, multipliers) must be reset here. Run time restarts at 0 each run, so a stale timestamp from an earlier run reads
   // as still active: that made recycled enemies start out shaken (Shockwave), heavy (Gravity Well) or unhealable (Laser)
-  e.shakenAt=e.heavyAt=e.noHealAt=null;e.shakeM=1;
+  e.shakenAt=e.heavyAt=e.noHealAt=e.hk=null;e.shakeM=1;
   e.sg=0;enemies.push(e);return e;
 }
 function nextWave(){
@@ -216,6 +216,7 @@ function update(dt){GEN_STEP++;
     else if(dist>stop+1e-6)advance(e,dist,stop,sp*dt) // walks in, resting while the crowd ahead leaves it little room
     else{e.atk+=dt;
       if(!d.dmg){} // Healers never attack
+      else if(d.hack&&hackOn(e,dt)){} // Hacker: drains an Ultimate instead of attacking (falls back to attacking if every Ultimate is taken)
       // Boss: on arrival and every d.barrageEvery s, d.barrage spikes leave its back and fly a curve (a quadratic Bézier) out
       // through a fan of points d.spikeOut m behind it, spread ±d.spikeFan°, and in to the spire over d.spikeFlight s.
       // Each barrage ramps like one hit

@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.64.0 — 2026-11-26
+- **New rank, Special Elite, and its first enemy: the Hacker** (cyan fork, from tier 5). Special Elites are meant to be very strong, so they're rare (0.5% of spawns, building to 2%) and capped at a few on the field (4 Hackers). It's very fast, light and fragile, and ignores the crowd. When it reaches the spire it doesn't attack. Instead it hacks one of your Ultimates, draining its levels over 20 s until the Ultimate shuts off. Each Hacker picks a different Ultimate. Kill it and every level comes back at once. A dashed line links each Hacker to the spire, and a chip under the arena shows which Ultimate is being drained and by how much. If every Ultimate is already being hacked, extra Hackers attack instead.
+- **Charger and Protector are Elites again** (from tier 3), since they didn't warrant Super Elite status this early.
+- **Tidier Enemy panel:** tap a rank (Veteran, Elite…) to show or hide its types, and the panel keeps the same size instead of resizing. The long explanation under the table moved into Help → Enemies.
+
 ## 1.63.3 — 2026-11-26
 - **Fixed: runs after the first were too easy.** Enemies are reused after they die, and four timed Ultimate effects weren't cleared when they came back: Shockwave's shake, Gravity Well's extra weight and Laser's no-heal. Because each run's clock starts at 0, enemies carried over from an earlier run started the new run already shaken, taking Shockwave's damage multiplier for most of the run. Every run after the first in a session was much easier than intended, until the page was reloaded. Runs now play the same whether or not you reload.
 
