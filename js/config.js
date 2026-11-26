@@ -112,7 +112,7 @@ const SHAPES={
  star:Array.from({length:10},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,r=i%2?.55:1.3;return[Math.cos(a)*r,Math.sin(a)*r]}),
  hexagon:regPoly(6,1),
 };
-// enemy ranks (ET r): 1 Normal (Basic), 2 Veteran (Fast, Ranged, Tank), 3 Elite (Shielded, Healer, Splitter), 4 Super Elite (Charger, Protector), and Boss on its own
+// enemy ranks (ET r): 1 Normal (Basic), 2 Veteran (Fast, Ranged, Tank), 3 Elite (Shielded, Healer, Splitter, Charger, Protector), 4 Super Elite (none yet), 6 Special Elite (Hacker), and Boss on its own
 const RK={NORMAL:1,VETERAN:2,ELITE:3,SUPER:4,BOSS:5,SPECIAL:6};
 const RANKS=['','Normal','Veteran','Elite','Super Elite','Boss','Special Elite'];
 // display order (Special Elites sit between Super Elites and the Boss); a rank with no types yet is skipped
@@ -143,7 +143,7 @@ const ET={
  splitter:{n:'Splitter',r:3,d:'Splits into 2 smaller Splitters with half its health when it dies, and each of those splits once more (7 in all). Each smaller one pays half the coins and cash of the one it split from, and only the first drops alloy.',hp:12,dmg:1.5,spd:22,weight:1.6,sz:10,cash:6,sh:'star',c:'e8',from:800,split:2,splits:2,cap:400},
  charger:{n:'Charger',r:3,d:'Immovable: nothing can push or pull it. It walks into your range, charges up for 3 s, then rams the spire for 10× its attack, and keeps hitting from there. It ignores the crowd: it walks and rams straight through other enemies.',hp:16,dmg:2,spd:16,weight:3,sz:11,cash:6,sh:'chevron',rot:'face',c:'e9',from:1200,immov:1,ghost:1,charge:3,ram:10,ramSpd:160,cap:300},
  protector:{n:'Protector',r:3,d:'Guards its friends: damage aimed at any enemy within 40 m of it hits the Protector instead, which takes only half. Protectors don\'t guard each other. Kill it first to get at the rest.',hp:20,dmg:1.5,spd:18,weight:2.5,sz:11,cash:6,sh:'crest',c:'e10',from:1800,protect:1,cap:200},
- hacker:{n:'Hacker',r:6,d:'Very fast, light and fragile, and ignores the crowd. When it reaches the spire it doesn\'t attack: it hacks one of your Ultimates (each Hacker picks a different one), draining its levels over 20 s while it stays at the spire until the Ultimate shuts off. Kill it and every level comes back at once. If every Ultimate is already being hacked, it attacks instead. Rare, and at most 4 on the field.',hp:3,dmg:.5,spd:60,weight:.4,sz:8,cash:8,sh:'fork',rot:'face',c:'e11',from:1500,ghost:1,hack:1,hackTime:20,cap:4},
+ hacker:{n:'Hacker',r:6,d:'Very fast, light and fragile, and ignores the crowd. When it reaches the spire it doesn\'t attack: it hacks one of your Ultimates (each Hacker picks a different one), draining 1 random level of it per second while it stays at the spire, until the Ultimate has none left and shuts off. The more levels an Ultimate has, the longer it holds out. Kill it and every level comes back at once. If every Ultimate is already being hacked, it attacks instead. Rare, and at most 4 on the field.',hp:3,dmg:.5,spd:60,weight:.4,sz:8,cash:8,sh:'fork',rot:'face',c:'e11',from:1500,ghost:1,hack:1,hackRate:1,cap:4},
  boss:{n:'Boss',r:5,d:'',hp:150,dmg:6,spd:9,weight:20,stop:30,edge:1,barrage:10,barrageEvery:10,spike:.25,spikeFlight:1.6,spikeFan:75,spikeOut:50,sz:22,cash:60,sh:'hexagon',rot:'spin',c:'e5',cap:25}
 };
 const TYPES=Object.keys(ET);

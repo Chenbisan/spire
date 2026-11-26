@@ -1,11 +1,15 @@
 // Spire — Ultimate weapons: run-time behaviour, effects, the Ultimates tab and manual fire buttons. Data in config.js.
 const ultDesc=u=>typeof u.d==='function'?u.d():u.d; // some descriptions are built from your current upgrade values
 const ultLv=(k,t)=>(save.ults[k]||{})[t]||0, ultOwned=k=>!!save.ults[k];
-// Hackers: run.hack[k] = {e: the Hacker, g: its gen, f: share of levels drained (0..1)}. In a run an Ultimate works at its
-// drained level, and at f = 1 it's off (ultLive false) until the Hacker dies
-const hackF=k=>{const h=typeof run!=='undefined'&&run&&!run.over&&run.hack&&run.hack[k];return h?h.f:0};
+// Hackers: run.hack[k] = {e: the Hacker, g: its gen, d: levels drained per track, n: levels drained in all, acc}. A Hacker
+// at the spire drains hackRate random levels a second (each remaining level equally likely), so an Ultimate with more
+// levels lasts longer. In a run an Ultimate works at its remaining levels, and with none left it's off (ultLive false)
+// until the Hacker dies
+const hackOf=k=>typeof run!=='undefined'&&run&&!run.over&&run.hack&&run.hack[k];
+const ultLvTot=k=>UK[k].t.reduce((a,t)=>a+ultLv(k,t.k),0);
+const hackF=k=>{const h=hackOf(k);if(!h)return 0;const T=ultLvTot(k);return T?Math.min(1,h.n/T):1};
 const ultLive=k=>ultOwned(k)&&hackF(k)<1;
-const ultLvH=(k,t)=>{const l=ultLv(k,t),f=hackF(k);return f?Math.floor(l*(1-f)):l};
+const ultLvH=(k,t)=>{const l=ultLv(k,t),h=hackOf(k);return h?Math.max(0,l-(h.d[t]||0)):l};
 // strength tracks grow base × (1 + level/band)^pow; the rest move evenly from base to end over all levels
 const trackVal=(t,l)=>{const n=Math.min(l,t.lv);return t.pow?t.base*(1+n/ULT.band)**t.pow:t.base+(t.end-t.base)*n/t.lv};
 function ultVal(u,tr,l){return+trackVal(u.t.find(x=>x.k===tr),l).toFixed(4)}
@@ -53,9 +57,12 @@ function ultDmgMult(e){const R=run,S=R&&R.ultSt;if(!S)return 1;let m=1;
   return m}
 // a Hacker at the spire: keep draining its Ultimate, or pick one no other Hacker has (false: none left, so it attacks)
 function hackOn(e,dt){const R=run,H=R.hack||(R.hack={}),h=e.hk&&H[e.hk];
-  if(h&&h.e===e&&h.g===e.gen){h.f=Math.min(1,h.f+dt/e.d.hackTime);return true}
+  if(h&&h.e===e&&h.g===e.gen){h.acc+=dt*e.d.hackRate;
+    for(;h.acc>=1;h.acc--){const ts=UK[e.hk].t,left=ts.map(t=>ultLvH(e.hk,t.k)),sum=left.reduce((a,b)=>a+b,0);if(!sum){h.acc=0;break}
+      let x=Math.random()*sum,i=0;while(x>=left[i]){x-=left[i];i++}const tk=ts[i].k;h.d[tk]=(h.d[tk]||0)+1;h.n++}
+    return true}
   const free=ULTS.filter(u=>ultOwned(u.k)&&!H[u.k]);if(!free.length)return false;
-  const u=free[Math.floor(Math.random()*free.length)];H[u.k]={e,g:e.gen,f:0};e.hk=u.k;return true}
+  const u=free[Math.floor(Math.random()*free.length)];H[u.k]={e,g:e.gen,d:{},n:0,acc:0};e.hk=u.k;return true}
 // medal while hacked: from the drained levels (an Ultimate that's fully drained has none)
 function ultStatusH(k){if(!ultLive(k))return 0;if(!hackF(k))return ultStatus(k);const p=UK[k].t.reduce((a,t)=>a+Math.min(1,ultLvH(k,t.k)/t.lv),0)/UK[k].t.length+1e-9;let s=0;for(const m of ULT.medals)if(p>=m)s++;return s}
 function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();
@@ -317,7 +324,7 @@ function refreshUltBar(){for(const b of $('ultBar').children){const k=b.dataset.
   const ready=st&&!off&&st.cd<=0&&st.act<=0,txt=!st?'':off?'hacked':st.act>0?'on':ready?'ready':Math.ceil(st.cd)+'s';if(t.textContent!==txt)t.textContent=txt;b.classList.toggle('ready',!!ready);b.disabled=!ready}}
 // hacked Ultimates: one chip each with the share of levels drained so far (shut off at 100%)
 function refreshHackBar(){const el=$('hackBar'),H=run&&!run.over&&run.hack,ks=H?Object.keys(H).filter(k=>!H[k].e.dead):[];
-  const html=ks.map(k=>`<span class="hackc" title="${UK[k].n} is being hacked">${ultIcon(UK[k])}${H[k].f>=1?'off':Math.floor(H[k].f*100)+'%'}</span>`).join('');
+  const html=ks.map(k=>{const f=hackF(k),left=ultLvTot(k)-H[k].n;return`<span class="hackc" title="${UK[k].n} is being hacked: ${Math.floor(f*100)}% of its levels drained">${ultIcon(UK[k])}${f>=1?'off':Math.max(0,left)+' lv'}</span>`}).join('');
   if(el.dataset.h!==html){el.dataset.h=html;el.innerHTML=html}}
 $('ultBar').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&fireUlt(b.dataset.fire))refreshUltBar()});
 buildUltBar();
