@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.63.2 — 2026-11-25
+- **Missile cap raised to 100:** the oldest missiles only switch to the nearest enemy once more than 100 are in the air (was 10).
+- **Missiles fire faster at max:** the Cooldown track now goes down to 1 s (was 3 s), in 14 levels of 1 s each (was 12). If you had it maxed, it has 2 new levels to buy.
+
 ## 1.63.1 — 2026-11-25
 - **Missiles no longer pile up:** missiles fly faster (60 m/s, was 45). When more than 10 are in the air (bomblets don't count), the oldest stop chasing the weakest enemy and head for the enemy nearest them instead. This stops missiles from circling endlessly when other damage keeps killing their targets first, which could slow the game down.
 
