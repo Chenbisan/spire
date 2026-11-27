@@ -1,5 +1,11 @@
 # What's new in Spire
 
+## 1.71.0 — 2026-11-27
+- **Offline earnings have no cap:** every hour the game is closed counts. Offline duration research is gone, and the shards you spent on it are refunded.
+- **Workshop discount goes to 99%:** 200 levels, each taking about 2.3% off the remaining Workshop price. Level 15 is now −29.2% (was −30%). Each level costs 30% more than the last, and the final levels get very expensive. Research can't be refunded, so a discount can't be bought, used and sold back.
+- **New Lab layout:** research is grouped into Combat, Economy and Systems tabs, with ×1 / ×10 / Max buying, a level counter and progress bar, and a dot on any section with research you can afford.
+- **Wider side panel on big screens:** the panel grows (up to 760 px) so the arena stays roughly square. Upgrades, Workshop and Lab show in two columns when there's room, and all six tabs fit on one row.
+
 ## 1.70.0 — 2026-11-27
 - **One tier formula all the way to tier 100:** every tier now multiplies enemy health ×12 and attack about ×7.3, and coins ×8. Shards, chips and alloy keep their tier 1–3 amounts, then double every tier (before, they grew more and more slowly and stopped keeping up). The balance sims put tier 3 at about 10 h, tier 4 at about 22 h and tier 5 at about 38 h of play.
 - **Ultimates last much longer:** every track has twice the levels (strength tracks 200, the others doubled) at the same values, so your Ultimates keep exactly their current strength. Each level now costs about 12% more than the last, matched to chip income, so there's something to buy well past tier 20 instead of maxing out around tier 5.

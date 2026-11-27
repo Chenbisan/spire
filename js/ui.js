@@ -90,30 +90,43 @@ function buildPanel(){
   labRows=[];
   if(ui.tab==='Equipment'||ui.tab==='Ultimates'||ui.tab==='Modules'){rows=[];loSig='';P.innerHTML='';return refreshLoadout()}
   if(ui.tab==='Lab'){rows=[];
-    P.innerHTML=`<p class="note">Research is paid in <b class="shard">shards</b>, earned at the end of every run on tier 2 and up: the more enemies you kill, the more you get, and higher tiers multiply it. It applies instantly and lasts forever. No timers.</p>`+(shardsOn()?'':`<p class="note"><b>Locked:</b> reach wave ${CFG.tierUnlockWave} on tier 1 to unlock tier 2 and start finding shards.</p>`)+LAB.map(l=>`<div class="row"><div><b>${l.n}</b><span class="v"></span><span class="note" style="display:block;margin:2px 0 0">${l.d}</span></div><button class="buy shard" data-lab="${l.k}"></button></div>`).join('');
-    labRows=[...P.querySelectorAll('[data-lab]')].map(b=>({l:LK[b.dataset.lab],b,v:b.parentNode.querySelector('.v')}));
+    const g=LAB_GROUPS.includes((save.set.sub||{}).Lab)?save.set.sub.Lab:LAB_GROUPS[0];
+    P.innerHTML=multsHtml()+`<div class="subs">${LAB_GROUPS.map(x=>`<button data-sub="${x}" class="${x===g?'on':''}">${x}<i class="dot" hidden></i></button>`).join('')}</div>`
+      +`<p class="note">Paid in <b class="shard">shards</b> (end of every run on tier 2+). Applies instantly, lasts forever, can't be refunded. A dot marks a section with research you can afford.</p>`
+      +(shardsOn()?'':`<p class="note"><b>Locked:</b> reach wave ${CFG.tierUnlockWave} on tier 1 to unlock tier 2 and start finding shards.</p>`)
+      +`<div class="rack">${LAB.filter(l=>l.g===g).map(l=>`<div class="lab"><div class="lh"><b>${l.n}</b><span class="lv"></span></div><span class="v"></span><p class="ld">${l.d}</p>${isFinite(l.max)&&l.max>1?'<span class="uprog"><i></i></span>':''}<button class="buy shard" data-lab="${l.k}"></button></div>`).join('')}</div>`;
+    labRows=[...P.querySelectorAll('[data-lab]')].map(b=>{const c=b.parentNode;return{l:LK[b.dataset.lab],b,v:c.querySelector('.v'),lv:c.querySelector('.lv'),bar:c.querySelector('.uprog i')}});
+    labDots=[...P.querySelectorAll('.subs button')].map(b=>({g:b.dataset.sub,d:b.querySelector('.dot')}));
     return refreshPanel()}
   const ws=ui.tab==='Workshop';
   const sec=GROUPS.includes((save.set.sub||{})[ui.tab])?save.set.sub[ui.tab]:'Attack';
-  let h=`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`
+  let h=multsHtml()
     +`<div class="subs">${GROUPS.map(g=>`<button data-sub="${g}" class="${g===sec?'on':''}">${g}</button>`).join('')}</div>`;
   if(ws){h+='<p class="note">Permanent upgrades, paid in coins. They apply to every run, including the one in progress. Values shown are your starting values.</p>'+`<p class="note">Offline rate: <b class="coin">${fmt(offlineRate())} coins/hour</b>${save.bestSph?` · <b class="shard">${fmt(offlineShardRate())} shards/hour</b>`:''}${save.bestChph?` · <b class="chip">${fmt(offlineChipRate())} chips/hour</b>`:''}</p>`;
-    h+=ST.filter(s=>s.g===sec).map(rowHtml).join('')+respecBtn('ws:'+sec,`Refund all ${sec.toLowerCase()} upgrades`)}
+    h+=`<div class="rack">${ST.filter(s=>s.g===sec).map(rowHtml).join('')}</div>`+respecBtn('ws:'+sec,`Refund all ${sec.toLowerCase()} upgrades`)}
   else{h+=!run||run.over?'<p class="note">Start a run to buy in-run upgrades.</p>':'<p class="note">Paid in cash, which resets every run.</p>';
     if(labLv('auto'))h+=`<label class="ab abs"><input type="checkbox" data-ab="${sec}" ${save.set.ab[sec]?'checked':''}> Auto-buy ${sec.toLowerCase()} upgrades</label>`;
-    h+=ST.filter(s=>s.g===sec&&!s.ws).map(rowHtml).join('')}
+    h+=`<div class="rack">${ST.filter(s=>s.g===sec&&!s.ws).map(rowHtml).join('')}</div>`}
   P.innerHTML=h;
   rows=[...P.querySelectorAll('.row')].map(r=>({s:SK[r.dataset.k],v:r.querySelector('.v'),b:r.querySelector('.buy')}));
   refreshPanel();
 }
-let labRows=[];
-const labCost=l=>l.c[0]*l.c[1]**labLv(l.k);
+let labRows=[],labDots=[];
+const multsHtml=()=>`<div class="mults">${[1,10,'Max'].map(m=>`<button data-mult="${m}" class="${ui.mult===m?'on':''}">${m==='Max'?'Max':'×'+m}</button>`).join('')}</div>`;
+// levels the ×1 / ×10 / Max choice buys (Max: as many as the shards cover)
+function labPlan(l){const lv=labLv(l.k),mx=lv>=l.max,lim=ui.mult==='Max'?1000:ui.mult;let n=0,tot=0;
+  while(n<lim&&lv+n<l.max){const c=labCost(l,lv+n);if(ui.mult==='Max'&&tot+c>save.shards)break;tot+=c;n++}
+  let show=n,cost=tot;if(!n&&!mx){show=1;cost=labCost(l,lv)}
+  return{lv,n,show,cost,mx,ok:n>0&&tot<=save.shards}}
 const rowHtml=s=>`<div class="row" data-k="${s.k}"><div><b>${s.n}</b><span class="v"></span></div><button class="buy" data-k="${s.k}"></button></div>`;
 function refreshPanel(){
   refreshLoadout();
-  for(const r of labRows){const l=r.l,lv=labLv(l.k),mx=lv>=l.max,c=labCost(l);
-    const vt=mx?l.f(l.val(lv))+' (max)':`${l.f(l.val(lv))} → ${l.f(l.val(lv+1))}`;if(r.v.textContent!==vt)r.v.textContent=vt;
-    const ok=!mx&&save.shards>=c;if(r.b.disabled===ok)r.b.disabled=!ok;const t=mx?'Max':fmt(c);if(r.b.textContent!==t)r.b.textContent=t}
+  for(const r of labRows){const l=r.l,p=labPlan(l),lv=p.lv;
+    const vt=p.mx?l.f(l.val(lv))+' (max)':`${l.f(l.val(lv))} → ${l.f(l.val(lv+p.show))}`;if(r.v.textContent!==vt)r.v.textContent=vt;
+    const lt=isFinite(l.max)&&l.max>1?`Lv ${lv} / ${l.max}`:l.max>1?`Lv ${lv}`:'';if(r.lv.textContent!==lt)r.lv.textContent=lt;
+    if(r.bar)r.bar.style.transform=`scaleX(${lv/l.max})`;
+    if(r.b.disabled===p.ok)r.b.disabled=!p.ok;const html=p.mx?'Max':`${l.max>1?`<span class="q">+${p.show}</span>`:''}${fmt(p.cost)}`;if(r.b.innerHTML!==html)r.b.innerHTML=html}
+  for(const d of labDots){const on=LAB.some(l=>l.g===d.g&&labLv(l.k)<l.max&&labCost(l)<=save.shards);if(d.d.hidden===on)d.d.hidden=!on}
   const ws=ui.tab==='Workshop';
   if(ws){const P=$('panel'),rb=P.querySelector('[data-respec^="ws:"]'),key='ws:'+(GROUPS.includes((save.set.sub||{}).Workshop)?save.set.sub.Workshop:'Attack');
     if(!rb||!rb.dataset.arm){const html=respecBtn(key,`Refund all ${key.slice(3).toLowerCase()} upgrades`);
@@ -130,7 +143,7 @@ $('panel').addEventListener('click',e=>{
   if(b.dataset.respec){if(b.dataset.arm)return respec(b.dataset.respec);b.dataset.arm=1;b.classList.add('arm');b.firstChild.textContent='Tap again to refund ';return}
   if(b.dataset.sub){save.set.sub=Object.assign({},save.set.sub,{[ui.tab]:b.dataset.sub});persist();return buildPanel()}
   if(b.dataset.mult){ui.mult=save.set.mult=b.dataset.mult==='Max'?'Max':+b.dataset.mult;persist();return buildPanel()}
-  if(b.dataset.lab){const l=LK[b.dataset.lab],c=labCost(l);if(labLv(l.k)>=l.max||save.shards<c)return;save.shards-=c;save.lab[l.k]=labLv(l.k)+1;save.stats.lab++;save.stats.labShards+=c;persist();
+  if(b.dataset.lab){const l=LK[b.dataset.lab],p=labPlan(l);if(!p.ok)return;save.shards-=p.cost;save.lab[l.k]=p.lv+p.n;save.stats.lab+=p.n;save.stats.labShards+=p.cost;persist();
     if(l.k==='speed')buildSpeeds();if(l.k==='auto')toast('Auto-buy toggles added to the Upgrades tab');refreshPanel();return}
   if(b.dataset.k){const s=SK[b.dataset.k],ws=ui.tab==='Workshop',p=plan(s,ws);if(!p.ok)return;
     if(ws){save.coins-=p.cost;save.ws[s.k]=(save.ws[s.k]||0)+p.n;save.stats.wsUps+=p.n;save.stats.wsCoins+=p.cost;persist()}else{const free=buyRun(s,p.n);if(free)toast(free>1?`${free} levels were free!`:'Free upgrade!')}
@@ -285,7 +298,7 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
     sec('Controls',ul([`<b>Space</b> pauses.`,`<b>Number keys</b> pick a game speed.`,`<b>Esc</b> closes this window.`]));
   if(k==='upgrades')return sec('Three ways to get stronger',ul([`<b>Upgrades</b> tab: bought with <b class="cash">cash</b> during a run. Gone when the run ends.`,
       `<b>Workshop</b>: bought with <b class="coin">coins</b>. Permanent: these are your starting levels in every run, and in-run levels stack on top.`,
-      `<b>Lab</b>: bought with <b class="shard">shards</b>. Longer offline earnings, faster game speeds, cheaper Workshop, auto-buy.`]))+
+      `<b>Lab</b>: bought with <b class="shard">shards</b>. Faster game speeds, cheaper Workshop, auto-buy, and research with no cap. Can't be refunded.`]))+
     sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b>.`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again.`,
       `<b>Damage per distance</b>: more damage for every metre to the target.`,`<b>Multishot</b>: a chance to also fire at more enemies in range.`,
       `<b>Bounce shots</b>: a chance for a shot to hop on to more enemies after it hits (bounce range is at most 40% of your range).`]))+
@@ -302,7 +315,7 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
       <tr><td><b class="alloy">Alloy</b></td><td>Elites</td><td>Modules (under maintenance: saved for later)</td></tr></tbody></table>`)+
     sec('Offline earnings',ul([`Only for time the game is <b>closed</b>. While it's open, even in a background tab, the run itself keeps going instead.`,
       `Pays your best coins per game-hour (from a run of at least ${CFG.offlineMinRun/60} game-minutes) at your fastest speed (${Math.max(...speeds())}× now), at ${Math.round(CFG.offlineEff*100)}% efficiency.`,
-      `Shards and boss chips are paid the same way, from your best rates.`,`Counts up to <b>${labVal('offCap')} h</b> (more with Lab research). The Workshop tab shows your current rates.`]));
+      `Shards and boss chips are paid the same way, from your best rates.`,`No limit: every hour away counts. The Workshop tab shows your current rates.`]));
   if(k==='gear')return sec('Equipment',ul([`Bought with <b class="chip">chips</b>, equipped in a slot, and levelled up to 5 stars. Swap any time, even mid-run.`,
       ...CARDS.map(c=>`<b>${c.n}</b>: ${c.f(c.v[0])} at 1 star.`)]))+
     sec('Modules',`<p>Under maintenance: they give no bonuses for now. Alloy you collect is kept for when they return.</p>`);

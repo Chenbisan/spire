@@ -44,17 +44,16 @@ python -m http.server 8000
 - **Targeting:** the 🎯 Target button under the arena opens target priority: drag enemy types above Closest to shoot them first, in order.
 - **Auto-restart:** a run that ends restarts after a short countdown, which you can change or turn off in Settings.
 - **Background running:** a run keeps going while the game is open, even in a hidden tab, driven by a small worker ticker (`CFG.bgTick`, `bgBudget`, `bgMaxGap`).
-- **Offline earnings** (only for time the game is closed; paid when it's opened again): your best coins, shards and boss chips per game-hour (from runs of at least 2 game-minutes) is paid out while you're away at 60% efficiency (`CFG.offlineEff`), as if the game ran at your fastest unlocked speed (8×, up to 24× with Overdrive). The Lab's Offline duration sets the cap. Shards are paid offline the same way, from your best shards per game-hour.
+- **Offline earnings** (only for time the game is closed; paid when it's opened again): your best coins, shards and boss chips per game-hour (from runs of at least 2 game-minutes) is paid out while you're away at 60% efficiency (`CFG.offlineEff`), as if the game ran at your fastest unlocked speed (8×, up to 24× with Overdrive). There is no cap: every hour away counts. Shards are paid offline the same way, from your best shards per game-hour.
 
 ### Lab
 
-Paid in shards.
+Paid in shards. Research can't be refunded. The Lab tab groups research into Combat, Economy and Systems, with ×1 / ×10 / Max buying and a dot on sections with something affordable.
 
 | Research | Effect |
 |---|---|
-| Offline duration | 24 h → 72 h cap |
 | Overdrive | Unlocks 12×, 16×, 24× game speed |
-| Workshop discount | Up to −30% Workshop costs |
+| Workshop discount | Workshop prices × 0.01^(level/200): about 2.3% off the remaining price per level, −99% at level 200. Cost ×1.3 per level × 200/(200 − level) |
 | Auto-buyer | Auto-buy toggles per Upgrades section (cheapest upgrade first) |
 | Damage research | Spire damage ×1.03 per level, compounding, no cap |
 | Health research | Spire health ×1.03 per level, compounding, no cap |

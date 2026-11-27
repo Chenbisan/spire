@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.70.0';
+const APP_VERSION='1.71.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -40,7 +40,7 @@ const CFG={
   killCash:w=>2*(1+w*.05), killCoin:w=>3.5*(1+w*.03),  // per-kill rewards (× the enemy's own cash/coin); fewer, tougher enemies per wave than before, so each pays more and higher waves pay much more
   shardPerKill:.2,           // shards paid when a run ends = kills × this × tier shard multiplier (tier 2+ only)
   offlineMinRun:120,         // a run must last this many game seconds to set the offline rate
-  offlineMinAway:60,          // offline cap and speed come from the Lab
+  offlineMinAway:60,          // shorter absences pay nothing; there is no upper limit
   offlineEff:.6,              // offline earnings pay this share of what the same time playing at your best rate would
   histMax:30,                // battle history keeps this many runs
   bossEvery:10, maxDmgNums:50, maxParts:240,
@@ -93,19 +93,21 @@ const ST=[
 const SK=Object.fromEntries(ST.map(s=>[s.k,s]));
 // Lab: meta upgrades, paid in shards, applied instantly
 const LAB=[
- {k:'offCap',n:'Offline duration',d:'Offline earnings count for up to 24 h, plus 4 h per level.',max:12,c:[15,1.5],val:l=>24+4*l,f:v=>v+'h'},
- {k:'speed',n:'Overdrive',d:'Each level unlocks the next game speed: 12×, then 16×, then 24×.',max:3,c:[200,5],val:l=>[8,12,16,24][l],f:v=>'up to '+v+'×'},
- {k:'disc',n:'Workshop discount',d:'Every Workshop upgrade costs 2% fewer coins per level (up to 30% at level 15).',max:15,c:[30,1.5],val:l=>.02*l,f:v=>'−'+Math.round(v*100)+'%'},
+ {k:'speed',g:'Systems',n:'Overdrive',d:'Each level unlocks the next game speed: 12×, then 16×, then 24×.',max:3,c:[200,5],val:l=>[8,12,16,24][l],f:v=>'up to '+v+'×'},
+ {k:'auto',g:'Systems',n:'Auto-buyer',d:'Adds an auto-buy toggle to each section (Attack, Defense, Utility) of the Upgrades tab. Buys the cheapest upgrade first.',max:1,c:[150,1],val:l=>l,f:v=>v?'unlocked':'locked'},
+ // Workshop prices × 0.01^(level/200): every level takes the same ~2.3% off what's left, 99% at level 200.
+ // Cost ×1.3 per level, times 200/(200−level) so the last few levels are a real decision (level 200 is a tier-70+ purchase)
+ {k:'disc',g:'Economy',n:'Workshop discount',d:'Workshop upgrades cost fewer coins. Each level takes about 2.3% off the remaining price, up to 99% at level 200. The last levels get very expensive.',max:200,cost:l=>100*1.3**l*200/(200-l),val:l=>1-.01**(l/200),f:v=>'−'+(v*100).toFixed(1)+'%'},
  // research: no cap, every level costs more (shards grow ×tierLoot per tier, so a few more levels each tier, well past tier 20)
- {k:'rDmg',n:'Damage research',d:'Spire damage ×1.03 per level, compounding. No cap.',max:Infinity,c:[2000,1.35],val:l=>1.03**l,f:v=>'×'+(v<10?v.toFixed(2):fmt(v))},
- {k:'rHp',n:'Health research',d:'Spire health ×1.03 per level, compounding. No cap.',max:Infinity,c:[2000,1.35],val:l=>1.03**l,f:v=>'×'+(v<10?v.toFixed(2):fmt(v))},
- {k:'rCoin',n:'Bounty research',d:'+4% coins per kill per level. No cap.',max:Infinity,c:[2500,1.38],val:l=>.04*l,f:v=>'+'+fmt(Math.round(v*100))+'%'},
- {k:'rLoot',n:'Salvage research',d:'+4% shards, chips and alloy per level. No cap.',max:Infinity,c:[3000,1.4],val:l=>.04*l,f:v=>'+'+fmt(Math.round(v*100))+'%'},
- {k:'auto',n:'Auto-buyer',d:'Adds an auto-buy toggle to each section (Attack, Defense, Utility) of the Upgrades tab. Buys the cheapest upgrade first.',max:1,c:[150,1],val:l=>l,f:v=>v?'unlocked':'locked'},
+ {k:'rDmg',g:'Combat',n:'Damage research',d:'Spire damage ×1.03 per level, compounding. No cap.',max:Infinity,c:[2000,1.35],val:l=>1.03**l,f:v=>'×'+(v<10?v.toFixed(2):fmt(v))},
+ {k:'rHp',g:'Combat',n:'Health research',d:'Spire health ×1.03 per level, compounding. No cap.',max:Infinity,c:[2000,1.35],val:l=>1.03**l,f:v=>'×'+(v<10?v.toFixed(2):fmt(v))},
+ {k:'rCoin',g:'Economy',n:'Bounty research',d:'+4% coins per kill per level. No cap.',max:Infinity,c:[2500,1.38],val:l=>.04*l,f:v=>'+'+fmt(Math.round(v*100))+'%'},
+ {k:'rLoot',g:'Economy',n:'Salvage research',d:'+4% shards, chips and alloy per level. No cap.',max:Infinity,c:[3000,1.4],val:l=>.04*l,f:v=>'+'+fmt(Math.round(v*100))+'%'},
 ];
+const LAB_GROUPS=['Combat','Economy','Systems'];
 const LK=Object.fromEntries(LAB.map(l=>[l.k,l]));
 // research removed from the game, with its old cost [first level, growth], so saves get the shards back
-const LAB_GONE={offSpd:[20,1.6]};
+const LAB_GONE={offSpd:[20,1.6],offCap:[15,1.5]}; // offCap (Offline duration) removed in 1.71: offline earnings have no cap
 // Enemy shapes as unit polygons (scaled by sz). Used by the canvas and the Help icons.
 const regPoly=(n,r,rot=0)=>Array.from({length:n},(_,i)=>{const a=rot+i*2*Math.PI/n;return[Math.cos(a)*r,Math.sin(a)*r]});
 const SHAPES={

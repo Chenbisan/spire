@@ -28,10 +28,10 @@ function offline(){
   const now=Date.now(),last=save.lastSeen;persist();
   if(!last||!(save.bestCph||save.bestSph||save.bestChph))return;
   const away=(now-last)/1000;if(away<CFG.offlineMinAway)return;
-  const cap=labVal('offCap'),counted=Math.min(away,cap*3600),earned=offlineRate()*counted/3600;
+  const counted=away,earned=offlineRate()*counted/3600;
   const sh=offlineShardRate()*counted/3600,ch=offlineChipRate()*counted/3600;
   save.coins+=earned;save.stats.offCoins+=earned;save.shards+=sh;save.stats.offShards+=sh;save.stats.shards+=sh;save.chips+=ch;save.stats.offChips=(save.stats.offChips||0)+ch;save.stats.chips+=ch;persist();
-  $('wbTxt').textContent=`You were away for ${awayText(away)}`+(away>counted?` (capped at ${cap}h)`:'')+'.';
+  $('wbTxt').textContent=`You were away for ${awayText(away)}.`;
   $('wbCoins').textContent=fmt(earned);$('wbRate').textContent=fmt(offlineRate())+'/h';
   $('wbShardRow').hidden=!sh;$('wbShards').textContent=fmt(sh);$('wbSRate').textContent=fmt(offlineShardRate())+'/h';
   $('wbChipRow').hidden=!ch;$('wbChips').textContent=fmt(ch);$('wbCRate').textContent=fmt(offlineChipRate())+'/h';
