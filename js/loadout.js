@@ -10,6 +10,8 @@ function loadoutFx(){
   for(const k of save.cardEq){const c=CK[k],l=cardLv(k);if(c&&l)c.fx(F,c.v[l-1])}
   if(!MOD.off)for(const sl of MOD_SLOTS){const m=MK[save.modEq[sl.k]],l=m&&modLv(m.k);if(!l)continue;
     if(m.mul)F.mul[m.st]*=1+m.per*l;else F.add[m.st]+=m.per*l;m.fx(F,m.sp[modRarity(l)])}
+  // Lab research
+  F.mul.damage*=labVal('rDmg');F.mul.health*=labVal('rHp');F.mul.coinBonus*=1+labVal('rCoin');F.drop+=labVal('rLoot');
   return F;
 }
 const stars=l=>'★'.repeat(l)+'☆'.repeat(5-l);

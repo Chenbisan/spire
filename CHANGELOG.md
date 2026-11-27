@@ -1,5 +1,13 @@
 # What's new in Spire
 
+## 1.70.0 — 2026-11-27
+- **One tier formula all the way to tier 100:** every tier now multiplies enemy health ×12 and attack about ×7.3, and coins ×8. Shards, chips and alloy keep their tier 1–3 amounts, then double every tier (before, they grew more and more slowly and stopped keeping up). The balance sims put tier 3 at about 10 h, tier 4 at about 22 h and tier 5 at about 38 h of play.
+- **Ultimates last much longer:** every track has twice the levels (strength tracks 200, the others doubled) at the same values, so your Ultimates keep exactly their current strength. Each level now costs about 12% more than the last, matched to chip income, so there's something to buy well past tier 20 instead of maxing out around tier 5.
+- **Six medals:** Silver at 5%, Gold at 12%, Platinum at 20%, Emerald at 35%, Diamond at 50% and Prismatic at 70% complete. Silver, Gold and Platinum keep their bonuses; the three new medals are milestones for now. The last 30% is room to grow on later tiers.
+- **New Lab research with no cap:** Damage research and Health research (×1.03 per level, compounding), Bounty research (+4% coins) and Salvage research (+4% shards, chips and alloy). Shards finally have a use after the first few Lab upgrades.
+- **Hackers drain 2 levels a second** (was 1), so with twice the levels they take as long as before to shut an Ultimate down.
+- **Big numbers keep going:** after T comes aa, ab … zz (it stopped at ag before).
+
 ## 1.69.1 — 2026-11-26
 - **How to play rewritten for skimming:** every topic is now short bullet points under clear headings instead of long paragraphs. Currencies and enemy ranks are tables, and each Ultimate has its own card listing what it does and its Silver, Gold and Platinum bonuses.
 - **Fixed:** How to play said chips are spent on Equipment only; they buy Ultimates and Equipment.

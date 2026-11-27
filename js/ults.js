@@ -16,8 +16,10 @@ function ultVal(u,tr,l){return+trackVal(u.t.find(x=>x.k===tr),l).toFixed(4)}
 const uv=(k,tr)=>ultVal(UK[k],tr,ultLvH(k,tr));
 // how complete an ultimate is: the average progress of its 4 tracks (0 to 1)
 const ultProg=k=>UK[k].t.reduce((a,t)=>a+Math.min(1,ultLv(k,t.k)/t.lv),0)/UK[k].t.length;
-// a level's price: the 100-level price at the same point in the tier bands, × √(100/lv) for short tracks
-const ultCost=(t,l)=>Math.ceil((t.lv>=ULT.levels?ULT.cost(l):ULT.cost(Math.floor(l*ULT.levels/t.lv))*Math.sqrt(ULT.levels/t.lv))*(t.cm||1));
+// a level's price: on a full-length track, ULT.cost of that step; a short track's level costs every full-length step it spans,
+// so every track costs the same to finish and all four move through the medals together
+const ultCost=(t,l)=>{const L=ULT.levels,cm=t.cm||1;if(t.lv>=L)return Math.ceil(ULT.cost(l)*cm);
+  const a=Math.floor(l*L/t.lv),b=Math.floor((l+1)*L/t.lv);let c=0;for(let j=a;j<b;j++)c+=ULT.cost(j);return Math.ceil(c*cm)};
 // unlock price: ULT.unlock × the ultimate's own price multiplier × unlockGrow for every ultimate you already own (each one costs more)
 const ultUnlock=u=>Math.ceil(ULT.unlock*u.cost*ULT.unlockGrow**Object.keys(save.ults).length);
 // status: 0 none, 1 Silver, 2 Gold, 3 Platinum, from how complete the ultimate is (ULT.medals)
@@ -34,19 +36,23 @@ if((save.ultV||1)<2){for(const k in save.ults){const u=UK[k],o=ULT_OLD_LV[k];if(
 // 1.25: Shockwave Force and Gravity Well Pull grow by % per level (100 levels); convert old levels to the same value
 if(save.ultV<3){const conv=(k,tk,old)=>{const l=(save.ults[k]||{})[tk];if(!l)return;const o=ULT_V3[k][tk];save.ults[k][tk]=Math.min(o[2],Math.round(Math.log(old(l)/o[0])/Math.log(1+o[3])))};
   conv('shock','force',l=>40+1.6*l);conv('grav','pull',l=>70+2*l);save.ultV=3;persist()}
+// migrations before 1.70 use the old lengths: strength tracks 100 levels in bands of 5, short tracks half today's levels
+const LV0=t=>t.lv>=ULT.levels?100:t.lv/2;
 // 1.33: every track has 400 levels in tier bands; convert each level to the first new level that's at least as strong
 if(save.ultV<4){const O=ULT_V3;
   for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k],o=O[k]&&O[k][t.k];if(!l||!o)continue;
     const n=Math.min(l,o[2]),v=o[3]?o[0]*(1+o[3])**n:o[0]+o[1]*n;let nl=0;
-    if(t.pow)nl=Math.ceil(ULT.band*((v/t.base)**(1/t.pow)-1)-1e-9);else nl=Math.ceil((v-t.base)/(t.end-t.base)*t.lv-1e-9);
-    save.ults[k][t.k]=Math.max(0,Math.min(t.lv,nl))}}
+    if(t.pow)nl=Math.ceil(5*((v/t.base)**(1/t.pow)-1)-1e-9);else nl=Math.ceil((v-t.base)/(t.end-t.base)*LV0(t)-1e-9);
+    save.ults[k][t.k]=Math.max(0,Math.min(LV0(t),nl))}}
   save.ultV=4;persist()}
 // 1.34: 400 levels per track became 100 (5 per tier band); level n now equals old level 4n, so round up
-if(save.ultV<5){for(const k in save.ults)for(const tk in save.ults[k])save.ults[k][tk]=Math.min(ULT.levels,Math.ceil(save.ults[k][tk]/4));save.ultV=5;persist()}
+if(save.ultV<5){for(const k in save.ults)for(const tk in save.ults[k])save.ults[k][tk]=Math.min(100,Math.ceil(save.ults[k][tk]/4));save.ultV=5;persist()}
 // 1.35: capped stats got their own short tracks; convert by progress, rounding up so nothing weakens
-if(save.ultV<6){for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k];if(l&&t.lv<ULT.levels)save.ults[k][t.k]=Math.min(t.lv,Math.ceil(l*t.lv/ULT.levels-1e-9))}}save.ultV=6;persist()}
+if(save.ultV<6){for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k];if(l&&LV0(t)<100)save.ults[k][t.k]=Math.min(LV0(t),Math.ceil(l*LV0(t)/100-1e-9))}}save.ultV=6;persist()}
 // 1.39: Shockwave's Stun became a weight-scaled Damage multiplier; Stun levels are refunded at their price
-if(save.ultV<7){const sh=save.ults.shock;if(sh&&sh.stun){const old={lv:12,cm:UK.shock.cost};let back=0;for(let i=0;i<Math.min(12,sh.stun);i++)back+=ultCost(old,i);delete sh.stun;if(back){save.chips+=back;save.refund=(save.refund||0)+back}}save.ultV=7;persist()}
+if(save.ultV<7){const sh=save.ults.shock;if(sh&&sh.stun){const old={lv:12,cm:UK.shock.cost};let back=0;for(let i=0;i<Math.min(12,sh.stun);i++)back+=Math.ceil(200*(1+Math.floor(i*100/12)/5)**1.5*Math.sqrt(100/12)*old.cm);delete sh.stun;if(back){save.chips+=back;save.refund=(save.refund||0)+back}}save.ultV=7;persist()}
+// 1.70: every track has twice the levels (strength 100 → 200, short tracks doubled) at the same values; double owned levels
+if(save.ultV<8){for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k];if(l)save.ults[k][t.k]=Math.min(t.lv,l*2)}}save.ultV=8;persist()}
 const ultFx=[]; // render-only effects (real time)
 function ultInit(){run.ult={};run.frostR=0;run.frostCap=0;for(const u of ULTS)run.ult[u.k]={cd:u.passive?0:uv(u.k,'cd')*.5,act:0,x:0,y:0,ang:0,after:0,tick:0}}
 const inRange=()=>enemies.filter(e=>!e.dead&&e.dist<=run.s.range+e.d.sz);
@@ -301,7 +307,7 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
 }
 const MK_P=[],MK_C=[],MK_F=[],MK_S=[];
 // ---- Ultimates tab: one compact row per ultimate; tap a row to open it (one open at a time) ----
-const MCLS=['','s','g','p'];
+const MCLS=['','s','g','p','e','d','x'];
 const medal=k=>{const s=ultStatus(k);return s?`<span class="medal ${MCLS[s]} on">${MEDALS[s]}</span>`:''};
 const ultIcon=u=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="var(--${u.col})" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${u.icon}</svg>`;
 let ultOpen=null;
@@ -317,14 +323,15 @@ function ultsHtml(){
     h+=`<button class="uhead" ${own?`data-uopen="${u.k}" aria-expanded="${open}"`:'tabindex="-1"'}>${ultIcon(u)}<span class="un"><b>${u.n}</b> ${medal(u.k)}<i class="uprog"><i style="transform:scaleX(${own?ultProg(u.k):0})"></i></i></span><span class="ul">${own?`${Math.round(ultProg(u.k)*100)}%`:''}</span></button>`;
     if(!own)h+=`<button class="buy chip ubuy" data-ubuy="${u.k}" ${save.chips>=ultUnlock(u)?'':'disabled'}>Unlock ${fmt(ultUnlock(u))}</button>`;
     if(open){const stt=ultStatus(u.k),M=ULT.medals,pr=ultProg(u.k),lvl=m=>`${Math.min(Math.round(m*100),Math.floor(pr*100))}/${Math.round(m*100)}% complete`;
-      h+=`<div class="ubody"><p class="note">${ultDesc(u)}</p><div class="ustat"><span class="medal s${stt>=1?' on':''}">Silver</span><span>${lvl(M[0])}: <b>${u.sb}</b></span><span class="medal g${stt>=2?' on':''}">Gold</span><span>${lvl(M[1])}: <b>${u.gb}</b></span><span class="medal p${stt>=3?' on':''}">Platinum</span><span>${lvl(M[2])}: <b>${u.pb}</b></span></div>`;
+      h+=`<div class="ubody"><p class="note">${ultDesc(u)}</p><div class="ustat">${M.map((m,i)=>`<span class="medal ${MCLS[i+1]}${stt>i?' on':''}">${MEDALS[i+1]}</span><span>${lvl(m)}${i<3?`: <b>${[u.sb,u.gb,u.pb][i]}</b>`:''}</span>`).join('')}</div>`;
       for(const t of u.t){const l=ultLv(u.k,t.k),mx=l>=t.lv,cur=ultVal(u,t.k,l),{n,c}=mx?{n:0,c:0}:ultBuyPlan(u.k,t),nx=ultVal(u,t.k,l+n);
         h+=`<div class="utr"><div><b>${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${l/t.lv})"></i></i><span class="v">Lv ${l}/${t.lv}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
       h+=respecBtn('ult:'+u.k,'Refund upgrades');
       h+=u.aura?'<p class="note" style="margin:4px 0 0">Always on, no cooldown.</p>':u.passive?'<p class="note" style="margin:4px 0 0">Triggers on your shots, no cooldown.</p>':`<div class="subs" style="margin:6px 0 0"><button data-umode="${u.k}" data-v="auto" class="${ultManual(u.k)?'':'on'}">Auto</button><button data-umode="${u.k}" data-v="man" class="${ultManual(u.k)?'on':''}">Manual</button></div>`;
       h+='</div>'}
     h+='</div>'}
-  return h+`</div><p class="note" style="margin-top:8px">Bought with <b class="chip">chips</b> (shared with Equipment). Every ultimate you own is active. Its medals come from how complete it is (the average of its 4 upgrades): <b>Silver</b> at ${Math.round(ULT.medals[0]*100)}%, <b>Gold</b> at ${Math.round(ULT.medals[1]*100)}%, <b>Platinum</b> at ${Math.round(ULT.medals[2]*100)}%; each adds a bonus. Strength upgrades have ${ULT.levels} levels (${ULT.band} per tier); the others have a few big steps that get expensive fast.</p>`}
+  return h+`</div><p class="note" style="margin-top:8px">Bought with <b class="chip">chips</b> (shared with Equipment). Every ultimate you own is active. Its medals come from how complete it is (the average of its 4 upgrades): ${medalList()}. Silver, Gold and Platinum each add a bonus. Strength upgrades have ${ULT.levels} levels; the others have fewer, bigger steps. Every step costs more than the last, so there's always a next one to save for.</p>`}
+const medalList=()=>ULT.medals.map((m,i)=>`<b>${MEDALS[i+1]}</b> at ${Math.round(m*100)}%`).join(', ')
 $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const d=b.dataset;
   if(d.uopen){ultOpen=ultOpen===d.uopen?'':d.uopen;loSig='';refreshLoadout();return}
   if(d.ubuy){const uc=ultUnlock(UK[d.ubuy]);if(save.chips<uc)return;save.chips-=uc;save.stats.chipsSpent=(save.stats.chipsSpent||0)+uc;save.ults[d.ubuy]={};ultOpen=d.ubuy;if(run&&run.ult&&!UK[d.ubuy].passive)run.ult[d.ubuy].cd=uv(d.ubuy,'cd')*.5}
