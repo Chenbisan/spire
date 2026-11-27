@@ -1,5 +1,9 @@
 # What's new in Spire
 
+## 1.78.0 — 2026-11-27
+- **Enemies stay visible when the view zooms far out.** Past about 400 m of view, enemies are drawn bigger so the smallest is still about 8 screen px across, and the others keep their sizes relative to it. The spire, shield rings and freeze, charge and stun markers grow with them. Only the drawing changes: hitboxes, crowding and reach stay the same, so crowded enemies can overlap on screen.
+- **Big ranges cost much more (for now).** Range's price climbs faster and faster past Workshop level 150 (330 m) and in-run level 100 (+300 m). Workshop level 190 now costs about 730ad coins and in-run level 140 about 95aa cash, so ranges past roughly 800–900 m are out of reach for now.
+
 ## 1.77.0 — 2026-11-27
 - **Shots are hitscan.** Spire shots land the moment they're fired, so they reach any range (before, shots ran out after about 840 m). A bounce shot jumps through its whole chain at once. Shots no longer stack up on an enemy that's already dying, which makes long range, fast attack speed, multishot and bounces stronger.
 - **Ranged enemy shots are hitscan too**, so they hit as soon as they fire, however far away the Ranged stops. Frost Field Platinum still melts them: 2% chance for every 10 m of the field a shot crosses. Boss spikes still fly.

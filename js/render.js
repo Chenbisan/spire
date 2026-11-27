@@ -12,13 +12,13 @@ function sprite(t,b,rot,d=ET[t]){const k=t+d.sz+'_'+b+'_'+rot;let s=SPR[k];if(s)
   g.setTransform(sc,0,0,sc,half,half);g.beginPath();g.moveTo(P[0][0]*c-P[0][1]*n,P[0][0]*n+P[0][1]*c);for(let i=1;i<P.length;i++)g.lineTo(P[i][0]*c-P[i][1]*n,P[i][0]*n+P[i][1]*c);g.closePath();
   g.fillStyle=col;g.globalAlpha=CFG.hpFill[b];g.fill();g.globalAlpha=1;g.strokeStyle=col;g.lineWidth=2;g.lineJoin='round';g.stroke();
   return SPR[k]={cv:cv2,half}}
-let sprSc=1;
+let sprSc=1,ENZ=1; // ENZ: how much bigger than life enemies are drawn this frame (CFG.enemyPx), for overlays in other files too
 readColors();
 new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
 const ro=new ResizeObserver(()=>{const d=Math.min(2,devicePixelRatio||1);cv.width=Math.round(stage.clientWidth*d);cv.height=Math.round(stage.clientHeight*d)});ro.observe(stage);
 function shape(e,T=ctx){ // T: the canvas context, or a Path2D to collect into
-  const d=e.d,P=SHAPES[d.sh],s=d.sz,x=IX(e),y=IY(e),r=d.rot==='face'?Math.atan2(-y,-x):d.rot==='spin'?run.time*.5:0;
+  const d=e.d,P=SHAPES[d.sh],s=d.sz*ENZ,x=IX(e),y=IY(e),r=d.rot==='face'?Math.atan2(-y,-x):d.rot==='spin'?run.time*.5:0;
   const c=Math.cos(r)*s,n=Math.sin(r)*s;
   T.moveTo(x+P[0][0]*c-P[0][1]*n,y+P[0][0]*n+P[0][1]*c);
   for(let i=1;i<P.length;i++)T.lineTo(x+P[i][0]*c-P[i][1]*n,y+P[i][0]*n+P[i][1]*c);
@@ -34,31 +34,31 @@ function draw(){
   viewR=viewR?viewR+(target-viewR)*Math.min(1,(now-viewT)/300):target;viewT=now;
   const VR=viewR,sc=Math.min(W,H)/(2*VR),ext=Math.max(W,H)/sc/2;VIEW.hx=W/2/sc;VIEW.hy=H/2/sc;ctx.setTransform(sc,0,0,sc,W/2,H/2);
   // distance rings every 100 m (wider apart when zoomed far out or on small screens), labelled along the crosshair
-  ctx.strokeStyle=C.grid;ctx.lineWidth=1.5/sc*Math.min(W,H)/640;const dpr=W/(stage.clientWidth||W),step=[100,200,500,1000,2000,5000].find(st=>st*sc/dpr>=48)||10000; // keep ≥48 screen px between rings
+  ctx.strokeStyle=C.grid;ctx.lineWidth=1.5/sc*Math.min(W,H)/640;const dpr=W/(stage.clientWidth||W),step=[100,200,500,1000,2000,5000].find(st=>st*sc/dpr>=48)||10000,PX=dpr/sc; // keep ≥48 screen px between rings; PX: world metres per screen pixel
+  ENZ=Math.max(1,CFG.enemyPx*PX/ET.fast.sz);
   ctx.beginPath();for(let r=step;r<=ext;r+=step){ctx.moveTo(r,0);ctx.arc(0,0,r,0,6.283)}ctx.stroke();
   ctx.beginPath();ctx.moveTo(-ext,0);ctx.lineTo(ext,0);ctx.moveTo(0,-ext);ctx.lineTo(0,ext);ctx.stroke();
   ctx.fillStyle=C.mute;ctx.globalAlpha=.7;ctx.font=`500 ${11/sc}px 'Chakra Petch',sans-serif`;ctx.textAlign='left';
   for(let r=step;r<=ext;r+=step)ctx.fillText(r+' m',r+4/sc,-4/sc);ctx.globalAlpha=1;
-  const R=run,tr=CFG.towerR;
+  const R=run,tr=Math.max(CFG.towerR,CFG.towerPx*PX); // drawn size only: the spire's real radius stays CFG.towerR
   if(R){
     ctx.setLineDash([6,8]);ctx.strokeStyle=C.acc;ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(0,0,R.s.range,0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
     // healer pulses and shield rings sit under the bodies
     ctx.lineWidth=1.5;
     for(const e of enemies)if(!e.dead&&e.hf>0){ctx.strokeStyle=C[e.d.c];ctx.globalAlpha=e.hf/.4*.6;ctx.beginPath();ctx.arc(IX(e),IY(e),e.d.healR*(1.1-e.hf/.4*.4),0,6.283);ctx.stroke()}
     ctx.globalAlpha=1;
-    ctx.strokeStyle=C.e6;ctx.lineWidth=2;ctx.beginPath();for(const e of enemies)if(!e.dead&&e.shield>0){const x=IX(e),y=IY(e),r=e.d.sz*1.65;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();
+    ctx.strokeStyle=C.e6;ctx.lineWidth=2;ctx.beginPath();for(const e of enemies)if(!e.dead&&e.shield>0){const x=IX(e),y=IY(e),r=e.d.sz*1.65*ENZ;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();
     // bodies: the fill shows health (solid at full, emptying to just the outline), in 4 bands, batched per type and band;
     // then one outline path per type (later types draw on top, boss last). No per-enemy health bars.
     ctx.lineWidth=2;ctx.lineJoin='round';const HF=CFG.hpFill,band=e=>{const f=e.hp/e.mhp;return f>.75?0:f>.5?1:f>.25?2:3};
     // stamp pre-drawn sprites (rebuilt when the zoom or theme changes); the spinning boss is still drawn as a path
-    {const q=Math.round(Math.log2(sc)*8),key=q+'|'+colorVer;if(key!==sprKey){sprKey=key;SPR={};sprSc=2**(q/8)} // scale in ~9% steps so the smooth zoom doesn't redraw sprites every frame
+    {const q=Math.round(Math.log2(sc*ENZ)*8),key=q+'|'+colorVer;if(key!==sprKey){sprKey=key;SPR={};sprSc=2**(q/8)} // scale in ~9% steps so the smooth zoom doesn't redraw sprites every frame
       for(const t of TYPES){const d=ET[t];
         if(d.rot==='spin'){const col=C[d.c];ctx.fillStyle=col;ctx.strokeStyle=col;for(const e of enemies)if(e.t===t&&!e.dead&&e.age>=CFG.fadeIn){ctx.beginPath();shape(e);ctx.globalAlpha=HF[band(e)];ctx.fill();ctx.globalAlpha=1;ctx.stroke()}continue}
         for(const e of enemies){if(e.t!==t||e.dead||e.age<CFG.fadeIn)continue;const x=IX(e),y=IY(e);
-          const rot=d.rot==='face'?((Math.round(Math.atan2(-y,-x)/(Math.PI*2)*SPR_ROT)%SPR_ROT)+SPR_ROT)%SPR_ROT:0,sp=sprite(t,band(e),rot,e.d),h=sp.half/sprSc;
+          const rot=d.rot==='face'?((Math.round(Math.atan2(-y,-x)/(Math.PI*2)*SPR_ROT)%SPR_ROT)+SPR_ROT)%SPR_ROT:0,sp=sprite(t,band(e),rot,e.d),h=sp.half/sprSc*ENZ;
           ctx.drawImage(sp.cv,x-h,y-h,h*2,h*2)}}}
     for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=HF[band(e)]*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
-    const PX=W/(stage.clientWidth||W)/sc; // world metres per screen pixel: tracers keep a readable size however far the view zooms out
     // Lancers: while charging, a line to the spire that thickens and brightens with the charge; when the beam fires, a wide
     // bright beam that fades over beamFade real ms (real time, so it reads the same at any speed)
     {const nowR=performance.now();ctx.strokeStyle=C.e12;ctx.lineCap='round';
@@ -104,7 +104,7 @@ function draw(){
       ctx.globalAlpha=(1-k)*.9;ctx.lineWidth=4*dpr/sc;ctx.beginPath();ctx.arc(0,0,tr+8+k*viewR*.35,0,6.283);ctx.stroke();
       ctx.globalAlpha=(1-k)*.85;ctx.beginPath();for(let i=0;i<6;i++){const a=i*1.0472+Math.PI/6;i?ctx.lineTo(Math.cos(a)*tr,Math.sin(a)*tr):ctx.moveTo(Math.cos(a)*tr,Math.sin(a)*tr)}ctx.closePath();ctx.fill();
       ctx.globalAlpha=Math.min(1,(1-k)*2);ctx.font=`700 ${20*dpr/sc}px 'Chakra Petch',sans-serif`;ctx.textAlign='center';ctx.fillText('DEFIED',0,-tr-(14+k*26)*dpr/sc);ctx.globalAlpha=1}}
-    if(dnums.length){ctx.font="600 11px 'Chakra Petch',sans-serif";ctx.textAlign='center';
+    if(dnums.length){ctx.font=`600 ${Math.max(11,12*PX)}px 'Chakra Petch',sans-serif`;ctx.textAlign='center';
       for(const n of dnums){ctx.fillStyle=n.c===2?C.hot:n.c?C.gold:C.ink;ctx.globalAlpha=Math.min(1,n.l*2);ctx.fillText(n.t||(n.b?'block':fmt(n.v)),n.x,n.py+(n.y-n.py)*A)}ctx.globalAlpha=1}
   }else{ctx.fillStyle=C.acc;ctx.beginPath();ctx.arc(0,0,tr,0,6.283);ctx.fill()}
 }

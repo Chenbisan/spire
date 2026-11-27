@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.77.0';
+const APP_VERSION='1.78.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -49,7 +49,7 @@ const CFG={
   // hit flash length (real ms)
   hitFlash:180, beamFade:350,
   thornRes:{4:.5,5:.7,6:.7}, // Thorns resistance by rank: Super Elite 50%, Boss and Special Elite 70%
-  tracerLife:.12, maxTracers:300, streakMax:90, shotPx:2.5, streakPx:110,  // tracers are at least shotPx screen px wide and at most streakPx screen px (or streakMax m, if longer) long, ending at the target   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
+  tracerLife:.12, maxTracers:300, streakMax:90, shotPx:2.5, streakPx:110, enemyPx:4, towerPx:7,  // enemyPx: when the view zooms far out, enemies are drawn bigger so a Fast (the smallest) is still this many screen px across its radius (sizes stay in proportion; hitboxes don't change); towerPx: the same for the spire  // tracers are at least shotPx screen px wide and at most streakPx screen px (or streakMax m, if longer) long, ending at the target   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
   sepGap:.9, sepPush:.8, restSteps:3, walkMin:.3, sepChecks:400, sepEveryOther:800, simBudget:20,
   // background running (tab hidden): tick every bgTick ms, at most bgBudget ms of work per tick, and at most bgMaxGap s caught up per tick
   bgTick:250, bgBudget:150, bgMaxGap:5, nearR:60, dotHz:10, boltsDrawn:20, // nearR: a retargeting shot looks this far through the grid first; dotHz: damage-over-time ultimates (Laser, Gravity Well) apply damage this many times per game second // restSteps: a fully blocked enemy waits this many steps before checking for room again; walkMin: slow movers step once they've built up this many metres // sepChecks: safety cap on neighbours checked per enemy per step; simBudget: max ms of simulation per frame
@@ -64,7 +64,7 @@ const ST=[
  {k:'critMult',g:'Attack',n:'Crit damage',base:1.5,ra:.1,wa:.05,c:[10,1.15],w:[20,1.22],x:1},
  {k:'superCrit',g:'Attack',n:'Super crit chance (of crits)',base:0,ra:.01,wa:.005,max:5,c:[20,1.18],w:[40,1.25],p:1},
  {k:'superMult',g:'Attack',n:'Super crit damage',base:2,ra:.1,wa:.05,c:[20,1.17],w:[40,1.22],x:1},
- {k:'range',g:'Attack',n:'Range',base:30,ra:3,wa:2,c:[8,1.16],w:[25,1.25],u:' m'},
+ {k:'range',g:'Attack',n:'Range',base:30,ra:3,wa:2,sc:[100,.02],sw:[150,.02],c:[8,1.16],w:[25,1.25],u:' m'},
  {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.04,c:[15,1.17],w:[30,1.25],p:1,u:' per m'},
  {k:'multiChance',g:'Attack',n:'Multishot chance',base:0,ra:.01,wa:.005,max:1,c:[15,1.17],w:[30,1.25],p:1},
  {k:'multiTargets',g:'Attack',n:'Multishot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},

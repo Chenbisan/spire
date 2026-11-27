@@ -77,12 +77,12 @@ const GROUPS=['Attack','Defense','Utility'];
 function buildTabs(){$('tabs').innerHTML=TABS.map(t=>`<button data-tab="${t}" class="${t===ui.tab?'on':''}">${t}</button>`).join('')}
 $('tabs').addEventListener('click',e=>{const t=e.target.closest('button');if(t){ui.tab=save.set.tab=t.dataset.tab;persist();buildPanel()}});
 function plan(s,ws){
-  const r=run?run.lv[s.k]||0:0,w=save.ws[s.k]||0,[c0r,g]=ws?s.w:s.c,lv=ws?w:r,c0=ws?c0r*(1-labVal('disc')):c0r;
+  const r=run?run.lv[s.k]||0:0,w=save.ws[s.k]||0,lv=ws?w:r,dk=ws?1-labVal('disc'):1,pc=l=>upCost(s,l,ws)*dk;
   const bank=ws?save.coins:(run&&!run.over?run.cash:0),lim=ui.mult==='Max'?1000:ui.mult;
   let n=0,tot=0;
-  while(n<lim){if(ws?capped(s,0,w+n):capped(s,r+n,w))break;const c=c0*g**(lv+n);if(ui.mult==='Max'&&tot+c>bank)break;tot+=c;n++}
+  while(n<lim){if(ws?capped(s,0,w+n):capped(s,r+n,w))break;const c=pc(lv+n);if(ui.mult==='Max'&&tot+c>bank)break;tot+=c;n++}
   const isCap=ws?capped(s,0,w):capped(s,r,w);
-  let show=n,cost=tot;if(n===0&&!isCap){show=1;cost=c0*g**lv}
+  let show=n,cost=tot;if(n===0&&!isCap){show=1;cost=pc(lv)}
   const cur=ws?valAt(s,0,w):valAt(s,r,w),nxt=ws?valAt(s,0,w+show):valAt(s,r+show,w);
   return{n,cost,show,cur,nxt,isCap,ok:n>0&&tot<=bank};
 }
@@ -316,7 +316,7 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
   if(k==='upgrades')return sec('Three ways to get stronger',ul([`<b>Upgrades</b> tab: bought with <b class="cash">cash</b> during a run. Gone when the run ends.`,
       `<b>Workshop</b>: bought with <b class="coin">coins</b>. Permanent: these are your starting levels in every run, and in-run levels stack on top.`,
       `<b>Lab</b>: bought with <b class="shard">shards</b>. Faster game speeds, Equipment slots, cheaper Workshop, auto-buy, and research with no cap. Can't be refunded.`]))+
-    sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b> (no cap: only the price limits it).`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again. Both chances go past 100%: every shot then crits (or super crits), and the extra boosts the bonus, so 150% crit chance gives 1.5× the crit damage bonus.`,
+    sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b> (no cap: only the price limits it; past Workshop level ${SK.range.sw[0]} and in-run level ${SK.range.sc[0]} each range level's price climbs faster and faster).`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again. Both chances go past 100%: every shot then crits (or super crits), and the extra boosts the bonus, so 150% crit chance gives 1.5× the crit damage bonus.`,
       `<b>Damage per distance</b>: more damage for every metre to the target.`,`<b>Multishot</b>: a chance to also fire at more enemies in range.`,
       `<b>Bounce shots</b>: a chance for a shot to hop on to more enemies after it hits (bounce range is at most 40% of your range).`]))+
     sec('Defense',ul([`<b>Health</b> and <b>regen</b>.`,`<b>Barrier</b>: a shield in front of your health (the blue bar). Once broken it comes back full after a timer.`,

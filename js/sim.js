@@ -9,6 +9,10 @@ const speeds=()=>[1,2,3,5,8,12,16,24].filter(s=>s<=labVal('speed'));
 const curRange=()=>run&&run.s&&run.s.range!=null?run.s.range:valAt(SK.range,0,save.ws.range||0);
 // average damage multiplier from crits: 1 + crit × (crit damage − 1) + crit × super crit × crit damage × (super crit damage − 1).
 // Ultimates use it; shots average out to the same thing (see critDmg)
+// price of level lv of stat s, in-run (c) or Workshop (w). sc / sw: past level [0], each further level also costs (1 + [1])× more
+// than the extra on the one before, so the price climbs faster and faster (range, for now, so huge ranges stay out of reach)
+const steepM=(st,lv)=>st&&lv>st[0]?(1+st[1])**((lv-st[0])*(lv-st[0]+1)/2):1;
+const upCost=(s,lv,ws)=>ws?s.w[0]*s.w[1]**lv*steepM(s.sw,lv):s.c[0]*s.c[1]**lv*steepM(s.sc,lv);
 const critX=s=>1+s.crit*(s.critMult-1)+s.crit*s.superCrit*s.critMult*(s.superMult-1);
 // one hit's crit roll (c: 0 none, 1 crit, 2 super crit) and its multiplier. Chances past 100% always proc, and the extra
 // scales the bonus instead: at 150% crit every shot crits for 1 + 1.5 × (crit damage − 1); likewise for super crits
@@ -357,13 +361,13 @@ function separate(){
 }
 // ---- in-run purchase: each level rolls its section's free-upgrade chance and costs nothing on a hit ----
 function buyRun(s,n){const r=run.lv[s.k]||0,ch=run.s['free'+s.g]||0;let paid=0,free=0;
-  for(let i=0;i<n;i++){if(ch>0&&Math.random()<ch)free++;else paid+=s.c[0]*s.c[1]**(r+i)}
+  for(let i=0;i<n;i++){if(ch>0&&Math.random()<ch)free++;else paid+=upCost(s,r+i,0)}
   run.cash-=paid;run.lv[s.k]=r+n;save.stats.ups+=n;save.stats.freeUps+=free;return free}
 // ---- auto-buyer (runs from the HUD tick) ----
 function autoBuy(){
   if(!run||run.over||paused||!labLv('auto'))return;let any=false;
   for(let i=0;i<100;i++){let best=null,bc=Infinity;
-    for(const s of ST){if(s.ws||!save.set.ab[s.g])continue;const r=run.lv[s.k]||0;if(capped(s,r,save.ws[s.k]||0))continue;const c=s.c[0]*s.c[1]**r;if(c<bc){bc=c;best=s}}
+    for(const s of ST){if(s.ws||!save.set.ab[s.g])continue;const r=run.lv[s.k]||0;if(capped(s,r,save.ws[s.k]||0))continue;const c=upCost(s,r,0);if(c<bc){bc=c;best=s}}
     if(!best||bc>run.cash)break;buyRun(best,1);any=true}
   if(any)recalc();
 }

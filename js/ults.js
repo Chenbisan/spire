@@ -313,9 +313,9 @@ function drawUlts(sc,W){const R=run;if(!R||!R.ult)return;const now=performance.n
   const PR=MK_P,CH=MK_C,FZ=MK_F,SN=MK_S;PR.length=CH.length=FZ.length=SN.length=0;
   for(const e of enemies){if(e.dead)continue;if(e.d.protect&&e.age>=CFG.fadeIn)PR.push(e);if(e.d.charge&&e.cs===1)CH.push(e);if(e.frzT>0)FZ.push(e);else if(e.stunT>0)SN.push(e)}
   if(PR.length){ctx.strokeStyle=C.e10;ctx.lineWidth=1.5*dpr/sc;ctx.globalAlpha=.3;ctx.beginPath();for(const e of PR){const x=IX(e),y=IY(e);ctx.moveTo(x+CFG.protectR,y);ctx.arc(x,y,CFG.protectR,0,6.283)}ctx.stroke();ctx.globalAlpha=1} // Protectors' guard area
-  if(CH.length){ctx.strokeStyle=C.e9;ctx.lineWidth=2.5*dpr/sc;for(const e of CH){const x=IX(e),y=IY(e),r=e.d.sz*1.8,k=Math.min(1,e.ct/e.d.charge);ctx.globalAlpha=.4+.6*k;ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+6.283*k);ctx.stroke()}ctx.globalAlpha=1} // Chargers winding up
-  if(FZ.length){ctx.strokeStyle=C.alloy;ctx.lineWidth=2.5*dpr/sc;ctx.beginPath();for(const e of FZ){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke()} // frozen (Frost Field Silver)
-  if(SN.length){ctx.strokeStyle=C.gold;ctx.lineWidth=1.5*dpr/sc;ctx.setLineDash([3*dpr/sc,3*dpr/sc]);ctx.beginPath();for(const e of SN){const x=IX(e),y=IY(e),r=e.d.sz*1.5;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();ctx.setLineDash([])} // stunned
+  if(CH.length){ctx.strokeStyle=C.e9;ctx.lineWidth=2.5*dpr/sc;for(const e of CH){const x=IX(e),y=IY(e),r=e.d.sz*1.8*ENZ,k=Math.min(1,e.ct/e.d.charge);ctx.globalAlpha=.4+.6*k;ctx.beginPath();ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+6.283*k);ctx.stroke()}ctx.globalAlpha=1} // Chargers winding up
+  if(FZ.length){ctx.strokeStyle=C.alloy;ctx.lineWidth=2.5*dpr/sc;ctx.beginPath();for(const e of FZ){const x=IX(e),y=IY(e),r=e.d.sz*1.5*ENZ;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke()} // frozen (Frost Field Silver)
+  if(SN.length){ctx.strokeStyle=C.gold;ctx.lineWidth=1.5*dpr/sc;ctx.setLineDash([3*dpr/sc,3*dpr/sc]);ctx.beginPath();for(const e of SN){const x=IX(e),y=IY(e),r=e.d.sz*1.5*ENZ;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,6.283)}ctx.stroke();ctx.setLineDash([])} // stunned
 }
 const MK_P=[],MK_C=[],MK_F=[],MK_S=[];
 // ---- Ultimates tab: one compact row per ultimate; tap a row to open it (one open at a time) ----
