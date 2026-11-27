@@ -316,7 +316,7 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
   if(k==='upgrades')return sec('Three ways to get stronger',ul([`<b>Upgrades</b> tab: bought with <b class="cash">cash</b> during a run. Gone when the run ends.`,
       `<b>Workshop</b>: bought with <b class="coin">coins</b>. Permanent: these are your starting levels in every run, and in-run levels stack on top.`,
       `<b>Lab</b>: bought with <b class="shard">shards</b>. Faster game speeds, Equipment slots, cheaper Workshop, auto-buy, and research with no cap. Can't be refunded.`]))+
-    sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b>.`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again. Both chances go past 100%: every shot then crits (or super crits), and the extra boosts the bonus, so 150% crit chance gives 1.5× the crit damage bonus.`,
+    sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b> (no cap: only the price limits it).`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again. Both chances go past 100%: every shot then crits (or super crits), and the extra boosts the bonus, so 150% crit chance gives 1.5× the crit damage bonus.`,
       `<b>Damage per distance</b>: more damage for every metre to the target.`,`<b>Multishot</b>: a chance to also fire at more enemies in range.`,
       `<b>Bounce shots</b>: a chance for a shot to hop on to more enemies after it hits (bounce range is at most 40% of your range).`]))+
     sec('Defense',ul([`<b>Health</b> and <b>regen</b>.`,`<b>Barrier</b>: a shield in front of your health (the blue bar). Once broken it comes back full after a timer.`,
@@ -352,12 +352,13 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
       const when=rk===RK.BOSS?`every ${CFG.bossEvery} waves`:rankTier(d)>1?`from tier ${rankTier(d)}`:d.from?`from wave ${d.from} on tier 1`:'from wave 1';
       return`<div class="mob">${mobIcon(d)}<div><b>${d.n}</b> <span class="v">${when} · ${rel(d.hp/ET.basic.hp)} health · ${rel(d.dmg/ET.basic.dmg)} attack</span><p>${d.d}</p></div></div>`}).join('')}</div>`).join(''))+
     `<p class="note">Health and attack are relative to a Basic on the same wave.</p>`}
-  if(k==='ults'){const capped=ULTS.flatMap(u=>u.t).filter(t=>t.lv<ULT.levels).map(t=>t.lv);
+  if(k==='ults'){const capped=ULTS.flatMap(u=>u.t).filter(t=>t.lv<ULT.levels&&!t.open).map(t=>t.lv),fr=UK.frost.t.find(t=>t.k==='radius');
     return sec('How they work',ul([`Unlocked and upgraded with <b class="chip">chips</b> in the Ultimates tab. Every one you own is active.`,
       `<b>Chain Lightning</b> and <b>Frost Field</b> work all the time. The others fire on their cooldown when an enemy is in range, or set one to <b>Manual</b> and fire it from its button under the arena.`,
       `Each new Ultimate costs more to unlock than the last.`,`<b>Damage</b> is your spire damage × your <b>average crit multiplier</b>: 1 + crit × (crit damage − 1) + crit × super crit × crit damage × (super crit damage − 1). Every attack and crit stat raises it. Ultimates don't roll crits themselves unless one says so (Chain Lightning's Silver).`]))+
     sec('Upgrading',ul([`<b>Strength</b> tracks (damage, Force, Pull) have ${ULT.levels} levels, each costing about ${Math.round((ULT.grow-1)*100)}% more than the last, so they last well into the later tiers.`,
       `Other tracks (chance, slow, cooldowns, durations) have ${Math.min(...capped)}–${Math.max(...capped)} levels; each level costs as much as the stretch of a strength track it matches, so all four tracks move through the medals together.`,
+      `<b>Frost Field radius</b> has no cap: ${fr.base} m plus ${fr.step} m a level, each level ${Math.round((fr.g-1)*100)}% more than the last. Its first ${fr.lv} levels (${fmt(fr.base+fr.step*fr.lv)} m) count towards medals. Keep the field 50–120 m past your range so enemies are already slowed when they reach it; if your Frost radius falls behind, a shorter range can be worth it.`,
       `Tap an Ultimate to open it; use ×1 / ×10 / Max to buy several levels.`]))+
     sec('Medals',ul([`From how complete an Ultimate is (the average of its 4 tracks): ${medalList()}.`,`Silver, Gold and Platinum each add a bonus, listed with each Ultimate below. Emerald, Diamond and Prismatic are milestones for now.`,`The last ${100-Math.round(ULT.medals[ULT.medals.length-1]*100)}% past Prismatic is room to grow on later tiers.`]))+
     sec('The Ultimates',`<div class="mobs">${ULTS.map(u=>`<div class="mob"><span class="uico">${ultIcon(u)}</span><div><b>${u.n}</b><p>${ultDesc(u)}</p>

@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.75.0';
+const APP_VERSION='1.76.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -64,7 +64,7 @@ const ST=[
  {k:'critMult',g:'Attack',n:'Crit damage',base:1.5,ra:.1,wa:.05,c:[10,1.15],w:[20,1.22],x:1},
  {k:'superCrit',g:'Attack',n:'Super crit chance (of crits)',base:0,ra:.01,wa:.005,max:5,c:[20,1.18],w:[40,1.25],p:1},
  {k:'superMult',g:'Attack',n:'Super crit damage',base:2,ra:.1,wa:.05,c:[20,1.17],w:[40,1.22],x:1},
- {k:'range',g:'Attack',n:'Range',base:30,ra:3,wa:2,max:1000,c:[8,1.16],w:[25,1.25],u:' m'},
+ {k:'range',g:'Attack',n:'Range',base:30,ra:3,wa:2,c:[8,1.16],w:[25,1.25],u:' m'},
  {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.04,c:[15,1.17],w:[30,1.25],p:1,u:' per m'},
  {k:'multiChance',g:'Attack',n:'Multishot chance',base:0,ra:.01,wa:.005,max:1,c:[15,1.17],w:[30,1.25],p:1},
  {k:'multiTargets',g:'Attack',n:'Multishot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
@@ -212,6 +212,8 @@ const CK=Object.fromEntries(CARDS.map(c=>[c.k,c])),MK=Object.fromEntries(MODS.ma
 //   - capped stats (chance, slow, cooldowns, durations) have their own short track (lv) in natural steps from base to end
 //     (e.g. Max slow 30% → 95% in 5% steps). Level i is priced like the 100-level track at the same point in the tier bands,
 //     × √(100 / lv), so each level is a big step and the price climbs fast (ultCost in ults.js).
+// open tracks (Frost radius) have no cap: base + step per level forever, each level ×g the price of the one before
+//   (× (1 + level/band)^1.5 × the ultimate's price multiplier); lv is only how many levels count towards medals.
 // cost: each ultimate's price multiplier (unlock and every level). The more impactful ones cost more, so choosing what to save for matters.
 // Medals come from how complete an ultimate is (average progress across its 4 tracks, ULT.medals). The last 30% past Prismatic is
 // headroom for later tiers. Prices: every step of a track costs ULT.grow× the one before (on top of a gentle polynomial), matched
@@ -233,7 +235,7 @@ const ULTS=[
  {k:'frost',cost:1.25,n:'Frost Field',col:'alloy',d:()=>`Always on. ${+uv('frost','rate').toFixed(2)} times a second, every enemy inside the field (${fmt(uv('frost','radius'))} m around the spire; the view zooms out to fit it) gains a frost stack. Each stack slows it by ${PC1(ULT.frostPer)}, up to ${PC1(uv('frost','slow'))} in total, and makes it take +${(v=>+(v*100).toFixed(3)+'%')(uv('frost','brittle'))} damage from everything. Stacks never wear off.`,passive:1,aura:1,
   icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
   t:[{k:'slow',lv:26,n:'Max slow',base:.3,end:.95,f:v=>PC1(v)+` (${Math.ceil(v/ULT.frostPer-1e-9)} stacks)`},{k:'rate',lv:28,n:'Tick rate',base:.5,end:4,f:v=>(+v.toFixed(2))+' ticks/s'},
-     {k:'radius',lv:28,n:'Radius',base:20,end:600,f:v=>fmt(v)+' m'},{k:'brittle',lv:36,n:'Brittle',base:.002,end:.04,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
+     {k:'radius',open:1,lv:184,n:'Radius',base:80,step:5,g:1.25,old:{lv:28,base:20,end:600},f:v=>fmt(v)+' m'},{k:'brittle',lv:36,n:'Brittle',base:.002,end:.04,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
   sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'frozen enemies take double brittle damage', pb:'enemy shots inside the field have a 2% chance to melt for every 10 m they travel'},
  {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:()=>`Every ${S1(uv('shock','cd'))}, a ring bursts out from the spire to ${PC1(uv('shock','radius'))} of your range. Each enemy it reaches is shoved ${fmt(uv('shock','force'))} m outward, divided by the enemy's weight (the crowd can stop it), and shaken for ${ULT.shaken} s: a shaken enemy takes damage × (${+uv('shock','dmg').toFixed(2)} × its weight) from everything, never less than ×1. Bosses count only ${PC1(ULT.bossWt)} of their weight.`,
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',

@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.76.0 — 2026-11-27
+- **Range has no cap.** Workshop and in-run range keep going; only the price limits it.
+- **Frost Field radius has no cap.** It starts at 80 m and each level adds 5 m, costing 25% more than the last. That's a gentler climb than range, so a field 50–120 m past your range is affordable at the same point in the game. Enemies are then already slowed when they reach your range. If your Frost radius falls behind, a shorter range can be worth it. The first 184 levels (1,000 m) count towards medals.
+- **Your radius is kept.** Frost levels convert to the same radius on the new track, rounded up. Reaching that radius is now much cheaper, so the difference is refunded in chips.
+
 ## 1.75.0 — 2026-11-27
 - **Crit past 100%:** crit chance and super crit chance now go up to 500%. Past 100%, every shot crits (or super crits), and the extra boosts the bonus: at 150% crit chance, crits deal 1 + 1.5 × (crit damage − 1). Ultimates use the same average, so crit keeps raising their damage too.
 - **Higher caps:** range 1,000 m (was 600), damage per distance 4%/m (was 2%), multishot, bounce shot and knockback chance 100% (were 80%), barrier 300% of max health (was 100%), barrier recharge down to 10 s (was 30), defense 90% (was 75%), thorns 200% of attacker max health (was 99%, so it now beats elite and boss resistance), death defy 70% (was 50%), lifesteal 50% (was 20%), free upgrade chances 80% (were 50%). Multishot and bounce targets stay at 8 to keep the frame rate up.

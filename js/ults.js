@@ -11,7 +11,7 @@ const hackF=k=>{const h=hackOf(k);if(!h)return 0;const T=ultLvTot(k);return T?Ma
 const ultLive=k=>ultOwned(k)&&hackF(k)<1;
 const ultLvH=(k,t)=>{const l=ultLv(k,t),h=hackOf(k);return h?Math.max(0,l-(h.d[t]||0)):l};
 // strength tracks grow base × (1 + level/band)^pow; the rest move evenly from base to end over all levels
-const trackVal=(t,l)=>{const n=Math.min(l,t.lv);return t.pow?t.base*(1+n/ULT.band)**t.pow:t.base+(t.end-t.base)*n/t.lv};
+const trackVal=(t,l)=>{if(t.open)return t.base+t.step*l;const n=Math.min(l,t.lv);return t.pow?t.base*(1+n/ULT.band)**t.pow:t.base+(t.end-t.base)*n/t.lv};
 function ultVal(u,tr,l){return+trackVal(u.t.find(x=>x.k===tr),l).toFixed(4)}
 const uv=(k,tr)=>ultVal(UK[k],tr,ultLvH(k,tr));
 // Ultimate damage is spire damage × the average multiplier crits give your shots, so every crit stat raises it:
@@ -22,7 +22,7 @@ const ultDmg=()=>run.s.damage*critX(run.s);
 const ultProg=k=>UK[k].t.reduce((a,t)=>a+Math.min(1,ultLv(k,t.k)/t.lv),0)/UK[k].t.length;
 // a level's price: on a full-length track, ULT.cost of that step; a short track's level costs every full-length step it spans,
 // so every track costs the same to finish and all four move through the medals together
-const ultCost=(t,l)=>{const L=ULT.levels,cm=t.cm||1;if(t.lv>=L)return Math.ceil(ULT.cost(l)*cm);
+const ultCost=(t,l)=>{const L=ULT.levels,cm=t.cm||1;if(t.open)return Math.ceil(cm*(1+l/ULT.band)**1.5*t.g**l);if(t.lv>=L)return Math.ceil(ULT.cost(l)*cm);
   const a=Math.floor(l*L/t.lv),b=Math.floor((l+1)*L/t.lv);let c=0;for(let j=a;j<b;j++)c+=ULT.cost(j);return Math.ceil(c*cm)};
 // unlock price: ULT.unlock × the ultimate's own price multiplier × unlockGrow for every ultimate you already own (each one costs more)
 const ultUnlock=u=>Math.ceil(ULT.unlock*u.cost*ULT.unlockGrow**Object.keys(save.ults).length);
@@ -42,9 +42,10 @@ if(save.ultV<3){const conv=(k,tk,old)=>{const l=(save.ults[k]||{})[tk];if(!l)ret
   conv('shock','force',l=>40+1.6*l);conv('grav','pull',l=>70+2*l);save.ultV=3;persist()}
 // migrations before 1.70 use the old lengths: strength tracks 100 levels in bands of 5, short tracks half today's levels
 const LV0=t=>t.lv>=ULT.levels?100:t.lv/2;
+const T0=t=>t.old?Object.assign({},t,t.old,{open:0}):t; // migrations before 1.76 see Frost radius as the old 28-level track
 // 1.33: every track has 400 levels in tier bands; convert each level to the first new level that's at least as strong
 if(save.ultV<4){const O=ULT_V3;
-  for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k],o=O[k]&&O[k][t.k];if(!l||!o)continue;
+  for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t0 of u.t){const t=T0(t0),l=save.ults[k][t.k],o=O[k]&&O[k][t.k];if(!l||!o)continue;
     const n=Math.min(l,o[2]),v=o[3]?o[0]*(1+o[3])**n:o[0]+o[1]*n;let nl=0;
     if(t.pow){const p0=t.pow===ULT.dmgPow?1.2:t.pow;nl=Math.ceil(5*((v/t.base)**(1/p0)-1)-1e-9)}else nl=Math.ceil((v-t.base)/(t.end-t.base)*LV0(t)-1e-9);
     save.ults[k][t.k]=Math.max(0,Math.min(LV0(t),nl))}}
@@ -52,11 +53,16 @@ if(save.ultV<4){const O=ULT_V3;
 // 1.34: 400 levels per track became 100 (5 per tier band); level n now equals old level 4n, so round up
 if(save.ultV<5){for(const k in save.ults)for(const tk in save.ults[k])save.ults[k][tk]=Math.min(100,Math.ceil(save.ults[k][tk]/4));save.ultV=5;persist()}
 // 1.35: capped stats got their own short tracks; convert by progress, rounding up so nothing weakens
-if(save.ultV<6){for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k];if(l&&LV0(t)<100)save.ults[k][t.k]=Math.min(LV0(t),Math.ceil(l*LV0(t)/100-1e-9))}}save.ultV=6;persist()}
+if(save.ultV<6){for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t0 of u.t){const t=T0(t0);const l=save.ults[k][t.k];if(l&&LV0(t)<100)save.ults[k][t.k]=Math.min(LV0(t),Math.ceil(l*LV0(t)/100-1e-9))}}save.ultV=6;persist()}
 // 1.39: Shockwave's Stun became a weight-scaled Damage multiplier; Stun levels are refunded at their price
 if(save.ultV<7){const sh=save.ults.shock;if(sh&&sh.stun){const old={lv:12,cm:UK.shock.cost};let back=0;for(let i=0;i<Math.min(12,sh.stun);i++)back+=Math.ceil(200*(1+Math.floor(i*100/12)/5)**1.5*Math.sqrt(100/12)*old.cm);delete sh.stun;if(back){save.chips+=back;save.refund=(save.refund||0)+back}}save.ultV=7;persist()}
 // 1.70: every track has twice the levels (strength 100 → 200, short tracks doubled) at the same values; double owned levels
-if(save.ultV<8){for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k];if(l)save.ults[k][t.k]=Math.min(t.lv,l*2)}}save.ultV=8;persist()}
+if(save.ultV<8){for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t0 of u.t){const t=T0(t0);const l=save.ults[k][t.k];if(l)save.ults[k][t.k]=Math.min(t.lv,l*2)}}save.ultV=8;persist()}
+// 1.76: Frost radius has no cap (80 m + 5 m a level). Keep each save's radius (rounded up to the next level) and refund
+// what the old levels cost beyond the new price of that radius
+if(save.ultV<9){const f=save.ults.frost,t=UK.frost.t.find(x=>x.k==='radius'),o=t.old;if(f&&f.radius){const L=Math.min(o.lv,f.radius),r=o.base+(o.end-o.base)*L/o.lv;
+  let paid=0;for(let i=0;i<L;i++)paid+=ultCost(Object.assign({},t,o,{open:0}),i);const nl=Math.max(0,Math.ceil((r-t.base)/t.step-1e-9));let now=0;for(let i=0;i<nl;i++)now+=ultCost(t,i);
+  f.radius=nl;const back=Math.floor(paid-now);if(back>0){save.chips+=back;save.refund=(save.refund||0)+back}}save.ultV=9;persist()}
 const ultFx=[]; // render-only effects (real time)
 function ultInit(){run.ult={};run.frostR=0;run.frostCap=0;for(const u of ULTS)run.ult[u.k]={cd:u.passive?0:uv(u.k,'cd')*.5,act:0,x:0,y:0,ang:0,after:0,tick:0}}
 const inRange=()=>enemies.filter(e=>!e.dead&&e.dist<=run.s.range+e.d.sz);
@@ -316,8 +322,8 @@ const medal=k=>{const s=ultStatus(k);return s?`<span class="medal ${MCLS[s]} on"
 const ultIcon=u=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="var(--${u.col})" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${u.icon}</svg>`;
 let ultOpen=null;
 // levels to buy on a track with the ×1 / ×10 / Max selector, and their total cost (Max: as many as you can afford)
-function ultBuyPlan(k,t){const l=ultLv(k,t.k),lim=ui.mult==='Max'?t.lv:ui.mult;let n=0,c=0;
-  while(n<lim&&l+n<t.lv){const nc=ultCost(t,l+n);if(ui.mult==='Max'&&n>0&&c+nc>save.chips)break;c+=nc;n++}return{n,c}}
+function ultBuyPlan(k,t){const l=ultLv(k,t.k),lim=ui.mult==='Max'?(t.open?1000:t.lv):ui.mult;let n=0,c=0;
+  while(n<lim&&(t.open||l+n<t.lv)){const nc=ultCost(t,l+n);if(ui.mult==='Max'&&n>0&&c+nc>save.chips)break;c+=nc;n++}return{n,c}}
 const ultDone=k=>UK[k].t.reduce((a,t)=>a+ultLv(k,t.k),0),ultTotal=k=>UK[k].t.reduce((a,t)=>a+t.lv,0);
 function ultsHtml(){
   if(!ultOpen||!ultOwned(ultOpen))ultOpen=(ULTS.find(u=>ultOwned(u.k))||{}).k||null;
@@ -328,8 +334,8 @@ function ultsHtml(){
     if(!own)h+=`<button class="buy chip ubuy" data-ubuy="${u.k}" ${save.chips>=ultUnlock(u)?'':'disabled'}>Unlock ${fmt(ultUnlock(u))}</button>`;
     if(open){const stt=ultStatus(u.k),M=ULT.medals,pr=ultProg(u.k),lvl=m=>`${Math.min(Math.round(m*100),Math.floor(pr*100))}/${Math.round(m*100)}% complete`;
       h+=`<div class="ubody"><p class="note">${ultDesc(u)}</p><div class="ustat">${M.map((m,i)=>`<span class="medal ${MCLS[i+1]}${stt>i?' on':''}">${MEDALS[i+1]}</span><span>${lvl(m)}${i<3?`: <b>${[u.sb,u.gb,u.pb][i]}</b>`:''}</span>`).join('')}</div>`;
-      for(const t of u.t){const l=ultLv(u.k,t.k),mx=l>=t.lv,cur=ultVal(u,t.k,l),{n,c}=mx?{n:0,c:0}:ultBuyPlan(u.k,t),nx=ultVal(u,t.k,l+n);
-        h+=`<div class="utr"><div><b>${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${l/t.lv})"></i></i><span class="v">Lv ${l}/${t.lv}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
+      for(const t of u.t){const l=ultLv(u.k,t.k),mx=!t.open&&l>=t.lv,cur=ultVal(u,t.k,l),{n,c}=mx?{n:0,c:0}:ultBuyPlan(u.k,t),nx=ultVal(u,t.k,l+n);
+        h+=`<div class="utr"><div><b>${t.n}</b> <span class="v">${t.f(cur)}${mx?'':` → ${t.f(nx)}`}</span><i class="uprog"><i style="transform:scaleX(${Math.min(1,l/t.lv)})"></i></i><span class="v">${t.open?`Lv ${l} · no cap`:`Lv ${l}/${t.lv}`}</span></div>${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-uup="${u.k}" data-t="${t.k}" ${save.chips>=c?'':'disabled'}><span class="q">+${n}</span>${fmt(c)}</button>`}</div>`}
       h+=respecBtn('ult:'+u.k,'Refund upgrades');
       h+=u.aura?'<p class="note" style="margin:4px 0 0">Always on, no cooldown.</p>':u.passive?'<p class="note" style="margin:4px 0 0">Triggers on your shots, no cooldown.</p>':`<div class="subs" style="margin:6px 0 0"><button data-umode="${u.k}" data-v="auto" class="${ultManual(u.k)?'':'on'}">Auto</button><button data-umode="${u.k}" data-v="man" class="${ultManual(u.k)?'on':''}">Manual</button></div>`;
       h+='</div>'}
