@@ -355,7 +355,7 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
   if(k==='ults'){const capped=ULTS.flatMap(u=>u.t).filter(t=>t.lv<ULT.levels).map(t=>t.lv);
     return sec('How they work',ul([`Unlocked and upgraded with <b class="chip">chips</b> in the Ultimates tab. Every one you own is active.`,
       `<b>Chain Lightning</b> and <b>Frost Field</b> work all the time. The others fire on their cooldown when an enemy is in range, or set one to <b>Manual</b> and fire it from its button under the arena.`,
-      `Each new Ultimate costs more to unlock than the last.`]))+
+      `Each new Ultimate costs more to unlock than the last.`,`<b>Damage</b> is your spire damage × your <b>average crit multiplier</b>: 1 + crit × (crit damage − 1) + crit × super crit × crit damage × (super crit damage − 1). Every attack and crit stat raises it. Ultimates don't roll crits themselves unless one says so (Chain Lightning's Silver).`]))+
     sec('Upgrading',ul([`<b>Strength</b> tracks (damage, Force, Pull) have ${ULT.levels} levels, each costing about ${Math.round((ULT.grow-1)*100)}% more than the last, so they last well into the later tiers.`,
       `Other tracks (chance, slow, cooldowns, durations) have ${Math.min(...capped)}–${Math.max(...capped)} levels; each level costs as much as the stretch of a strength track it matches, so all four tracks move through the medals together.`,
       `Tap an Ultimate to open it; use ×1 / ×10 / Max to buy several levels.`]))+

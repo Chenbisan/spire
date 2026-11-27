@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.74.0 — 2026-11-27
+- **Crit stats power Ultimates:** Chain Lightning, Laser, Missiles and Firebomb now deal spire damage × your average crit multiplier (1 + crit × (crit damage − 1) + crit × super crit × crit damage × (super crit damage − 1)). Raising damage, crit chance, crit damage, super crit chance or super crit damage all make them hit harder. Ultimates still don't roll crits unless one says so (Chain Lightning's Silver bolts do, on top).
+- **To balance it, Ultimate damage tracks were lowered:** they start at half their old value and grow more slowly (× (1 + level/10)^0.6 instead of ^1.2). Early on, with low crit, Ultimates hit softer. With a crit build they hit much harder than before.
+- **Frost Field radius goes up to 600 m** (was 300 m), over the same 28 levels.
+
 ## 1.73.0 — 2026-11-27
 - **Run details:** tap a run in Battle history (or **Details** on the end-of-run screen) to see how it ended: which enemy landed the killing blow, with what attack and for how much damage. You also get damage taken from each enemy type, what was on the field at the end, your Equipment, and your spire's full stats at that moment. Runs from before this version don't have details.
 

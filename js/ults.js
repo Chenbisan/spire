@@ -14,6 +14,11 @@ const ultLvH=(k,t)=>{const l=ultLv(k,t),h=hackOf(k);return h?Math.max(0,l-(h.d[t
 const trackVal=(t,l)=>{const n=Math.min(l,t.lv);return t.pow?t.base*(1+n/ULT.band)**t.pow:t.base+(t.end-t.base)*n/t.lv};
 function ultVal(u,tr,l){return+trackVal(u.t.find(x=>x.k===tr),l).toFixed(4)}
 const uv=(k,tr)=>ultVal(UK[k],tr,ultLvH(k,tr));
+// Ultimate damage is spire damage × the average multiplier crits give your shots, so every crit stat raises it:
+// 1 + crit × (crit damage − 1) + crit × super crit × crit damage × (super crit damage − 1). Linear in crit chance, so it keeps
+// working if crit chance ever goes past 100%. Ultimates don't roll crits themselves unless one says so (Chain Lightning Silver).
+const critX=s=>1+s.crit*(s.critMult-1)+s.crit*s.superCrit*s.critMult*(s.superMult-1);
+const ultDmg=()=>run.s.damage*critX(run.s);
 // how complete an ultimate is: the average progress of its 4 tracks (0 to 1)
 const ultProg=k=>UK[k].t.reduce((a,t)=>a+Math.min(1,ultLv(k,t.k)/t.lv),0)/UK[k].t.length;
 // a level's price: on a full-length track, ULT.cost of that step; a short track's level costs every full-length step it spans,
@@ -42,7 +47,7 @@ const LV0=t=>t.lv>=ULT.levels?100:t.lv/2;
 if(save.ultV<4){const O=ULT_V3;
   for(const k in save.ults){const u=UK[k];if(!u)continue;for(const t of u.t){const l=save.ults[k][t.k],o=O[k]&&O[k][t.k];if(!l||!o)continue;
     const n=Math.min(l,o[2]),v=o[3]?o[0]*(1+o[3])**n:o[0]+o[1]*n;let nl=0;
-    if(t.pow)nl=Math.ceil(5*((v/t.base)**(1/t.pow)-1)-1e-9);else nl=Math.ceil((v-t.base)/(t.end-t.base)*LV0(t)-1e-9);
+    if(t.pow){const p0=t.pow===ULT.dmgPow?1.2:t.pow;nl=Math.ceil(5*((v/t.base)**(1/p0)-1)-1e-9)}else nl=Math.ceil((v-t.base)/(t.end-t.base)*LV0(t)-1e-9);
     save.ults[k][t.k]=Math.max(0,Math.min(LV0(t),nl))}}
   save.ultV=4;persist()}
 // 1.34: 400 levels per track became 100 (5 per tier band); level n now equals old level 4n, so round up
@@ -86,7 +91,7 @@ function ultTick(dt,tgt){const R=run;if(!R.ult)ultInit();
       if(u.k==='laser'){const L=S.laser||0;
         // Silver: tracking. The beam stays locked on the enemy it chose and only picks a new one (the one with the most health now) once that enemy dies
         if(L>=1){let t=st.big;if(!t||t.dead||t.gen!==st.bigGen){t=st.big=biggest();st.bigGen=t?t.gen:0}if(t){let da=Math.atan2(t.y,t.x)-st.ang;da=Math.atan2(Math.sin(da),Math.cos(da));const turn=(L>=3?ULT.laserTurnFast:ULT.laserTurn)*dt;st.ang+=Math.max(-turn,Math.min(turn,da))}}
-        if(dotT){const w=uv('laser','width')/2,dmg=R.s.damage*uv('laser','dmg')*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang);
+        if(dotT){const w=uv('laser','width')/2,dmg=ultDmg()*uv('laser','dmg')*dotT,cx=Math.cos(st.ang),cy=Math.sin(st.ang);
           for(const e of enemies){if(e.dead||e.x*cx+e.y*cy<=0||Math.abs(e.x*cy-e.y*cx)>w+e.d.sz)continue;
             if(L>=2)e.noHealAt=R.time; // Gold (Cauterize)
             if(L>=3){e.slowT=Math.max(e.slowT,1/CFG.dotHz+.05);e.slowF=Math.max(e.slowF||0,.5)} // Platinum (Lock-on): slowed inside the beam
@@ -150,7 +155,7 @@ function shockRings(dt,st){const R=run;if(!R.rings||!R.rings.length)return;const
 let chainStamp=0;const chainQ=[],chainV=[],chainD=[],chainNear=[],chainNd=[];
 function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),nf=uv('chain','jumps'),mul=uv('chain','mult'),jr=ULT.chainJump**2,hits=S.chain>=2?2:1;
   const stamp=++chainStamp,fx=ultFx.length<80,segs=fx?[]:null;let hitN=1;e0.cz=stamp;save.stats.ultUses++;
-  chainQ.length=chainV.length=chainD.length=0;chainQ.push(e0);chainV.push(R.s.damage*uv('chain','dmg'));chainD.push(0);
+  chainQ.length=chainV.length=chainD.length=0;chainQ.push(e0);chainV.push(ultDmg()*uv('chain','dmg'));chainD.push(0);
   // Gold strikes twice: each strike rolls its own crit, but they land as one damage call (half the work) unless the target has
   // a shield, where each strike must take off a shield of its own
   const crit=S.chain>=1,cc=R.s.crit,cm=R.s.critMult,sc=R.s.superCrit,sm=R.s.superMult;
@@ -211,9 +216,9 @@ function missileTick(dt,S){const R=run,M=R.missiles;if(!M||!M.length)return;cons
     // smoke trail: the last missileTrail positions
     const tr=m.tr||(m.tr=[]);tr.push(m.x,m.y);if(tr.length>ULT.missileTrail*2)tr.splice(0,2)}}
 // a bomblet that lost its target (or ran out of range) bursts where it is: its damage to everything in the blast radius
-function blastAt(m,x,y,S){const rad=uv('missile','radius'),dmg=run.s.damage*uv('missile','dmg')*m.m;
+function blastAt(m,x,y,S){const rad=uv('missile','radius'),dmg=ultDmg()*uv('missile','dmg')*m.m;
   forNear(x,y,rad,o=>{if((o.x-x)**2+(o.y-y)**2>rad*rad)return;const v=S>=3?dmg*ULT.mStack**(o.mh||0):dmg;o.mh=(o.mh||0)+1;damage(o,v,0,false,1)})}
-function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=R.s.damage*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
+function missileHit(m,t,S){const R=run,low=uv('missile','low'),dmg=ultDmg()*uv('missile','dmg')*(1+low*Math.max(0,1-t.hp/t.mhp))*m.m,rad=uv('missile','radius');
   const hitE=(o,f)=>{const v=S>=3?dmg*ULT.mStack**(o.mh||0):dmg;o.mh=(o.mh||0)+1;damage(o,v,0,false,f)}; // Platinum: each earlier missile hit on this enemy multiplies the damage
   if(S>=2&&!isBoss(t.d)&&t.hp/t.mhp<ULT.execute)damage(t,t.hp+1,0,false,6); // Gold (Execute): straight through any Protector
   else hitE(t,0);
@@ -235,7 +240,7 @@ function firebombTick(dt,S){const R=run,Sh=R.shells,C2=R.carpets;
   if(Sh&&Sh.length)for(let i=Sh.length-1;i>=0;i--){const s=Sh[i];if((s.t+=dt)<ULT.shellFlight)continue;Sh.splice(i,1);
     (R.carpets||(R.carpets=[])).push({x:s.x,y:s.y,r:uv('firebomb','radius'),left:uv('firebomb','dur')})}
   if(!C2||!C2.length)return;R.burnT=(R.burnT||0)+dt;for(const c of C2)c.left-=dt;
-  if(R.burnT>=1/CFG.dotHz){const tick=R.burnT,id=++fireTickN;R.burnT=0;const dps=R.s.damage*uv('firebomb','dmg'),heat=ULT.heat*(S>=2?2:1);
+  if(R.burnT>=1/CFG.dotHz){const tick=R.burnT,id=++fireTickN;R.burnT=0;const dps=ultDmg()*uv('firebomb','dmg'),heat=ULT.heat*(S>=2?2:1);
     for(const c of C2)forNear(c.x,c.y,c.r,e=>{if(e.fireTick!==id&&(e.x-c.x)**2+(e.y-c.y)**2<=c.r*c.r)e.fireTick=id});
     // e.onFire is the total time an enemy has spent on any carpet; it never resets (only a new enemy starts at 0)
     // each burning enemy takes one hit per tick, however many carpets overlap it
@@ -330,7 +335,7 @@ function ultsHtml(){
       h+=u.aura?'<p class="note" style="margin:4px 0 0">Always on, no cooldown.</p>':u.passive?'<p class="note" style="margin:4px 0 0">Triggers on your shots, no cooldown.</p>':`<div class="subs" style="margin:6px 0 0"><button data-umode="${u.k}" data-v="auto" class="${ultManual(u.k)?'':'on'}">Auto</button><button data-umode="${u.k}" data-v="man" class="${ultManual(u.k)?'on':''}">Manual</button></div>`;
       h+='</div>'}
     h+='</div>'}
-  return h+`</div><p class="note" style="margin-top:8px">Bought with <b class="chip">chips</b> (shared with Equipment). Every ultimate you own is active. Its medals come from how complete it is (the average of its 4 upgrades): ${medalList()}. Silver, Gold and Platinum each add a bonus. Strength upgrades have ${ULT.levels} levels; the others have fewer, bigger steps. Every step costs more than the last, so there's always a next one to save for.</p>`}
+  return h+`</div><p class="note" style="margin-top:8px">Bought with <b class="chip">chips</b> (shared with Equipment). Every ultimate you own is active. Damage is your spire damage × your average crit multiplier (${fmt(critX(run&&!run.over?run.s:spireStats().v))}× now), so every crit stat makes Ultimates hit harder; Ultimates only roll crits when one says so. Its medals come from how complete it is (the average of its 4 upgrades): ${medalList()}. Silver, Gold and Platinum each add a bonus. Strength upgrades have ${ULT.levels} levels; the others have fewer, bigger steps. Every step costs more than the last, so there's always a next one to save for.</p>`}
 const medalList=()=>ULT.medals.map((m,i)=>`<b>${MEDALS[i+1]}</b> at ${Math.round(m*100)}%`).join(', ')
 $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const d=b.dataset;
   if(d.uopen){ultOpen=ultOpen===d.uopen?'':d.uopen;loSig='';refreshLoadout();return}
