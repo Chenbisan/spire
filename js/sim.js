@@ -37,14 +37,15 @@ function recalc(){if(!run)return;const old=run.s?run.s.health:0;run.s={};for(con
 // ================= state =================
 let run=null,paused=false,GEN=0;
 const typeN={};let aliveN=0; // enemies on the field, per type and in total (for the caps)
-const enemies=[],ePool=[],bullets=[],bPool=[],ebs=[],ebPool=[],dnums=[],parts=[];
-// tracers: visual-only streaks for shots that landed, so hits stay visible at high game speed (faded in real time)
-const tracers=[];
-function trace(x0,y0,x1,y1,k){if(tracers.length<CFG.maxTracers)tracers.push({x0,y0,x1,y1,k,l:CFG.tracerLife})}
+const enemies=[],ePool=[],ebs=[],ebPool=[],dnums=[],parts=[]; // ebs: Boss spikes in flight (every other shot is hitscan)
+// tracers: visual-only streaks for every shot (shots are hitscan), faded in real time so they look the same at any speed.
+// At most maxTracers at once: when full, the oldest is replaced, so the screen always shows the latest shots
+const tracers=[];let traceI=0;
+function trace(x0,y0,x1,y1,k){const t={x0,y0,x1,y1,k,l:CFG.tracerLife};if(tracers.length<CFG.maxTracers)tracers.push(t);else tracers[traceI++%CFG.maxTracers]=t}
 function newRun(tier){
   stopAuto();sepBuilt=false;
-  for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
-  enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;for(const t of TYPES)typeN[t]=0;aliveN=0;
+  for(const e of enemies)ePool.push(e);for(const b of ebs)ebPool.push(b);
+  enemies.length=ebs.length=dnums.length=parts.length=tracers.length=0;for(const t of TYPES)typeN[t]=0;aliveN=0;
   run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},taken:{},killer:null,fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
   run.barT=0;recalc();run.hp=run.s.health;run.bar=run.barMax;ultInit();run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
@@ -181,9 +182,18 @@ let rankKey='',rankMap=null;
 // target priority: types above 'closest' in save.set.prio are shot first, in order; the rest share one rank (closest first)
 function targetRank(){const P=save.set.prio,ci=P.indexOf('closest');if(ci<=0)return null;const k=P.join();
   if(k!==rankKey){rankKey=k;rankMap={};TYPES.forEach(t=>rankMap[t]=ci);for(let i=0;i<ci;i++)rankMap[P[i]]=i}return rankMap}
-function fire(tgt){const s=run.s,b=bPool.pop()||{};const c=critRoll(s);save.stats.shots++;if(c){save.stats.crits++;if(c===2)save.stats.supers++}
-  b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*critDmg(s,c);b.l=2;
-  b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
+// Shots are hitscan: a shot lands the moment it's fired, drawn as a tracer from where it came from. A bounce shot then jumps
+// straight on to the nearest other enemy within bounce range, up to its bounces, all in the same step
+function hitShot(e,dmg,c,x0,y0){const R=run,s=R.s;trace(x0,y0,e.x,e.y,c===2?3:c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}
+  const dealt=damage(e,dmg*(e.d.r>=RK.ELITE?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),c);if(R.chainP&&Math.random()<R.chainP)chainBolt(e);
+  if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}
+  if(!e.dead&&!e.d.immov&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/wtOf(e),spawnMax()-d);if(k>0){walk(e,e.x/d,e.y/d,k);e.px=e.x;e.py=e.y;e.rest=0;save.stats.kbs++}}}
+function fire(tgt){const s=run.s,c=critRoll(s);save.stats.shots++;if(c){save.stats.crits++;if(c===2)save.stats.supers++}
+  const dmg=s.damage*critDmg(s,c);let bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0,e=tgt,x0=0,y0=0;
+  for(;;){const ex=e.x,ey=e.y;hitShot(e,dmg,c,x0,y0);if(bn<=0)break;const n=nearestOther(ex,ey,e,s.bounceRange);if(!n)break;bn--;save.stats.bounces++;x0=ex;y0=ey;e=n}}
+// the best living target in range (type priority, then closest), when the one picked this step dies mid-volley
+function nextTarget(pr){const rg=run.s.range;let best=null,bp=Infinity,bd=Infinity;
+  for(const e of enemies){if(e.dead||e.dist>rg+e.d.sz)continue;const p=pr?pr[e.t]:0;if(p<bp||(p===bp&&e.dist<bd)){bp=p;bd=e.dist;best=e}}return best}
 // one step of walking towards the spire, up to `stop`: small moves are saved up until they reach walkMin, and an enemy that
 // managed under a quarter of its move (the crowd ahead leaves no room) rests restSteps before checking again
 function advance(e,dist,stop,m0){e.pend+=m0;if(e.rest>0){e.rest--;return}if(e.pend<CFG.walkMin&&e.pend<dist-stop)return;
@@ -244,7 +254,11 @@ function update(dt){GEN_STEP++;
       else if(d.barrage){if(!e.hn||e.atk>=d.barrageEvery){e.atk=0;const dm=e.dmg*d.spike*CFG.hitRamp**e.hn++,ux=e.x/dist,uy=e.y/dist,bx=e.x+ux*d.sz,by=e.y+uy*d.sz;
         for(let i=0;i<d.barrage;i++){const a=(i/(d.barrage-1)-.5)*2*d.spikeFan*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a),b=ebPool.pop()||{};
           b.x=b.px=b.rx=b.x0=bx;b.y=b.py=b.ry=b.y0=by;b.cx=bx+(ux*ca-uy*sa)*d.spikeOut;b.cy=by+(ux*sa+uy*ca)*d.spikeOut;b.u=0;b.T=d.spikeFlight;b.dmg=dm;b.sp=1;b.src=null;b.st=e.t;ebs.push(b)}}}
-      else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;b.sp=0;b.src=e;b.g=e.gen;b.st=e.t;ebs.push(b)}}
+      // Ranged: hitscan too, so its shot lands at once (a tracer shows it) and triggers Thorns. Frost Field Platinum may melt it
+      // on the way through the field (meltShot); a melted shot's tracer stops at the field's edge
+      else if(d.shoot){if(e.atk>=2){e.atk=0;const dm=e.dmg*CFG.hitRamp**e.hn++,tr=CFG.towerR;
+        if(meltShot(dist)){const r=R.frostR;if(dist>r)trace(e.x,e.y,e.x/dist*r,e.y/dist*r,1)}
+        else{trace(e.x,e.y,e.x/dist*tr,e.y/dist*tr,1);hitTower(dm,e,'shot',e.t);if(R.over)return}}}
       else if(e.atk>=1){e.atk=0;hitTower(e.dmg*CFG.hitRamp**e.hn++,e,'melee');if(R.over)return}}  // each attack an enemy lands hits CFG.hitRamp × harder than its last
     if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=d.healEvery){e.ht=0;e.hf=.4;healers.push(e)}} // healed below, once the grid is built
     if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}
@@ -261,27 +275,13 @@ function update(dt){GEN_STEP++;
   ultTick(dt,tgt);if(R.over)return;
   const fi=1/s.aspd;R.fireT+=dt;
   if(!tgt)R.fireT=Math.min(R.fireT,fi);
-  else while(R.fireT>=fi){R.fireT-=fi;fire(tgt);
+  else while(R.fireT>=fi){R.fireT-=fi;if(tgt.dead){tgt=nextTarget(pr);if(!tgt){R.fireT=Math.min(R.fireT,fi);break}}fire(tgt);
     const mc=s.multiChance+R.fx.multi;
     if(mc>0&&Math.random()<mc){const extra=multiPicks(tgt,pr,Math.floor(s.multiTargets));for(const e of extra)if(!e.dead)fire(e);if(extra.length)save.stats.multi++}}
-  const m=CFG.bulletSpd*dt;
-  for(let i=bullets.length-1;i>=0;i--){
-    const b=bullets[i];b.px=b.x;b.py=b.y;let e=b.e,drop=false;
-    if(e.dead||e.gen!==b.g){e=nearest(b.x,b.y);if(e){b.e=e;b.g=e.gen}else drop=true}
-    if(!drop){const dx=e.x-b.x,dy=e.y-b.y,dd=Math.hypot(dx,dy);
-      if(dd<=m+e.d.sz){trace(b.rx,b.ry,e.x,e.y,b.c===2?3:b.c?2:0);if(R.fx.slowHit){e.slowT=1;e.slowF=R.fx.slowHit}{const dealt=damage(e,b.dmg*(e.d.r>=RK.ELITE?1+R.fx.eliteDmg:1)*(1+s.dmgDist*e.dist),b.c);if(R.chainP&&Math.random()<R.chainP)chainBolt(e);if(s.lifesteal>0&&dealt>0){const h=Math.min(s.health-R.hp,dealt*s.lifesteal);if(h>0){R.hp+=h;save.stats.stolen+=h}}}drop=true;
-        if(!e.dead&&!e.d.immov&&s.kbChance>0&&Math.random()<s.kbChance){const d=Math.hypot(e.x,e.y)||1,k=Math.min(s.kbForce/wtOf(e),spawnMax()-d);if(k>0){walk(e,e.x/d,e.y/d,k);e.px=e.x;e.py=e.y;e.rest=0;save.stats.kbs++}}
-        if(b.bn>0){const n=nearestOther(e.x,e.y,e,s.bounceRange);if(n){b.bn--;b.rx=b.x=b.px=e.x;b.ry=b.y=b.py=e.y;b.e=n;b.g=n.gen;b.l=2;drop=false;save.stats.bounces++}}}else{b.x+=dx/dd*m;b.y+=dy/dd*m;b.l-=dt;if(b.l<=0)drop=true}}
-    if(drop){bullets[i]=bullets[bullets.length-1];bullets.pop();bPool.push(b)}
-  }
-  const em=CFG.ebSpd*dt;
-  for(let i=ebs.length-1;i>=0;i--){const b=ebs[i],d=Math.hypot(b.x,b.y);b.px=b.x;b.py=b.y;
+  for(let i=ebs.length-1;i>=0;i--){const b=ebs[i];b.px=b.x;b.py=b.y;
     // Boss spikes follow their curve and land on the spire when it ends (spikes have no attacker, so no Thorns)
     if(b.sp){b.u+=dt/b.T;if(b.u>=1){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);hitTower(b.dmg,null,'spike',b.st);if(R.over)return;continue}
-      const u=b.u,v=1-u;b.x=v*v*b.x0+2*v*u*b.cx;b.y=v*v*b.y0+2*v*u*b.cy;continue}
-    // a Ranged shot triggers Thorns on its shooter, if it's still alive
-    if(d<=tr+em){trace(b.rx,b.ry,b.x/d*tr,b.y/d*tr,1);ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);const s=b.src;hitTower(b.dmg,s&&!s.dead&&s.gen===b.g?s:null,'shot',b.st);b.src=null;if(R.over)return}
-    else{b.x-=b.x/d*em;b.y-=b.y/d*em}}
+      const u=b.u,v=1-u;b.x=v*v*b.x0+2*v*u*b.cx;b.y=v*v*b.y0+2*v*u*b.cy}}
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.px=p.x;p.py=p.y;p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;if(p.l<=0){parts[i]=parts[parts.length-1];parts.pop()}}
   for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}
 }

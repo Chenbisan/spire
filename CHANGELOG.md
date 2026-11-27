@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.77.0 — 2026-11-27
+- **Shots are hitscan.** Spire shots land the moment they're fired, so they reach any range (before, shots ran out after about 840 m). A bounce shot jumps through its whole chain at once. Shots no longer stack up on an enemy that's already dying, which makes long range, fast attack speed, multishot and bounces stronger.
+- **Ranged enemy shots are hitscan too**, so they hit as soon as they fire, however far away the Ranged stops. Frost Field Platinum still melts them: 2% chance for every 10 m of the field a shot crosses. Boss spikes still fly.
+- **New shot look:** every shot leaves a short tracer that ends at its target and fades in real time, so it looks the same at every game speed. Tracers stay readable when the view zooms far out. The screen shows up to 300 of the latest at once.
+
 ## 1.76.0 — 2026-11-27
 - **Range has no cap.** Workshop and in-run range keep going; only the price limits it.
 - **Frost Field radius has no cap.** It starts at 80 m and each level adds 5 m, costing 25% more than the last. That's a gentler climb than range, so a field 50–120 m past your range is affordable at the same point in the game. Enemies are then already slowed when they reach your range. If your Frost radius falls behind, a shorter range can be worth it. The first 184 levels (1,000 m) count towards medals.

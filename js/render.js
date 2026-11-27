@@ -24,14 +24,6 @@ function shape(e,T=ctx){ // T: the canvas context, or a Path2D to collect into
   for(let i=1;i<P.length;i++)T.lineTo(x+P[i][0]*c-P[i][1]*n,y+P[i][0]*n+P[i][1]*c);
   T.closePath();
 }
-function shots(list,col,h){
-  if(!list.length)return;
-  ctx.strokeStyle=col;ctx.globalAlpha=.45;ctx.lineWidth=h;ctx.lineCap='round';ctx.beginPath();
-  for(const b of list){if(b.sp)continue;const x=IX(b),y=IY(b);let x0=b.rx,y0=b.ry;const dx=x-x0,dy=y-y0,L=Math.hypot(dx,dy);
-    if(L>CFG.streakMax){x0=x-dx/L*CFG.streakMax;y0=y-dy/L*CFG.streakMax}if(L>.5){ctx.moveTo(x0,y0);ctx.lineTo(x,y)}}
-  ctx.stroke();ctx.globalAlpha=1;ctx.lineCap='butt';
-  ctx.fillStyle=col;ctx.beginPath();for(const b of list){if(b.sp)continue;const x=IX(b),y=IY(b);ctx.rect(x-h,y-h,h*2,h*2);b.rx=x;b.ry=y}ctx.fill();
-}
 let viewR=0,viewT=0;
 // the radius the view zooms to (m from the spire to the nearest screen edge): fits the spawn ring, which follows your range
 function viewFit(){const [v0,v1,vAt]=CFG.viewRatio,rg=run&&run.s?run.s.range:0,vk=Math.max(0,Math.min(1,(rg-SK.range.base)/(vAt-SK.range.base)));return Math.max(CFG.arenaR,rg*(v0+(v1-v0)*vk),(run&&run.frostR||0)*CFG.frostView)} // Frost Field bigger than range: zoom out to fit it
@@ -66,8 +58,7 @@ function draw(){
           const rot=d.rot==='face'?((Math.round(Math.atan2(-y,-x)/(Math.PI*2)*SPR_ROT)%SPR_ROT)+SPR_ROT)%SPR_ROT:0,sp=sprite(t,band(e),rot,e.d),h=sp.half/sprSc;
           ctx.drawImage(sp.cv,x-h,y-h,h*2,h*2)}}}
     for(const e of enemies)if(!e.dead&&e.age<CFG.fadeIn){const col=C[e.d.c],f=e.age/CFG.fadeIn;ctx.beginPath();shape(e);ctx.fillStyle=col;ctx.globalAlpha=HF[band(e)]*f;ctx.fill();ctx.globalAlpha=f;ctx.strokeStyle=col;ctx.stroke()}ctx.globalAlpha=1;
-    // shots: a streak from where each was last drawn to where it is now, so fast shots glide instead of jumping
-    shots(bullets,C.acc,2);shots(ebs,C.e4,2.5);
+    const PX=W/(stage.clientWidth||W)/sc; // world metres per screen pixel: tracers keep a readable size however far the view zooms out
     // Lancers: while charging, a line to the spire that thickens and brightens with the charge; when the beam fires, a wide
     // bright beam that fades over beamFade real ms (real time, so it reads the same at any speed)
     {const nowR=performance.now();ctx.strokeStyle=C.e12;ctx.lineCap='round';
@@ -84,10 +75,10 @@ function draw(){
       if(any)ctx.fill()}
     ctx.lineCap='round';
     // tracers, batched: one path per colour and fade step (4 steps) instead of one stroke per tracer (up to maxTracers a frame)
-    ctx.lineWidth=2.5;const TRC=[C.acc,C.e4,C.gold,C.hot];
+    ctx.lineWidth=Math.max(2.5,CFG.shotPx*PX);const TRC=[C.acc,C.e4,C.gold,C.hot],TSM=Math.max(CFG.streakMax,CFG.streakPx*PX);
     for(let k=0;k<4;k++)for(let a=0;a<4;a++){let any=false;ctx.beginPath();
       for(const t of tracers){if(t.k!==k||Math.min(3,Math.floor(t.l/CFG.tracerLife*4))!==a)continue;any=true;
-        let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>CFG.streakMax){x0=t.x1-dx/L*CFG.streakMax;y0=t.y1-dy/L*CFG.streakMax}
+        let x0=t.x0,y0=t.y0;const dx=t.x1-x0,dy=t.y1-y0,L=Math.hypot(dx,dy);if(L>TSM){x0=t.x1-dx/L*TSM;y0=t.y1-dy/L*TSM}
         ctx.moveTo(x0,y0);ctx.lineTo(t.x1,t.y1)}
       if(any){ctx.strokeStyle=TRC[k];ctx.globalAlpha=.55*(a+.5)/4;ctx.stroke()}}
     ctx.globalAlpha=1;ctx.lineCap='butt';

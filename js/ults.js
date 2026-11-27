@@ -134,8 +134,10 @@ function frostTick(dt,st){const R=run;if(!ultLive('frost')){R.frostR=R.frostCap=
   if(F.tick>=1/uv('frost','rate')){F.tick=0;const r=R.frostR;
     for(const e of enemies){if(e.dead||e.dist>r+e.d.sz)continue;e.fs++;
       if(st>=1&&!e.frz1&&e.fs>=maxSt){e.frz1=true;e.frzT=ULT.freeze}}} // Silver: freeze the first time it reaches max slow
-  // Platinum: each step an enemy shot spends inside the field it may melt, ULT.melt chance per 10 m travelled
+  // Platinum: each step a Boss spike spends inside the field it may melt, ULT.melt chance per 10 m travelled (Ranged shots: meltShot)
   if(st>=3){const r2=R.frostR**2,p=1-(1-ULT.melt)**(CFG.ebSpd*dt/10);for(let i=ebs.length-1;i>=0;i--){const b=ebs[i];if(b.x*b.x+b.y*b.y<=r2&&Math.random()<p){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b)}}}}
+// Frost Field Platinum vs a (hitscan) Ranged shot fired from d m away: ULT.melt chance for every 10 m of field it crosses
+function meltShot(d){const R=run;if(!R.frostR||ultStatusH('frost')<3)return false;const path=Math.max(0,Math.min(d,R.frostR)-CFG.towerR);return Math.random()<1-(1-ULT.melt)**(path/10)}
 // Shockwave: a ring travels out from the spire to its radius in ULT.ringTime. Each enemy it reaches is shoved outward (force ÷ weight,
 // never through the crowd) and shaken for ULT.shaken s: it takes damage × (multiplier × weight) from everything. No damage of its own.
 let ringId=0;

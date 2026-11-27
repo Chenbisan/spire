@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.76.0';
+const APP_VERSION='1.77.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -8,7 +8,7 @@ const CFG={
   arenaR:100, spawnR:110, spawnRatio:1.35, viewRatio:[1.15,1.5,510], frostView:1.1, fadeIn:.5,  // viewRatio: the view fits range × this, growing from [0] at the base range to [1] at [2] m so there's room to see enemies walk in; frostView: the view also fits Frost Field's radius × this, and enemies spawn outside it
   offscreen:25,  // offscreen: how far past the screen edge enemies spawn (m)
    // spawn ring 35% beyond your range; the view fits range ×1.12 so enemies walk in from off-screen; new enemies fade in (game s)
-  towerR:14, bulletSpd:420, ebSpd:120,
+  towerR:14, ebSpd:120,  // ebSpd: Boss spike speed for Frost melt (every other shot is hitscan)
   tierUnlockWave:2500,                     // reach this wave to unlock the next tier (a quarter of the way to the final wave)
   // tier multipliers: one constant step per tier, the same all the way to tier 100 (calibrated with the balance sims on tiers 2-6).
   // Enemy health ×tierHp per tier, attack ×tierHp^tierAtk; coins ×tierCoin. Shards and drops (chips, alloy) keep their tier 1-3
@@ -49,7 +49,7 @@ const CFG={
   // hit flash length (real ms)
   hitFlash:180, beamFade:350,
   thornRes:{4:.5,5:.7,6:.7}, // Thorns resistance by rank: Super Elite 50%, Boss and Special Elite 70%
-  tracerLife:.12, maxTracers:300, streakMax:90,   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
+  tracerLife:.12, maxTracers:300, streakMax:90, shotPx:2.5, streakPx:110,  // tracers are at least shotPx screen px wide and at most streakPx screen px (or streakMax m, if longer) long, ending at the target   // shot streaks: real seconds a landed shot's trail lingers; longest drawn trail
   sepGap:.9, sepPush:.8, restSteps:3, walkMin:.3, sepChecks:400, sepEveryOther:800, simBudget:20,
   // background running (tab hidden): tick every bgTick ms, at most bgBudget ms of work per tick, and at most bgMaxGap s caught up per tick
   bgTick:250, bgBudget:150, bgMaxGap:5, nearR:60, dotHz:10, boltsDrawn:20, // nearR: a retargeting shot looks this far through the grid first; dotHz: damage-over-time ultimates (Laser, Gravity Well) apply damage this many times per game second // restSteps: a fully blocked enemy waits this many steps before checking for room again; walkMin: slow movers step once they've built up this many metres // sepChecks: safety cap on neighbours checked per enemy per step; simBudget: max ms of simulation per frame
@@ -236,7 +236,7 @@ const ULTS=[
   icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
   t:[{k:'slow',lv:26,n:'Max slow',base:.3,end:.95,f:v=>PC1(v)+` (${Math.ceil(v/ULT.frostPer-1e-9)} stacks)`},{k:'rate',lv:28,n:'Tick rate',base:.5,end:4,f:v=>(+v.toFixed(2))+' ticks/s'},
      {k:'radius',open:1,lv:184,n:'Radius',base:80,step:5,g:1.25,old:{lv:28,base:20,end:600},f:v=>fmt(v)+' m'},{k:'brittle',lv:36,n:'Brittle',base:.002,end:.04,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
-  sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'frozen enemies take double brittle damage', pb:'enemy shots inside the field have a 2% chance to melt for every 10 m they travel'},
+  sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'frozen enemies take double brittle damage', pb:'enemy shots and spikes have a 2% chance to melt for every 10 m of the field they crossl'},
  {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:()=>`Every ${S1(uv('shock','cd'))}, a ring bursts out from the spire to ${PC1(uv('shock','radius'))} of your range. Each enemy it reaches is shoved ${fmt(uv('shock','force'))} m outward, divided by the enemy's weight (the crowd can stop it), and shaken for ${ULT.shaken} s: a shaken enemy takes damage × (${+uv('shock','dmg').toFixed(2)} × its weight) from everything, never less than ×1. Bosses count only ${PC1(ULT.bossWt)} of their weight.`,
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
   t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:36,n:'Shake multiplier',base:.5,end:10,f:v=>`×${+v.toFixed(2)} × enemy weight damage taken`},

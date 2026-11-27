@@ -106,7 +106,7 @@ These are classic `<script>` files, not ES modules, so the game keeps working fr
 ## Tech notes
 
 - Plain HTML, CSS and JS using Canvas 2D, with no build step.
-- Shots are drawn as streaks from their last drawn position, and shots that land within one frame leave a short fading tracer, so they stay visible at 24× speed.
+- Spire shots and Ranged enemy shots are hitscan: they land the moment they're fired (a bounce shot jumps through its whole chain in the same step) and nothing is tracked in flight, so range, attack speed, multishot and bounces cost the same however far shots go. Each shot leaves a fading tracer that ends at its target, kept at least `shotPx` screen px wide and at most `streakPx` long so it reads at any zoom. At most `maxTracers` are drawn, replacing the oldest, and they fade in real time so they look the same at every game speed. Frost Field Platinum melts a Ranged shot with 2% chance per 10 m of field it crosses (`meltShot`). Boss spikes still fly their curve.
 - Fixed-timestep simulation (60 Hz) with render interpolation, so motion is smooth at any refresh rate and game speed adds simulation steps instead of skipping frames.
 - Object pooling for enemies and projectiles, and batched drawing per enemy type.
 - Saves to `localStorage` (`spire-save-v1`). Settings → Copy backup code exports a save, and Import restores it. Saves are tied to the site the game runs on, so use a backup code when moving between hosts.

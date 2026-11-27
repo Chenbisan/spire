@@ -33,7 +33,7 @@ function hud(){
   else{TX('hpTxt','–')}
   if(run&&run.barMax>0)TX('barTxt',run.barT>0?`◈ ${mmss(run.barT)}`:`◈ ${fmt(run.bar)}`);
   const pf=$('perf');pf.hidden=!save.set.perf;$('perfBtn').classList.toggle('on',save.set.perf);
-  if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame${simCapped?'  ·  busy: running below set speed':''}\n${enemies.length} enemies  ·  ${bullets.length} shots  ·  ${ebs.length} enemy shots`;
+  if(save.set.perf)pf.textContent=`${fps} fps  ·  sim ${simMs.toFixed(2)} ms/frame${simCapped?'  ·  busy: running below set speed':''}\n${enemies.length} enemies  ·  ${tracers.length} tracers  ·  ${ebs.length} spikes`;
   refreshPanel();refreshUltBar();refreshHackBar();if(typeof updRunNote==='function')updRunNote();
 }
 let ovTier=save.tierMax;
@@ -170,7 +170,7 @@ function settingsClick(b){
     navigator.clipboard?.writeText(code).then(()=>toast('Backup code copied'),()=>toast('Select the code and copy it'))||toast('Select the code and copy it')}
   else if(a==='import'){try{const s=JSON.parse(decodeURIComponent(escape(atob(tx.value.trim()))));if(s.v!==1)throw 0;save=fromSaved(s);persist();recalc();toast('Save imported');buildPanel();if(!run)showOv('start');openModal('settings')}catch(e){toast('That code did not work')}}
   else if(a==='abandon'){if(run&&!run.over){closeModal();gameOver(true)}}
-  else if(a==='reset'){if(Date.now()-resetArm<3000){stopAuto();save=fresh();persist();run=null;enemies.length=bullets.length=ebs.length=0;ovTier=1;showOv('start');buildPanel();buildSpeeds();closeModal();toast('Progress reset')}else{resetArm=Date.now();b.textContent='Click again to confirm'}}
+  else if(a==='reset'){if(Date.now()-resetArm<3000){stopAuto();save=fresh();persist();run=null;enemies.length=ebs.length=0;ovTier=1;showOv('start');buildPanel();buildSpeeds();closeModal();toast('Progress reset')}else{resetArm=Date.now();b.textContent='Click again to confirm'}}
 }
 function optChange(e){if(e.target.id==='optDn')save.set.dmgNums=e.target.checked;if(e.target.id==='optPf')save.set.perf=e.target.checked;
   if(e.target.id==='optAuto'){save.set.auto=e.target.checked;if(!save.set.auto&&autoTimer){stopAuto();if(run&&run.over)showOv('over')}}
