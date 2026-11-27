@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.71.0';
+const APP_VERSION='1.72.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -94,6 +94,8 @@ const SK=Object.fromEntries(ST.map(s=>[s.k,s]));
 // Lab: meta upgrades, paid in shards, applied instantly
 const LAB=[
  {k:'speed',g:'Systems',n:'Overdrive',d:'Each level unlocks the next game speed: 12×, then 16×, then 24×.',max:3,c:[200,5],val:l=>[8,12,16,24][l],f:v=>'up to '+v+'×'},
+ // Equipment slots: 2 free, +1 per level up to 18; each slot ×3.2 the shards of the last (the 18th is a tier-20+ purchase)
+ {k:'slots',g:'Systems',n:'Equipment slots',d:'+1 Equipment slot per level, up to 18. Each slot costs about 3× the last.',max:16,c:[500,3.2],val:l=>CARD.slots0+l,f:v=>v+' slots'},
  {k:'auto',g:'Systems',n:'Auto-buyer',d:'Adds an auto-buy toggle to each section (Attack, Defense, Utility) of the Upgrades tab. Buys the cheapest upgrade first.',max:1,c:[150,1],val:l=>l,f:v=>v?'unlocked':'locked'},
  // Workshop prices × 0.01^(level/200): every level takes the same ~2.3% off what's left, 99% at level 200.
  // Cost ×1.3 per level, times 200/(200−level) so the last few levels are a real decision (level 200 is a tier-70+ purchase)
@@ -174,7 +176,7 @@ const ALLOY_RANK={[RK.ELITE]:1,[RK.SUPER]:3,[RK.SPECIAL]:8};
 const DROPS={chips:(w,t)=>2*(1+w/20)*CFG.tier(t).drop, alloy:(w,t)=>(1+w/50)*CFG.tier(t).drop};
 // Equipment: items that add a mechanic (not plain stats; those come from upgrades). Bought with chips (boss drops),
 // equipped into slots, levelled to 5 stars. v = value per star. (Internally still save.cards / CARDS so old saves load.)
-const CARD={buy:10, up:[10,20,40,80], slots0:2, slotCost:[40,120,300]}; // up[i]: star i+1 → i+2; slotCost: 3rd, 4th, 5th slot
+const CARD={buy:10, up:[10,20,40,80], slots0:2}; // up[i]: star i+1 → i+2; more slots come from the Lab (LK.slots)
 const CARDS=[
  {k:'wind',n:'Second Wind',col:'acc',icon:'<path d="M12 20s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.4C19 15.6 12 20 12 20z"/><path d="M8 12.5h2.2l1.2-2.5 1.6 4.5 1.2-2h1.8"/>',
   v:[60,75,90,105,120],f:v=>`once per run, a killing blow is cancelled and the spire is invincible for ${v} s`,fx:(F,v)=>F.revive=Math.max(F.revive,v)}, // v: invincible game seconds

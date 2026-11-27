@@ -17,11 +17,11 @@ function loadoutFx(){
 const stars=l=>'★'.repeat(l)+'☆'.repeat(5-l);
 const eqIcon=c=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="var(--${c.col})" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${c.icon}</svg>`;
 function cardsHtml(){
-  const used=save.cardEq.length,next=CARD.slotCost[save.cardSlots-CARD.slots0],canSlot=next!=null&&save.cardSlots<CARDS.length;
+  const used=save.cardEq.length,slots=eqSlots();
   let h=`<p class="note">Equipment adds new abilities to the spire. Refund anything for all its chips back. Buy it with <b class="chip">chips</b>, which bosses drop, equip it into a slot and level it up to 5 stars. Swap any time, even mid-run.</p>
-  <div class="lhead"><span>Chips <b class="chip">${fmt(save.chips)}</b></span>${canSlot?`<button class="chip" data-cslot ${save.chips>=next?'':'disabled'}>+1 slot · ${fmt(next)}</button>`:''}</div>
-  <div class="gh">Equipped ${used} / ${save.cardSlots}</div><div class="eqslots">`;
-  for(let i=0;i<save.cardSlots;i++){const c=CK[save.cardEq[i]];
+  <div class="lhead"><span>Chips <b class="chip">${fmt(save.chips)}</b></span><span class="note" style="margin:0">More slots: Lab → Systems</span></div>
+  <div class="gh">Equipped ${used} / ${slots}</div><div class="eqslots">`;
+  for(let i=0;i<slots;i++){const c=CK[save.cardEq[i]];
     h+=c?`<button class="eqslot on" data-ceq="${c.k}" title="Unequip ${c.n}" style="--c:var(--${c.col})">${eqIcon(c)}<b>${c.n}</b><span class="stars">${stars(cardLv(c.k))}</span></button>`
         :`<div class="eqslot empty"><span>Empty slot</span></div>`}
   h+=`</div><div class="gh">Armory</div><div class="armory">`;
@@ -30,7 +30,7 @@ function cardsHtml(){
     h+=`<div class="item${eq?' eq':''}${l?'':' locked'}" style="--c:var(--${c.col})"><div class="itop">${eqIcon(c)}<div><b>${c.n}</b><span class="stars">${l?stars(l):'not owned'}</span></div></div>
       <p>${v}</p><div class="ibtns">
       ${mx?'<button class="buy" disabled>Max</button>':`<button class="buy chip" data-cbuy="${c.k}" ${save.chips>=cost?'':'disabled'}>${l?'<span class="q">★</span>':'Buy '}${fmt(cost)}</button>`}
-      ${l?`<button data-ceq="${c.k}" class="${eq?'on':''}" ${!eq&&used>=save.cardSlots?'disabled':''}>${eq?'Equipped':'Equip'}</button>`:''}</div>${l?respecBtn('card:'+c.k,'Refund'):''}</div>`}
+      ${l?`<button data-ceq="${c.k}" class="${eq?'on':''}" ${!eq&&used>=slots?'disabled':''}>${eq?'Equipped':'Equip'}</button>`:''}</div>${l?respecBtn('card:'+c.k,'Refund'):''}</div>`}
   return h+`</div><p class="note">More equipment is on the way.</p>`;
 }
 function modsHtml(){
@@ -51,14 +51,13 @@ function modsHtml(){
 // affordability changes as chips/alloy drop mid-run; rebuild the tab when it does
 let loSig='';
 function refreshLoadout(){if(ui.tab!=='Equipment'&&ui.tab!=='Ultimates'&&ui.tab!=='Modules')return;const P=$('panel');
-  const sig=ui.tab+'|'+save.cardEq.join()+'|'+(ui.tab==='Ultimates'?JSON.stringify(save.ults)+JSON.stringify(save.set.ultMan)+Math.floor(save.chips):'')+'|'+[CARD.buy,...CARD.up,...CARD.slotCost].filter(c=>save.chips>=c).length+'|'+MODS.map(m=>{const l=modLv(m.k);return save.alloy>=(l?modCost(l):MOD.buy)?1:0}).join('');
+  const sig=ui.tab+'|'+save.cardEq.join()+'|'+(ui.tab==='Ultimates'?JSON.stringify(save.ults)+JSON.stringify(save.set.ultMan)+Math.floor(save.chips):'')+'|'+[CARD.buy,...CARD.up].filter(c=>save.chips>=c).length+'|'+MODS.map(m=>{const l=modLv(m.k);return save.alloy>=(l?modCost(l):MOD.buy)?1:0}).join('');
   if(sig===loSig)return;loSig=sig;const y=P.scrollTop;P.innerHTML=ui.tab==='Equipment'?cardsHtml():ui.tab==='Ultimates'?ultsHtml():modsHtml();P.scrollTop=y}
 function loadoutChanged(){persist();if(run&&!run.over)recalc();loSig='';refreshLoadout()}
 $('panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const d=b.dataset;
   if(d.cbuy){const k=d.cbuy,l=cardLv(k),c=l?CARD.up[l-1]:CARD.buy;if(l>=5||save.chips<c)return;save.chips-=c;save.stats.chipsSpent=(save.stats.chipsSpent||0)+c;save.cards[k]=l+1;
-    if(!l&&save.cardEq.length<save.cardSlots)save.cardEq.push(k);loadoutChanged()}
-  else if(d.ceq){const k=d.ceq,i=save.cardEq.indexOf(k);if(i>=0)save.cardEq.splice(i,1);else if(save.cardEq.length<save.cardSlots)save.cardEq.push(k);loadoutChanged()}
-  else if('cslot' in d){const c=CARD.slotCost[save.cardSlots-CARD.slots0];if(c==null||save.chips<c)return;save.chips-=c;save.cardSlots++;loadoutChanged()}
+    if(!l&&save.cardEq.length<eqSlots())save.cardEq.push(k);loadoutChanged()}
+  else if(d.ceq){const k=d.ceq,i=save.cardEq.indexOf(k);if(i>=0)save.cardEq.splice(i,1);else if(save.cardEq.length<eqSlots())save.cardEq.push(k);loadoutChanged()}
   else if(MOD.off&&(d.mbuy||d.meq))return;
   else if(d.mbuy){const m=MK[d.mbuy],l=modLv(m.k),c=l?modCost(l):MOD.buy;if(l>=MOD.max||save.alloy<c)return;save.alloy-=c;save.stats.alloySpent=(save.stats.alloySpent||0)+c;save.mods[m.k]=l+1;
     if(!l&&!modLv(save.modEq[m.s]||''))save.modEq[m.s]=m.k;loadoutChanged()}

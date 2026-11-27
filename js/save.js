@@ -4,10 +4,12 @@ const KEY='spire-save-v1';
 // lifetime counters for the Stats sheet; old saves get zeros and 'since' = the day they first load this version
 const freshStats=()=>({since:Date.now(),time:0,coins:0,offCoins:0,cash:0,shards:0,dmg:0,thorn:0,taken:0,shots:0,crits:0,blocked:0,
   elite:0,boss:0,chips:0,alloy:0,multi:0,bounces:0,absorbed:0,offShards:0,offChips:0,ultUses:0,supers:0,kbs:0,defies:0,stolen:0,freeUps:0,waves:0,ups:0,wsUps:0,wsCoins:0,lab:0,labShards:0,tiers:{}});
-const fresh=()=>({v:1,ultV:8,bestCph:0,bestSph:0,bestChph:0,lastSeen:0,coins:0,shards:0,chips:0,alloy:0,cards:{},cardEq:[],cardSlots:2,mods:{},modEq:{},ults:{},ms:{},cleared:{},hist:[],stats:freshStats(),ws:{},lab:{},tierMax:1,best:{},runs:0,kills:0,set:{ultMan:{},dmgNums:true,prio:['closest','healer','protector','boss','charger','splitter','shielded','ranged','tank','fast','basic'],perf:false,speed:1,auto:true,autoDelay:5,ab:{}}});
+const fresh=()=>({v:1,ultV:8,bestCph:0,bestSph:0,bestChph:0,lastSeen:0,coins:0,shards:0,chips:0,alloy:0,cards:{},cardEq:[],mods:{},modEq:{},ults:{},ms:{},cleared:{},hist:[],stats:freshStats(),ws:{},lab:{},tierMax:1,best:{},runs:0,kills:0,set:{ultMan:{},dmgNums:true,prio:['closest','healer','protector','boss','charger','splitter','shielded','ranged','tank','fast','basic'],perf:false,speed:1,auto:true,autoDelay:5,ab:{}}});
 let save=fresh();
 // items removed from the game are refunded in chips (save.refund is shown once by the Equipment code)
 function migrate(sv){let back=0;
+  // 1.72: Equipment slots moved from chips to the Lab; slots already bought are kept as research levels
+  if(sv.cardSlots>CARD.slots0){sv.lab.slots=Math.max(sv.lab.slots||0,sv.cardSlots-CARD.slots0)}delete sv.cardSlots;
   // removed research: refund its shards (shown once as a toast)
   for(const k of Object.keys(sv.lab||{}))if(LAB_GONE[k]){const [c0,g]=LAB_GONE[k];let sh=0;for(let i=0;i<sv.lab[k];i++)sh+=c0*g**i;delete sv.lab[k];if(sh){sv.shards+=sh;sv.shardRefund=(sv.shardRefund||0)+sh}}
 for(const k of Object.keys(sv.cards)){if(CK[k])continue;const l=sv.cards[k];back+=CARD.buy;for(let i=0;i<l-1;i++)back+=CARD.up[i];delete sv.cards[k]}

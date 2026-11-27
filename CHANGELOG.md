@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.72.0 — 2026-11-27
+- **Equipment slots come from the Lab:** the new Equipment slots research (Lab → Systems) adds one slot per level, up to 18. The first costs 500 shards and each one after costs about 3.2× the last, so the 18th is a tier 20+ purchase. You still start with 2 free slots, and slots you already bought with chips are kept as research levels. Slots are no longer sold for chips.
+
 ## 1.71.0 — 2026-11-27
 - **Offline earnings have no cap:** every hour the game is closed counts. Offline duration research is gone, and the shards you spent on it are refunded.
 - **Workshop discount goes to 99%:** 200 levels, each taking about 2.3% off the remaining Workshop price. Level 15 is now −29.2% (was −30%). Each level costs 30% more than the last, and the final levels get very expensive. Research can't be refunded, so a discount can't be bought, used and sold back.

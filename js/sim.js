@@ -1,6 +1,7 @@
 // Spire — game state and fixed-step simulation.
 // Lab levels come from the save
 const labLv=k=>Math.min(LK[k].max,save.lab[k]||0),labVal=k=>LK[k].val(labLv(k));
+const eqSlots=()=>labVal('slots');
 const labCost=(l,lv=labLv(l.k))=>l.cost?l.cost(lv):l.c[0]*l.c[1]**lv;
 const speeds=()=>[1,2,3,5,8,12,16,24].filter(s=>s<=labVal('speed'));
 // ================= stats =================

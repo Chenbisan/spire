@@ -298,7 +298,7 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
     sec('Controls',ul([`<b>Space</b> pauses.`,`<b>Number keys</b> pick a game speed.`,`<b>Esc</b> closes this window.`]));
   if(k==='upgrades')return sec('Three ways to get stronger',ul([`<b>Upgrades</b> tab: bought with <b class="cash">cash</b> during a run. Gone when the run ends.`,
       `<b>Workshop</b>: bought with <b class="coin">coins</b>. Permanent: these are your starting levels in every run, and in-run levels stack on top.`,
-      `<b>Lab</b>: bought with <b class="shard">shards</b>. Faster game speeds, cheaper Workshop, auto-buy, and research with no cap. Can't be refunded.`]))+
+      `<b>Lab</b>: bought with <b class="shard">shards</b>. Faster game speeds, Equipment slots, cheaper Workshop, auto-buy, and research with no cap. Can't be refunded.`]))+
     sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b>.`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again.`,
       `<b>Damage per distance</b>: more damage for every metre to the target.`,`<b>Multishot</b>: a chance to also fire at more enemies in range.`,
       `<b>Bounce shots</b>: a chance for a shot to hop on to more enemies after it hits (bounce range is at most 40% of your range).`]))+
@@ -316,7 +316,7 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
     sec('Offline earnings',ul([`Only for time the game is <b>closed</b>. While it's open, even in a background tab, the run itself keeps going instead.`,
       `Pays your best coins per game-hour (from a run of at least ${CFG.offlineMinRun/60} game-minutes) at your fastest speed (${Math.max(...speeds())}× now), at ${Math.round(CFG.offlineEff*100)}% efficiency.`,
       `Shards and boss chips are paid the same way, from your best rates.`,`No limit: every hour away counts. The Workshop tab shows your current rates.`]));
-  if(k==='gear')return sec('Equipment',ul([`Bought with <b class="chip">chips</b>, equipped in a slot, and levelled up to 5 stars. Swap any time, even mid-run.`,
+  if(k==='gear')return sec('Equipment',ul([`Bought with <b class="chip">chips</b>, equipped in a slot, and levelled up to 5 stars. Swap any time, even mid-run.`,`You start with ${CARD.slots0} slots. <b>Equipment slots</b> research in the Lab (Systems) adds one per level, up to ${CARD.slots0+LK.slots.max}; each costs about 3× the last.`,
       ...CARDS.map(c=>`<b>${c.n}</b>: ${c.f(c.v[0])} at 1 star.`)]))+
     sec('Modules',`<p>Under maintenance: they give no bonuses for now. Alloy you collect is kept for when they return.</p>`);
   if(k==='enemies'){const minE=+(Math.min(...TYPES.filter(t=>isElite(ET[t])).map(t=>ET[t].coin))/ET.basic.coin).toFixed(2);

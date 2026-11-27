@@ -32,7 +32,7 @@ python -m http.server 8000
 - **Cash:** earned from kills and cash interest (paid at the start of every wave), spent in the Upgrades tab (Attack / Defense / Utility sections, as in the Workshop). It resets every run.
 - **Coins:** earned from kills, permanent, spent in the Workshop (tower stats).
 - **Shards:** paid when a run on tier 2+ ends, based on kills (kills × `shardPerKill` × the tier's shard multiplier, (tier − 1)^1.5 up to tier 3, then ×2 per tier), permanent, spent in the Lab (meta upgrades).
-- **Chips** drop from bosses and buy **Equipment**: items that add a mechanic rather than plain stats (Second Wind, Wave Rush), equipped into slots and levelled to 5 stars. Plain stat boosts come from upgrades instead.
+- **Chips** drop from bosses and buy **Equipment**: items that add a mechanic rather than plain stats (Second Wind, Wave Rush), equipped into slots (2 free, more from the Lab's Equipment slots research, up to 18) and levelled to 5 stars. Plain stat boosts come from upgrades instead.
 - **Alloy** drops from elites and buys **Modules**: one per slot (Cannon, Armor, Core, Generator), 2 choices each, levelled to 40. Every 10 levels a module ranks up (Common → Rare → Epic → Legendary), boosting its special effect.
 - Both are bought directly (no random draws) and can be swapped mid-run.
 - **Respec:** Workshop sections, ultimates, equipment and modules can each be refunded in full (`respec()` in `js/loadout.js`), so players can try builds freely.
@@ -53,6 +53,7 @@ Paid in shards. Research can't be refunded. The Lab tab groups research into Com
 | Research | Effect |
 |---|---|
 | Overdrive | Unlocks 12×, 16×, 24× game speed |
+| Equipment slots | 2 free, +1 per level up to 18 (16 levels). 500 shards, ×3.2 per level |
 | Workshop discount | Workshop prices × 0.01^(level/200): about 2.3% off the remaining price per level, −99% at level 200. Cost ×1.3 per level × 200/(200 − level) |
 | Auto-buyer | Auto-buy toggles per Upgrades section (cheapest upgrade first) |
 | Damage research | Spire damage ×1.03 per level, compounding, no cap |
