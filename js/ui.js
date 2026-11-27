@@ -54,7 +54,7 @@ function showOv(kind){
   else{const R=run,m=Math.floor(R.time/60),s=Math.floor(R.time%60);
     // after a run: the same screen as the start, with a compact summary of the run on top
     c.className='card big';
-    c.innerHTML=`<div class="lastrun"><div class="lrh"><b>${R.won?`Tier ${R.tier} cleared!`:`${R.quit?'Ended':'Fell'} on wave ${R.wave}`}</b><span>Tier ${R.tier} · best ${save.best[R.tier]||0} · ${m}m ${s}s</span></div><div class="grid2 lrg"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':R.time<CFG.offlineMinRun?' · too short to count':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b> <small>${fmt(R.sph)}/h${R.newBestS?' · new best':''}</small></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div>${R.defies?`<div><span>Deaths defied</span>${fmt(R.defies)}</div>`:''}<div><span>Cash earned</span>${fmt(R.cashEarned)}</div></div></div>
+    c.innerHTML=`<div class="lastrun"><div class="lrh"><b>${R.won?`Tier ${R.tier} cleared!`:`${R.quit?'Ended':'Fell'} on wave ${R.wave}`}</b><span>Tier ${R.tier} · best ${save.best[R.tier]||0} · ${m}m ${s}s</span>${save.hist[0]&&save.hist[0].d?'<button id="toRun" class="lrd">Details ›</button>':''}</div><div class="grid2 lrg"><div><span>Coins earned</span>${fmt(R.coins)}</div><div><span>Coins per hour</span>${fmt(R.cph)}${R.newBest?' · new best':R.time<CFG.offlineMinRun?' · too short to count':''}</div>${R.tier>=2?`<div><span>Shards earned</span><b class="shard">${fmt(R.shards)}</b> <small>${fmt(R.sph)}/h${R.newBestS?' · new best':''}</small></div>`:''}${R.chips?`<div><span>Chips earned</span><b class="chip">${fmt(R.chips)}</b></div>`:''}${R.alloy?`<div><span>Alloy earned</span><b class="alloy">${fmt(R.alloy)}</b></div>`:''}<div><span>Kills</span>${fmt(R.kills)}</div>${R.defies?`<div><span>Deaths defied</span>${fmt(R.defies)}</div>`:''}<div><span>Cash earned</span>${fmt(R.cashEarned)}</div></div></div>
     <h2>Next run</h2>${tierPicker()}${tierInfo(ovTier)}
     <div class="obtns"><button id="toWs">Workshop · <span class="coin">${fmt(save.coins)}</span></button><button id="toHist">Records</button><button id="toHelp">How to play</button></div>
     <button class="go" id="goBtn">${autoTimer?`Start tier ${ovTier} · auto in <span id="autoTxt">${autoLeft}</span>s`:`Start tier ${ovTier}`}</button>${autoTimer?'<button id="stopAuto" style="width:100%;margin-top:8px">Stay on this screen</button>':''}`}
@@ -68,7 +68,8 @@ $('ovCard').addEventListener('click',e=>{
   else if(t.id==='endBtn'){if(t.dataset.arm){setPause(false);gameOver(true)}else{t.dataset.arm=1;t.textContent='Tap again to end the run'}}
   else if(t.id==='toHelp')openModal('help');
   else if(t.id==='toWs'){ui.tab=save.set.tab='Workshop';buildPanel()}
-  else if(t.id==='toHist'){hTab='runs';openModal('history')}
+  else if(t.id==='toHist'){hTab='runs';hDetail=-1;openModal('history')}
+  else if(t.id==='toRun'){hTab='runs';hDetail=save.hist[0].at;openModal('history')}
 });
 const TABS=['Upgrades','Workshop','Lab','Equipment','Ultimates','Modules'];
 const ui={tab:TABS.includes(save.set.tab)?save.set.tab:'Upgrades',mult:[1,10,'Max'].includes(save.set.mult)?save.set.mult:1};let rows=[];
@@ -218,7 +219,7 @@ mBody.addEventListener('keydown',e=>{const r=e.target.closest&&e.target.closest(
 $('tgtBtn').addEventListener('click',()=>modalKind==='target'?closeModal():openModal('target'));
 $('histBtn').addEventListener('click',()=>modalKind==='history'?closeModal():openModal('history'));
 const dur=s=>{s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${m}m`:`${m}m ${x}s`};
-let hTab='runs',msTier=null;
+let hTab='runs',msTier=null,hDetail=-1;
 // Milestones tab: every milestone of one tier, claimed ones ticked, with its rewards
 function msHtml(){const t=msTier&&msTier<=save.tierMax?msTier:save.tierMax,n=save.ms[t]||0;
   let h=`<div class="tiers">${Array.from({length:save.tierMax},(_,i)=>`<button data-mstier="${i+1}" class="${i+1===t?'on':''}">Tier ${i+1}<small>${save.ms[i+1]||0}/${MILESTONES.length}${save.cleared[i+1]?' · cleared':''}</small></button>`).join('')}</div>`;
@@ -231,9 +232,24 @@ function historyHtml(){const H=save.hist,tabs=`<div class="mults"><button data-h
   if(hTab==='ms')return tabs+msHtml();
   if(!H.length)return tabs+`<p class="note">No runs yet. Your last ${CFG.histMax} runs will show up here when they end.</p>`;
   const top=Math.max(...H.map(h=>h.cph));
-  return tabs+`<p class="note">Your last ${CFG.histMax} runs, newest first. Run time and coins per hour are in game time.</p><div class="hist">${H.map(h=>{const d=new Date(h.at);
-    return`<div class="hrow"><div class="htop"><b>Tier ${h.t}</b><b>Wave ${h.w}</b>${h.best?'<span class="tag">best wave</span>':''}${h.quit?'<span class="tag mute">ended early</span>':''}${h.won?'<span class="tag">cleared</span>':''}<span class="hdate">${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
-    <div class="hst"><span>Coins <b class="coin">${fmt(h.c)}</b></span><span>Coins/hour <b class="coin">${fmt(h.cph)}</b>${h.cph===top&&H.length>1?' ★':''}</span>${h.t>=2?`<span>Shards <b class="shard">${fmt(h.s)}</b></span>`:''}${h.ch?`<span>Chips <b class="chip">${fmt(h.ch)}</b></span>`:''}${h.al?`<span>Alloy <b class="alloy">${fmt(h.al)}</b></span>`:''}<span>Kills <b>${fmt(h.k)}</b></span>${h.df?`<span>Defied <b>${fmt(h.df)}</b></span>`:''}<span>Time <b>${dur(h.time)}</b></span></div></div>`}).join('')}</div>`}
+  {const h=H.find(x=>x.at===hDetail&&x.d);if(h)return tabs+runDetailHtml(h,top,H.length)} // keyed by end time, so a run ending meanwhile doesn't change which one is shown
+  return tabs+`<p class="note">Your last ${CFG.histMax} runs, newest first. Run time and coins per hour are in game time. Tap a run for its details.</p><div class="hist">${H.map((h,i)=>histRow(h,top,H.length,i)).join('')}</div>`}
+function histRow(h,top,n,i){const d=new Date(h.at),tap=i!=null&&h.d;
+    return`<div class="hrow${tap?' tap':''}"${tap?` data-hi="${h.at}" role="button" tabindex="0" aria-label="Details for tier ${h.t} wave ${h.w}"`:''}><div class="htop"><b>Tier ${h.t}</b><b>Wave ${h.w}</b>${h.best?'<span class="tag">best wave</span>':''}${h.quit?'<span class="tag mute">ended early</span>':''}${h.won?'<span class="tag">cleared</span>':''}<span class="hdate">${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+    <div class="hst"><span>Coins <b class="coin">${fmt(h.c)}</b></span><span>Coins/hour <b class="coin">${fmt(h.cph)}</b>${h.cph===top&&n>1?' ★':''}</span>${h.t>=2?`<span>Shards <b class="shard">${fmt(h.s)}</b></span>`:''}${h.ch?`<span>Chips <b class="chip">${fmt(h.ch)}</b></span>`:''}${h.al?`<span>Alloy <b class="alloy">${fmt(h.al)}</b></span>`:''}<span>Kills <b>${fmt(h.k)}</b></span>${h.df?`<span>Defied <b>${fmt(h.df)}</b></span>`:''}<span>Time <b>${dur(h.time)}</b></span>${h.d?.killer&&!h.won?`<span>Killed by <b>${ET[h.d.killer.t]?.n||h.d.killer.t}</b></span>`:''}</div>${tap?'<span class="hgo" aria-hidden="true">›</span>':''}</div>`}
+const HOW={melee:'hit',ram:'charge',beam:'beam',shot:'shot',spike:'spike barrage'};
+const ordinal=n=>n+(['th','st','nd','rd'][n%10>3||Math.floor(n%100/10)===1?0:n%10]);
+// one run's details: how it ended, who did the damage, what was on the field, and the spire's stats at the end
+function runDetailHtml(h,top,n){const D=h.d,K=D.killer,nm=k=>ET[k]?ET[k].n:k,ic=k=>ET[k]?mobIcon(ET[k]):'',rk=k=>ET[k]?RANKS[ET[k].r]:'';
+  const v=Object.assign({},D.st),tot=Object.values(D.taken).reduce((a,b)=>a+b,0),T=Object.entries(D.taken).sort((a,b)=>b[1]-a[1]),F=Object.entries(D.field).sort((a,b)=>b[1]-a[1]);
+  const cause=h.won?`<p>Tier ${h.t} cleared on wave ${h.w}.</p>`:h.quit?`<p>You ended this run on wave ${h.w}.</p>`:K?`<div class="kill">${ic(K.t)}<div><b>Killed by: ${nm(K.t)}</b> <span class="tag mute">${rk(K.t)}</span>
+    <span class="note" style="display:block;margin:2px 0 0">Its ${K.n>1?ordinal(K.n)+' ':''}${HOW[K.how]||K.how} did <b>${fmt(K.hit)}</b> damage (${fmt(K.raw)} before defense and barrier). Max health was ${fmt(v.health)}.</span></div></div>`:'<p class="note">Not recorded.</p>';
+  return`<button class="hback" data-hback>‹ All runs</button>${histRow(h,top,n)}
+  <div class="gh">How it ended</div>${cause}
+  ${T.length?`<div class="gh">Damage taken · ${fmt(tot)}</div><div class="dmgby">${T.map(([k,d])=>`<div class="db">${ic(k)}<span>${nm(k)}</span><i style="--w:${(d/T[0][1]*100).toFixed(1)}%"></i><b>${fmt(d)}</b><small>${pct(d/tot)}</small></div>`).join('')}</div>`:''}
+  ${F.length?`<div class="gh">On the field at the end · ${F.reduce((a,b)=>a+b[1],0)}</div><div class="field">${F.map(([k,c])=>`<span title="${nm(k)}">${ic(k)}<b>${c}</b> ${nm(k)}</span>`).join('')}</div>`:''}
+  <div class="gh">Equipment</div><p class="note">${D.eq.length?D.eq.map(([k,l])=>`<b>${CK[k]?CK[k].n:k}</b> ${stars(l)}`).join(' · '):'None equipped'}</p>
+  <div class="gh">Spire at the end</div><p class="note">Workshop and ${fmt(D.ups)} in-run upgrade levels included.</p>${statGrid(v,null)}`}
 $('eBtn').addEventListener('click',()=>modalKind==='enemies'?closeModal():openModal('enemies'));
 let eTabW=0,eTabT=0,eTab='wave',eSig='';
 const pct=v=>(v*100).toFixed(v<.1&&v>0?1:0)+'%';
@@ -263,14 +279,15 @@ function enemyHtml(){const live=run&&!run.over,w=eTabW=live?run.wave:1,t=eTabT=l
   </div>`}
 function spireStats(){const live=run&&!run.over;const v={};for(const s of ST)v[s.k]=live?run.s[s.k]:valAt(s,0,save.ws[s.k]||0);return{live,v}}
 function spireHtml(){const {live,v}=spireStats();eSig=JSON.stringify(v)+(live?Math.round(run.hp):'');
-  const dps=v.damage*v.aspd*(1+v.crit*(v.critMult-1));
-  return`<p class="note">${live?'Current values in this run, Workshop and in-run upgrades included.':'Your starting values (Workshop). Start a run to see in-run upgrades added.'}</p>
-  <div class="grid2 winfo"><div><span>Damage per second</span><b>${fmt(dps)}</b> <small>average, crits included</small></div><div><span>Health</span><b>${live?fmt(Math.max(0,run.hp))+' / ':''}${fmt(v.health)}</b></div></div>
-  ${GROUPS.map(g=>`<div class="gh">${g}</div><div class="grid2 winfo">${ST.filter(s=>s.g===g&&!(s.ws&&live)).map(s=>`<div><span>${s.n}</span><b>${fv(s,v[s.k])}</b></div>`).join('')}</div>`).join('')}`}
+  return`<p class="note">${live?'Current values in this run, Workshop and in-run upgrades included.':'Your starting values (Workshop). Start a run to see in-run upgrades added.'}</p>${statGrid(v,live?run.hp:null,!live)}`}
+// hp: current health (null = don't show); ws: include Workshop-only stats
+function statGrid(v,hp,ws){const dps=v.damage*v.aspd*(1+v.crit*(v.critMult-1));
+  return`<div class="grid2 winfo"><div><span>Damage per second</span><b>${fmt(dps)}</b> <small>average, crits included</small></div><div><span>Health</span><b>${hp!=null?fmt(Math.max(0,hp))+' / ':''}${fmt(v.health)}</b></div></div>
+  ${GROUPS.map(g=>`<div class="gh">${g}</div><div class="grid2 winfo">${ST.filter(s=>s.g===g&&(ws||!s.ws)&&v[s.k]!=null).map(s=>`<div><span>${s.n}</span><b>${fv(s,v[s.k])}</b></div>`).join('')}</div>`).join('')}`}
 function togglePool(r){const rk=+r.dataset.rk,o=save.set.eOpen||(save.set.eOpen=[]),i=o.indexOf(rk);if(i<0)o.push(rk);else o.splice(i,1);persist();
   const st=mBody.scrollTop;mBody.innerHTML=enemyHtml();mBody.scrollTop=st;const n=mBody.querySelector(`tr[data-rk="${rk}"]`);if(n)n.focus()}
-mBody.addEventListener('keydown',e=>{const r=e.target.closest&&e.target.closest('tr[data-rk]');if(r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();togglePool(r)}});
-modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();{const r=e.target.closest('tr[data-rk]');if(r&&modalKind==='enemies'){togglePool(r);return}}const b=e.target.closest('button');if(!b)return;if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.mstier){msTier=+b.dataset.mstier;mBody.innerHTML=historyHtml();return}if(b.dataset.htab){hTab=b.dataset.htab;mBody.innerHTML=historyHtml();return}if(b.dataset.help){helpTab=b.dataset.help;try{localStorage.setItem('spireHelpTab',helpTab)}catch(e){}mBody.innerHTML=helpView();mBody.scrollTop=0;return}if(b.dataset.act)settingsClick(b)});
+mBody.addEventListener('keydown',e=>{{const h=e.target.closest&&e.target.closest('.hrow[data-hi]');if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();h.click();return}}const r=e.target.closest&&e.target.closest('tr[data-rk]');if(r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();togglePool(r)}});
+modal.addEventListener('click',e=>{if(e.target===modal)return closeModal();{const r=e.target.closest('tr[data-rk]');if(r&&modalKind==='enemies'){togglePool(r);return}}{const r=e.target.closest('.hrow[data-hi]');if(r&&modalKind==='history'){hDetail=+r.dataset.hi;mBody.innerHTML=historyHtml();mBody.scrollTop=0;return}}const b=e.target.closest('button');if(!b)return;if('hback' in b.dataset){hDetail=-1;mBody.innerHTML=historyHtml();return}if(b.dataset.etab){eTab=b.dataset.etab;mBody.innerHTML=enemyHtml();return}if(b.dataset.mstier){msTier=+b.dataset.mstier;mBody.innerHTML=historyHtml();return}if(b.dataset.htab){hTab=b.dataset.htab;hDetail=-1;mBody.innerHTML=historyHtml();return}if(b.dataset.help){helpTab=b.dataset.help;try{localStorage.setItem('spireHelpTab',helpTab)}catch(e){}mBody.innerHTML=helpView();mBody.scrollTop=0;return}if(b.dataset.act)settingsClick(b)});
 modal.addEventListener('change',optChange);
 const mobIcon=d=>{const z=d.sz/22*.75+.4,pts=SHAPES[d.sh].map(p=>p.map(v=>(v*z).toFixed(3)).join(',')).join(' ');
   return`<svg viewBox="-1.5 -1.5 3 3" width="34" height="34" aria-hidden="true">${d.shield?`<circle r="${(z*1.4).toFixed(2)}" fill="none" stroke="var(--e6)" stroke-width=".1"/>`:''}<polygon points="${pts}" fill="var(--${d.c})" fill-opacity=".3" stroke="var(--${d.c})" stroke-width=".12" stroke-linejoin="round"/></svg>`};

@@ -1,5 +1,8 @@
 # What's new in Spire
 
+## 1.73.0 — 2026-11-27
+- **Run details:** tap a run in Battle history (or **Details** on the end-of-run screen) to see how it ended: which enemy landed the killing blow, with what attack and for how much damage. You also get damage taken from each enemy type, what was on the field at the end, your Equipment, and your spire's full stats at that moment. Runs from before this version don't have details.
+
 ## 1.72.0 — 2026-11-27
 - **Equipment slots come from the Lab:** the new Equipment slots research (Lab → Systems) adds one slot per level, up to 18. The first costs 500 shards and each one after costs about 3.2× the last, so the 18th is a tier 20+ purchase. You still start with 2 free slots, and slots you already bought with chips are kept as research levels. Slots are no longer sold for chips.
 

@@ -38,7 +38,7 @@ function newRun(tier){
   stopAuto();sepBuilt=false;
   for(const e of enemies)ePool.push(e);for(const b of bullets)bPool.push(b);for(const b of ebs)ebPool.push(b);
   enemies.length=bullets.length=ebs.length=dnums.length=parts.length=tracers.length=0;for(const t of TYPES)typeN[t]=0;aliveN=0;
-  run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
+  run={tier,wave:1,waveT:0,spawnT:0,spawned:0,lv:{},taken:{},killer:null,fireT:0,kills:0,coins:0,shards:0,chips:0,alloy:0,cashEarned:0,time:0,over:false,tm:CFG.tier(tier)};
   run.barT=0;recalc();run.hp=run.s.health;run.bar=run.barMax;ultInit();run.cash=run.s.startCash;
   paused=false;showOv(null);buildPanel();
 }
@@ -117,16 +117,17 @@ function damage(e,v,crit,thorn,f=0){ // f: 1 = no damage number (damage over tim
 }
 // Thorns: a share of the attacker's max health, less its rank's resistance (CFG.thornRes)
 const thornDmg=e=>e.mhp*run.s.thorns*(1-(CFG.thornRes[e.d.r]||0));
-function hitTower(v,att){
-  const R=run;
+// how: 'melee' | 'ram' | 'beam' | 'shot' | 'spike'; who: the attacker's type (projectiles keep it after their shooter dies)
+function hitTower(v,att,how,who){
+  const R=run;who=who||(att&&att.t)||'basic';
   if(R.invT>0){if(att&&R.s.thorns>0&&!att.dead)damage(att,thornDmg(att),false,true);return} // Second Wind: invincible
   let t=v*(1-R.s.defense);
   if(R.bar>0){const a=Math.min(R.bar,t);R.bar-=a;t-=a;save.stats.absorbed+=a;if(R.bar<=1e-9){R.bar=0;R.barT=R.s.barrierRegen;R.barBrokeAt=performance.now()}} // broken: recharges to full after the timer
-  R.hp-=t;save.stats.taken+=t;
+  R.hp-=t;save.stats.taken+=t;if(t>0)R.taken[who]=(R.taken[who]||0)+t; // damage taken per enemy type, for the run's history details
   if(R.hp<=0&&R.s.deathDefy>0&&Math.random()<R.s.deathDefy){R.hp+=t;save.stats.taken-=t;save.stats.defies++;R.defies=(R.defies||0)+1;R.defyAt=performance.now()} // render-only: gold burst + DEFIED
   if(R.hp<=0&&R.fx.revive&&!R.revived){R.revived=true;R.hp=Math.max(1,R.hp+t);save.stats.taken-=t;R.invT=R.fx.revive;save.stats.winds=(save.stats.winds||0)+1;toast(`Second Wind! Invincible for ${R.fx.revive} s`)}
   if(att&&R.s.thorns>0&&!att.dead)damage(att,thornDmg(att),false,true);
-  if(R.hp<=0)gameOver();
+  if(R.hp<=0){R.killer={t:who,how:how||'melee',hit:t,raw:v,n:att?att.hn:0};gameOver()}
 }
 // enemies near (x,y) within r: uses this step's push-apart grid when it's built, otherwise scans everything
 function forNear(x,y,r,fn){if(!sepBuilt){for(const e of enemies)if(!e.dead)fn(e);return}
@@ -157,11 +158,17 @@ function gameOver(quit,won){
   const prevBest=save.best[R.tier]||0;R.newBestWave=R.wave>prevBest;
   if(prevBest<R.wave)save.best[R.tier]=R.wave;
   {const T=save.stats.tiers[R.tier]||(save.stats.tiers[R.tier]={runs:0,coins:0,cph:0});T.runs++;T.coins+=R.coins;if(R.time>=CFG.offlineMinRun)T.cph=Math.max(T.cph,R.cph)}
-  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,df:R.defies||0,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,won:!!won,best:R.newBestWave});
+  save.hist.unshift({at:Date.now(),t:R.tier,w:R.wave,df:R.defies||0,c:R.coins,s:R.shards,ch:R.chips,al:R.alloy,cph:R.cph,time:R.time,k:R.kills,quit:!!quit,won:!!won,best:R.newBestWave,d:runSnapshot(R)});
   save.hist.length=Math.min(save.hist.length,CFG.histMax);
   persist();ovTier=R.tier;if(!quit)startAuto(); // a run you end yourself doesn't auto-restart
   showOv('over');buildPanel();
 }
+// what the history details show: the spire's stats when the run ended, what hit it, and what was on the field
+function runSnapshot(R){const st={},field={},r=x=>+x.toPrecision(5);for(const s of ST)if(!s.ws)st[s.k]=r(R.s[s.k]);
+  for(const e of enemies)if(!e.dead)field[e.t]=(field[e.t]||0)+1;
+  const taken={};for(const k in R.taken)taken[k]=r(R.taken[k]);
+  return{st,taken,field,killer:R.killer&&{...R.killer,hit:r(R.killer.hit),raw:r(R.killer.raw)},eq:save.cardEq.map(k=>[k,cardLv(k)]),
+    ups:Object.values(R.lv).reduce((a,b)=>a+b,0),cash:r(R.cashEarned||0)}}
 // ================= simulation (fixed step) =================
 let rankKey='',rankMap=null;
 // target priority: types above 'closest' in save.set.prio are shot first, in order; the rest share one rank (closest first)
@@ -216,22 +223,22 @@ function update(dt){GEN_STEP++;
       if(e.cs===0){const at=Math.max(hit,s.range*CFG.chargeAt);if(dist>at)advance(e,dist,at,sp*dt);else{e.cs=1;e.ct=0}}
       else if(e.cs===1){if((e.ct+=dt)>=d.charge)e.cs=2}
       else{const m=Math.min(d.ramSpd*dt,dist-hit);e.x-=e.x/dist*m;e.y-=e.y/dist*m; // rams straight through the crowd (Chargers ignore collision)
-        if(dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e);if(R.over)return}}}
+        if(dist-m<=hit+.01){e.cs=3;e.atk=0;hitTower(e.dmg*d.ram*CFG.hitRamp**e.hn++,e,'ram');if(R.over)return}}}
     else if(dist>stop+1e-6)advance(e,dist,stop,sp*dt) // walks in, resting while the crowd ahead leaves it little room
     else{e.atk+=dt;
       if(!d.dmg){} // Healers never attack
       else if(d.hack&&hackOn(e,dt)){} // Hacker: drains an Ultimate instead of attacking (falls back to attacking if every Ultimate is taken)
       // Lancer: atk counts up through the d.beamCharge s charge (drawn as a thickening line), then the beam hits for d.beam ×
       // its attack (ramping like any hit) and atk drops below 0 for the rest of the d.beamEvery cycle
-      else if(d.beam){if(e.atk>=d.beamCharge){e.atk=d.beamCharge-d.beamEvery;e.bfAt=performance.now();hitTower(e.dmg*d.beam*CFG.hitRamp**e.hn++,e);if(R.over)return}}
+      else if(d.beam){if(e.atk>=d.beamCharge){e.atk=d.beamCharge-d.beamEvery;e.bfAt=performance.now();hitTower(e.dmg*d.beam*CFG.hitRamp**e.hn++,e,'beam');if(R.over)return}}
       // Boss: on arrival and every d.barrageEvery s, d.barrage spikes leave its back and fly a curve (a quadratic Bézier) out
       // through a fan of points d.spikeOut m behind it, spread ±d.spikeFan°, and in to the spire over d.spikeFlight s.
       // Each barrage ramps like one hit
       else if(d.barrage){if(!e.hn||e.atk>=d.barrageEvery){e.atk=0;const dm=e.dmg*d.spike*CFG.hitRamp**e.hn++,ux=e.x/dist,uy=e.y/dist,bx=e.x+ux*d.sz,by=e.y+uy*d.sz;
         for(let i=0;i<d.barrage;i++){const a=(i/(d.barrage-1)-.5)*2*d.spikeFan*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a),b=ebPool.pop()||{};
-          b.x=b.px=b.rx=b.x0=bx;b.y=b.py=b.ry=b.y0=by;b.cx=bx+(ux*ca-uy*sa)*d.spikeOut;b.cy=by+(ux*sa+uy*ca)*d.spikeOut;b.u=0;b.T=d.spikeFlight;b.dmg=dm;b.sp=1;b.src=null;ebs.push(b)}}}
-      else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;b.sp=0;b.src=e;b.g=e.gen;ebs.push(b)}}
-      else if(e.atk>=1){e.atk=0;hitTower(e.dmg*CFG.hitRamp**e.hn++,e);if(R.over)return}}  // each attack an enemy lands hits CFG.hitRamp × harder than its last
+          b.x=b.px=b.rx=b.x0=bx;b.y=b.py=b.ry=b.y0=by;b.cx=bx+(ux*ca-uy*sa)*d.spikeOut;b.cy=by+(ux*sa+uy*ca)*d.spikeOut;b.u=0;b.T=d.spikeFlight;b.dmg=dm;b.sp=1;b.src=null;b.st=e.t;ebs.push(b)}}}
+      else if(d.shoot){if(e.atk>=2){e.atk=0;const b=ebPool.pop()||{};b.x=b.px=b.rx=e.x;b.y=b.py=b.ry=e.y;b.dmg=e.dmg*CFG.hitRamp**e.hn++;b.sp=0;b.src=e;b.g=e.gen;b.st=e.t;ebs.push(b)}}
+      else if(e.atk>=1){e.atk=0;hitTower(e.dmg*CFG.hitRamp**e.hn++,e,'melee');if(R.over)return}}  // each attack an enemy lands hits CFG.hitRamp × harder than its last
     if(d.heal){e.hf=Math.max(0,e.hf-dt);e.ht+=dt;if(e.ht>=d.healEvery){e.ht=0;e.hf=.4;healers.push(e)}} // healed below, once the grid is built
     if(!e.dead&&dist<=s.range+d.sz){const p=pr?pr[e.t]:0;if(p<tp||(p===tp&&dist<td)){tp=p;td=dist;tgt=e}}
   }
@@ -263,10 +270,10 @@ function update(dt){GEN_STEP++;
   const em=CFG.ebSpd*dt;
   for(let i=ebs.length-1;i>=0;i--){const b=ebs[i],d=Math.hypot(b.x,b.y);b.px=b.x;b.py=b.y;
     // Boss spikes follow their curve and land on the spire when it ends (spikes have no attacker, so no Thorns)
-    if(b.sp){b.u+=dt/b.T;if(b.u>=1){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);hitTower(b.dmg,null);if(R.over)return;continue}
+    if(b.sp){b.u+=dt/b.T;if(b.u>=1){ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);hitTower(b.dmg,null,'spike',b.st);if(R.over)return;continue}
       const u=b.u,v=1-u;b.x=v*v*b.x0+2*v*u*b.cx;b.y=v*v*b.y0+2*v*u*b.cy;continue}
     // a Ranged shot triggers Thorns on its shooter, if it's still alive
-    if(d<=tr+em){trace(b.rx,b.ry,b.x/d*tr,b.y/d*tr,1);ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);const s=b.src;hitTower(b.dmg,s&&!s.dead&&s.gen===b.g?s:null);b.src=null;if(R.over)return}
+    if(d<=tr+em){trace(b.rx,b.ry,b.x/d*tr,b.y/d*tr,1);ebs[i]=ebs[ebs.length-1];ebs.pop();ebPool.push(b);const s=b.src;hitTower(b.dmg,s&&!s.dead&&s.gen===b.g?s:null,'shot',b.st);b.src=null;if(R.over)return}
     else{b.x-=b.x/d*em;b.y-=b.y/d*em}}
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.px=p.x;p.py=p.y;p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;if(p.l<=0){parts[i]=parts[parts.length-1];parts.pop()}}
   for(let i=dnums.length-1;i>=0;i--){const n=dnums[i];n.py=n.y;n.y-=30*dt;n.l-=dt;if(n.l<=0){dnums[i]=dnums[dnums.length-1];dnums.pop()}}
