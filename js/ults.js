@@ -17,7 +17,6 @@ const uv=(k,tr)=>ultVal(UK[k],tr,ultLvH(k,tr));
 // Ultimate damage is spire damage × the average multiplier crits give your shots, so every crit stat raises it:
 // 1 + crit × (crit damage − 1) + crit × super crit × crit damage × (super crit damage − 1). Linear in crit chance, so it keeps
 // working if crit chance ever goes past 100%. Ultimates don't roll crits themselves unless one says so (Chain Lightning Silver).
-const critX=s=>1+s.crit*(s.critMult-1)+s.crit*s.superCrit*s.critMult*(s.superMult-1);
 const ultDmg=()=>run.s.damage*critX(run.s);
 // how complete an ultimate is: the average progress of its 4 tracks (0 to 1)
 const ultProg=k=>UK[k].t.reduce((a,t)=>a+Math.min(1,ultLv(k,t.k)/t.lv),0)/UK[k].t.length;
@@ -158,8 +157,8 @@ function chainBolt(e0){const R=run,S=R.ultSt||{},ch=uv('chain','chance'),nf=uv('
   chainQ.length=chainV.length=chainD.length=0;chainQ.push(e0);chainV.push(ultDmg()*uv('chain','dmg'));chainD.push(0);
   // Gold strikes twice: each strike rolls its own crit, but they land as one damage call (half the work) unless the target has
   // a shield, where each strike must take off a shield of its own
-  const crit=S.chain>=1,cc=R.s.crit,cm=R.s.critMult,sc=R.s.superCrit,sm=R.s.superMult;
-  const strike=(e,v0)=>{let tot=0,cmax=0;for(let h=0;h<hits;h++){let c=0,v=v0;if(crit&&Math.random()<cc){c=1;v*=cm;if(Math.random()<sc){c=2;v*=sm}}
+  const crit=S.chain>=1,rs=R.s;
+  const strike=(e,v0)=>{let tot=0,cmax=0;for(let h=0;h<hits;h++){let c=0,v=v0;if(crit){c=critRoll(rs);if(c)v*=critDmg(rs,c)}
       if(e.shield>0){damage(e,v,c);continue}tot+=v;if(c>cmax)cmax=c}if(tot>0)damage(e,tot,cmax)
     if(S.chain>=3){e.slowT=2;e.slowF=Math.max(e.slowF||0,.5)}};
   for(let qi=0;qi<chainQ.length;qi++){const e=chainQ[qi],v=chainV[qi],dp=chainD[qi];strike(e,v);

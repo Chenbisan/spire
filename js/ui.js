@@ -281,7 +281,7 @@ function spireStats(){const live=run&&!run.over;const v={};for(const s of ST)v[s
 function spireHtml(){const {live,v}=spireStats();eSig=JSON.stringify(v)+(live?Math.round(run.hp):'');
   return`<p class="note">${live?'Current values in this run, Workshop and in-run upgrades included.':'Your starting values (Workshop). Start a run to see in-run upgrades added.'}</p>${statGrid(v,live?run.hp:null,!live)}`}
 // hp: current health (null = don't show); ws: include Workshop-only stats
-function statGrid(v,hp,ws){const dps=v.damage*v.aspd*(1+v.crit*(v.critMult-1));
+function statGrid(v,hp,ws){const dps=v.damage*v.aspd*critX(v);
   return`<div class="grid2 winfo"><div><span>Damage per second</span><b>${fmt(dps)}</b> <small>average, crits included</small></div><div><span>Health</span><b>${hp!=null?fmt(Math.max(0,hp))+' / ':''}${fmt(v.health)}</b></div></div>
   ${GROUPS.map(g=>`<div class="gh">${g}</div><div class="grid2 winfo">${ST.filter(s=>s.g===g&&(ws||!s.ws)&&v[s.k]!=null).map(s=>`<div><span>${s.n}</span><b>${fv(s,v[s.k])}</b></div>`).join('')}</div>`).join('')}`}
 function togglePool(r){const rk=+r.dataset.rk,o=save.set.eOpen||(save.set.eOpen=[]),i=o.indexOf(rk);if(i<0)o.push(rk);else o.splice(i,1);persist();
@@ -316,7 +316,7 @@ function helpTopic(k){const rel=v=>'×'+(+v.toFixed(v<10?2:0)),t2=CFG.tier(2),se
   if(k==='upgrades')return sec('Three ways to get stronger',ul([`<b>Upgrades</b> tab: bought with <b class="cash">cash</b> during a run. Gone when the run ends.`,
       `<b>Workshop</b>: bought with <b class="coin">coins</b>. Permanent: these are your starting levels in every run, and in-run levels stack on top.`,
       `<b>Lab</b>: bought with <b class="shard">shards</b>. Faster game speeds, Equipment slots, cheaper Workshop, auto-buy, and research with no cap. Can't be refunded.`]))+
-    sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b>.`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again.`,
+    sec('Attack',ul([`<b>Damage</b>, <b>attack speed</b>, <b>range</b>.`,`<b>Crits</b> multiply a shot; <b>super crits</b> multiply a crit again. Both chances go past 100%: every shot then crits (or super crits), and the extra boosts the bonus, so 150% crit chance gives 1.5× the crit damage bonus.`,
       `<b>Damage per distance</b>: more damage for every metre to the target.`,`<b>Multishot</b>: a chance to also fire at more enemies in range.`,
       `<b>Bounce shots</b>: a chance for a shot to hop on to more enemies after it hits (bounce range is at most 40% of your range).`]))+
     sec('Defense',ul([`<b>Health</b> and <b>regen</b>.`,`<b>Barrier</b>: a shield in front of your health (the blue bar). Once broken it comes back full after a timer.`,

@@ -1,6 +1,6 @@
 // Spire — balance and content tables. Tweak numbers here.
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION='1.74.0';
+const APP_VERSION='1.75.0';
 const CHANGELOG_URL='https://github.com/chenbisan/spire/blob/main/CHANGELOG.md';
 // ================= CONFIG: tweak everything here =================
 const CFG={
@@ -60,34 +60,34 @@ const CFG={
 const ST=[
  {k:'damage',g:'Attack',n:'Damage',base:3,mul:1,ra:.35,wm:1.08,c:[4,1.14],w:[12,1.2]},
  {k:'aspd',g:'Attack',n:'Attack speed',base:1,ra:.06,wa:.03,max:25,c:[6,1.16],w:[15,1.22],u:'/s'},
- {k:'crit',g:'Attack',n:'Crit chance',base:.02,ra:.01,wa:.005,max:1,c:[8,1.15],w:[20,1.25],p:1},
+ {k:'crit',g:'Attack',n:'Crit chance',base:.02,ra:.01,wa:.005,max:5,c:[8,1.15],w:[20,1.25],p:1},
  {k:'critMult',g:'Attack',n:'Crit damage',base:1.5,ra:.1,wa:.05,c:[10,1.15],w:[20,1.22],x:1},
- {k:'superCrit',g:'Attack',n:'Super crit chance (of crits)',base:0,ra:.01,wa:.005,max:.8,c:[20,1.18],w:[40,1.25],p:1},
+ {k:'superCrit',g:'Attack',n:'Super crit chance (of crits)',base:0,ra:.01,wa:.005,max:5,c:[20,1.18],w:[40,1.25],p:1},
  {k:'superMult',g:'Attack',n:'Super crit damage',base:2,ra:.1,wa:.05,c:[20,1.17],w:[40,1.22],x:1},
- {k:'range',g:'Attack',n:'Range',base:30,ra:3,wa:2,max:600,c:[8,1.16],w:[25,1.25],u:' m'},
- {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.02,c:[15,1.17],w:[30,1.25],p:1,u:' per m'},
- {k:'multiChance',g:'Attack',n:'Multishot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
+ {k:'range',g:'Attack',n:'Range',base:30,ra:3,wa:2,max:1000,c:[8,1.16],w:[25,1.25],u:' m'},
+ {k:'dmgDist',g:'Attack',n:'Damage per distance',base:0,ra:.0005,wa:.0003,max:.04,c:[15,1.17],w:[30,1.25],p:1,u:' per m'},
+ {k:'multiChance',g:'Attack',n:'Multishot chance',base:0,ra:.01,wa:.005,max:1,c:[15,1.17],w:[30,1.25],p:1},
  {k:'multiTargets',g:'Attack',n:'Multishot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
- {k:'bounceChance',g:'Attack',n:'Bounce shot chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.17],w:[30,1.25],p:1},
+ {k:'bounceChance',g:'Attack',n:'Bounce shot chance',base:0,ra:.01,wa:.005,max:1,c:[15,1.17],w:[30,1.25],p:1},
  {k:'bounceTargets',g:'Attack',n:'Bounce shot targets',base:1,ra:1,wa:1,max:8,c:[60,2.5],w:[200,3]},
  {k:'bounceRange',g:'Attack',n:'Bounce shot range',base:60,ra:3,wa:2,maxOfRange:.4,c:[12,1.16],w:[25,1.22],u:' m'},
  {k:'health',g:'Defense',n:'Health',base:30,mul:1,ra:.4,wm:1.08,c:[4,1.14],w:[12,1.2]},
  {k:'regen',g:'Defense',n:'Regen',base:.4,mul:1,ra:.4,wm:1.08,c:[6,1.15],w:[15,1.2],u:'/s'},
- {k:'barrier',g:'Defense',n:'Barrier health (of max health)',base:0,ra:.02,wa:.01,max:1,c:[12,1.16],w:[30,1.25],p:1},
+ {k:'barrier',g:'Defense',n:'Barrier health (of max health)',base:0,ra:.02,wa:.01,max:3,c:[12,1.16],w:[30,1.25],p:1},
  // barrier recharge: once broken, the barrier comes back at full after this many game seconds (key kept from the old regen stat so saves keep their levels)
- {k:'barrierRegen',g:'Defense',n:'Barrier recharge time',base:300,ra:-4,wa:-3,min:30,c:[10,1.16],w:[25,1.25],t:1},
- {k:'defense',g:'Defense',n:'Defense',base:0,ra:.01,wa:.005,max:.75,c:[10,1.16],w:[25,1.25],p:1},
- {k:'thorns',g:'Defense',n:'Thorns (of attacker max HP)',base:0,ra:.02,wa:.01,max:.99,c:[12,1.17],w:[30,1.25],p:1},
- {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.5,c:[20,1.2],w:[40,1.28],p:1},
- {k:'lifesteal',g:'Defense',n:'Lifesteal (of damage dealt)',base:0,ra:.002,wa:.001,max:.2,c:[20,1.2],w:[40,1.28],p:1},
- {k:'kbChance',g:'Defense',n:'Knockback chance',base:0,ra:.01,wa:.005,max:.8,c:[12,1.16],w:[25,1.25],p:1},
+ {k:'barrierRegen',g:'Defense',n:'Barrier recharge time',base:300,ra:-4,wa:-3,min:10,c:[10,1.16],w:[25,1.25],t:1},
+ {k:'defense',g:'Defense',n:'Defense',base:0,ra:.01,wa:.005,max:.9,c:[10,1.16],w:[25,1.25],p:1},
+ {k:'thorns',g:'Defense',n:'Thorns (of attacker max HP)',base:0,ra:.02,wa:.01,max:2,c:[12,1.17],w:[30,1.25],p:1},
+ {k:'deathDefy',g:'Defense',n:'Death defy chance',base:0,ra:.005,wa:.003,max:.7,c:[20,1.2],w:[40,1.28],p:1},
+ {k:'lifesteal',g:'Defense',n:'Lifesteal (of damage dealt)',base:0,ra:.002,wa:.001,max:.5,c:[20,1.2],w:[40,1.28],p:1},
+ {k:'kbChance',g:'Defense',n:'Knockback chance',base:0,ra:.01,wa:.005,max:1,c:[12,1.16],w:[25,1.25],p:1},
  {k:'kbForce',g:'Defense',n:'Knockback force (÷ enemy weight)',base:10,mul:1,ra:.05,wm:1.04,c:[15,1.2],w:[40,1.28],u:' m'}, // grows by % with no cap, so it can keep up with ever heavier high-wave and high-tier enemies; its price climbs faster than other stats (×1.28 per Workshop level) so high levels take high-tier earnings
  {k:'cashBonus',g:'Utility',n:'Cash per kill',base:1,ra:.05,wa:.04,c:[10,1.15],w:[20,1.2],x:1},
  {k:'waveCash',g:'Utility',n:'Cash interest',base:1,ra:.1,wa:.08,c:[10,1.15],w:[20,1.2],x:1},
  {k:'coinBonus',g:'Utility',n:'Coins per kill',base:1,ra:.03,wa:.05,c:[15,1.17],w:[25,1.2],x:1},
- {k:'freeAttack',g:'Utility',n:'Free attack upgrade chance',base:0,ra:.01,wa:.005,max:.5,c:[15,1.18],w:[30,1.25],p:1},
- {k:'freeDefense',g:'Utility',n:'Free defense upgrade chance',base:0,ra:.01,wa:.005,max:.5,c:[15,1.18],w:[30,1.25],p:1},
- {k:'freeUtility',g:'Utility',n:'Free utility upgrade chance',base:0,ra:.01,wa:.005,max:.5,c:[15,1.18],w:[30,1.25],p:1},
+ {k:'freeAttack',g:'Utility',n:'Free attack upgrade chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.18],w:[30,1.25],p:1},
+ {k:'freeDefense',g:'Utility',n:'Free defense upgrade chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.18],w:[30,1.25],p:1},
+ {k:'freeUtility',g:'Utility',n:'Free utility upgrade chance',base:0,ra:.01,wa:.005,max:.8,c:[15,1.18],w:[30,1.25],p:1},
  {k:'startCash',g:'Utility',n:'Starting cash',base:0,wa:25,ws:1,w:[20,1.2]},
 ];
 const SK=Object.fromEntries(ST.map(s=>[s.k,s]));
@@ -227,28 +227,28 @@ const S1=v=>(+v.toFixed(1))+' s';
 const ULTS=[
  {k:'chain',cost:1.5,n:'Chain Lightning',col:'bolt',d:()=>`Your shots have a ${PC1(uv('chain','chance'))} chance to spark a bolt that splits from enemy to enemy like lightning. Each bounce deals ${PC1(1-uv('chain','mult'))} less damage than the one before.`,passive:1, // d can be a function: descriptions show your current numbers
   icon:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
-  t:[{k:'chance',lv:20,n:'Proc chance (to start and to split)',base:.1,end:.6,f:v=>PC1(v)},{k:'jumps',lv:16,n:'Bounce targets',base:2,end:6,f:v=>`splits into ${+v.toFixed(1)}`},
+  t:[{k:'chance',lv:20,n:'Proc chance (to start and to split)',base:.1,end:1,f:v=>PC1(v)},{k:'jumps',lv:16,n:'Bounce targets',base:2,end:8,f:v=>`splits into ${+v.toFixed(1)}`},
      {k:'mult',lv:20,n:'Bounce multiplier',base:.4,end:.9,f:v=>PC1(1-v)+' less damage per bounce'},{k:'dmg',n:'Damage',base:1,pow:ULT.dmgPow,f:v=>`×${fmt(v)} crit-averaged damage`}],
   sb:'bolts can crit and super crit, using your spire\'s crit chance, crit damage, super crit chance and super crit damage', gb:'every bolt hits each enemy twice (double bolt damage)', pb:'bolts slow what they hit by 50% for 2 s'},
  {k:'frost',cost:1.25,n:'Frost Field',col:'alloy',d:()=>`Always on. ${+uv('frost','rate').toFixed(2)} times a second, every enemy inside the field (${fmt(uv('frost','radius'))} m around the spire; the view zooms out to fit it) gains a frost stack. Each stack slows it by ${PC1(ULT.frostPer)}, up to ${PC1(uv('frost','slow'))} in total, and makes it take +${(v=>+(v*100).toFixed(3)+'%')(uv('frost','brittle'))} damage from everything. Stacks never wear off.`,passive:1,aura:1,
   icon:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
   t:[{k:'slow',lv:26,n:'Max slow',base:.3,end:.95,f:v=>PC1(v)+` (${Math.ceil(v/ULT.frostPer-1e-9)} stacks)`},{k:'rate',lv:28,n:'Tick rate',base:.5,end:4,f:v=>(+v.toFixed(2))+' ticks/s'},
-     {k:'radius',lv:28,n:'Radius',base:20,end:600,f:v=>fmt(v)+' m'},{k:'brittle',lv:36,n:'Brittle',base:.002,end:.02,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
+     {k:'radius',lv:28,n:'Radius',base:20,end:600,f:v=>fmt(v)+' m'},{k:'brittle',lv:36,n:'Brittle',base:.002,end:.04,f:v=>`+${(v*100).toFixed(3).replace(/0+$/,'')}% damage taken per stack`}],
   sb:'enemies freeze solid for 5 s the first time they reach max slow', gb:'frozen enemies take double brittle damage', pb:'enemy shots inside the field have a 2% chance to melt for every 10 m they travel'},
  {k:'shock',cost:0.75,n:'Shockwave',col:'gold',d:()=>`Every ${S1(uv('shock','cd'))}, a ring bursts out from the spire to ${PC1(uv('shock','radius'))} of your range. Each enemy it reaches is shoved ${fmt(uv('shock','force'))} m outward, divided by the enemy's weight (the crowd can stop it), and shaken for ${ULT.shaken} s: a shaken enemy takes damage × (${+uv('shock','dmg').toFixed(2)} × its weight) from everything, never less than ×1. Bosses count only ${PC1(ULT.bossWt)} of their weight.`,
   icon:'<circle cx="12" cy="12" r="2.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a12 12 0 0 0 0 17M20.5 3.5a12 12 0 0 1 0 17"/>',
-  t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:36,n:'Shake multiplier',base:.5,end:5,f:v=>`×${+v.toFixed(2)} × enemy weight damage taken`},
+  t:[{k:'force',n:'Force',base:40,pow:2,f:v=>fmt(v)+' m (÷ weight)'},{k:'dmg',lv:36,n:'Shake multiplier',base:.5,end:10,f:v=>`×${+v.toFixed(2)} × enemy weight damage taken`},
      {k:'radius',lv:16,n:'Radius',base:.6,end:1,f:v=>PC1(v)+' of range'},{k:'cd',lv:30,n:'Cooldown',base:90,end:15,f:S1}],  // 5 s steps, fastest 15 s
   sb:'Crush: an enemy the crowd stops from being pushed all the way is shaken harder, up to double the multiplier if it couldn\'t move at all', gb:'Aftershock: when a shaken enemy dies, the shake spreads to enemies within 25 m for the time it had left', pb:'Echo: a second ring follows 1 s later'},
  {k:'grav',cost:1,n:'Gravity Well',col:'shard',d:()=>`Every ${S1(uv('grav','cd'))} (counted from when the last well opened), opens a well on the spot in your range with the most enemies within ${fmt(uv('grav','radius'))} m that aren't already in a well. For ${S1(uv('grav','dur'))} it pulls every enemy within ${fmt(uv('grav','radius'))} m towards its centre at ${fmt(uv('grav','pull'))} m/s, divided by the enemy's weight. Up to ${ULT.maxWells} wells can be open at once; once Duration reaches Cooldown there's always one up.`,
   icon:'<circle cx="12" cy="12" r="2"/><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/>',
-  t:[{k:'radius',lv:20,n:'Radius',base:50,end:150,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,pow:2,f:v=>fmt(v)+' m/s (÷ weight)'},
+  t:[{k:'radius',lv:20,n:'Radius',base:50,end:300,f:v=>(+v.toFixed(1))+' m'},{k:'pull',n:'Pull',base:70,pow:2,f:v=>fmt(v)+' m/s (÷ weight)'},
      {k:'dur',lv:20,n:'Duration',base:10,end:60,f:S1},{k:'cd',lv:24,n:'Cooldown',base:300,end:60,f:S1}],
   sb:`Collapse: when a well ends, it yanks every enemy within twice its radius towards its centre, as far as ${ULT.collapse} s of its pull would move them`, gb:'Siphon: every enemy that dies inside a well adds 0.5 s to it (up to double its duration), so wells can overlap', pb:'Heavy core: enemies inside a well count as 50% heavier, so Shockwave shakes them harder and knockback can\'t push them back out'},
  {k:'laser',cost:1.5,n:'Laser',col:'hot',d:()=>`Every ${S1(uv('laser','cd'))}, fires a ${fmt(uv('laser','width'))} m wide beam for ${S1(uv('laser','dur'))} at the enemy with the most health (the biggest number, not the biggest share), chosen once when it fires. Every enemy the beam touches takes ×${fmt(uv('laser','dmg'))} spire damage per second.`,
   icon:'<circle cx="5" cy="12" r="2.5"/><path d="M8 12h14"/><path d="M8 9.5l3 1M8 14.5l3-1"/>',
-  t:[{k:'dmg',n:'Damage',base:1.5,pow:ULT.dmgPow,f:v=>`×${fmt(v)} crit-averaged damage /s`},{k:'width',lv:24,n:'Width',base:10,end:40,f:v=>(+v.toFixed(1))+' m'},
-     {k:'dur',lv:24,n:'Duration',base:3,end:15,f:S1},{k:'cd',lv:24,n:'Charge time',base:60,end:12,f:S1}],
+  t:[{k:'dmg',n:'Damage',base:1.5,pow:ULT.dmgPow,f:v=>`×${fmt(v)} crit-averaged damage /s`},{k:'width',lv:24,n:'Width',base:10,end:80,f:v=>(+v.toFixed(1))+' m'},
+     {k:'dur',lv:24,n:'Duration',base:3,end:30,f:S1},{k:'cd',lv:24,n:'Charge time',base:60,end:12,f:S1}],
   sb:`Tracking: while firing, the beam slowly turns, up to ${Math.round(ULT.laserTurn*180/Math.PI)}° per second, to follow the enemy it locked on to; only when that enemy dies does it lock on to the enemy with the most health at that moment`, gb:'Cauterize: enemies the beam hits can\'t be healed for 5 s', pb:`Lock-on: the beam turns up to ${Math.round(ULT.laserTurnFast*180/Math.PI)}° per second (${+(ULT.laserTurnFast/ULT.laserTurn).toFixed(2)}× faster), and enemies inside it are slowed by 50%`},
  {k:'missile',cost:1.25,n:'Missiles',col:'chip',d:()=>`Every ${S1(uv('missile','cd'))}, fires a slow missile (${ULT.missileSpd} m/s) that homes in on the enemy with the least health. It deals ×${fmt(uv('missile','dmg'))} spire damage to every enemy within ${fmt(uv('missile','radius'))} m of where it hits, plus a bonus for the health its target is missing: +${PC1(uv('missile','low'))} at 0% health, +${PC1(uv('missile','low')/2)} at 50%, scaling evenly in between. A missile still flying after ${ULT.missileGiveUp} s switches to the enemy nearest it.`,
   icon:'<path d="M14.5 4.5c2.5-1 4.6-1 5 .1.4 1-.6 3.2-3 5.5l-6 6-3-3z"/><path d="M8.5 10.5 5 11l-2 3 3.5.5M13.5 15.5 13 19l-3 2-.5-3.5"/><path d="m6.5 17.5-2 2"/>',
@@ -257,7 +257,7 @@ const ULTS=[
   sb:`Cluster: each blast throws ${ULT.bomblets} bomblets out of the far side of the enemy hit, fanned in a V, at the ${ULT.bomblets} weakest other enemies within ${ULT.bombletR} m (sharing targets if there are fewer), each for 50% of the missile damage. A bomblet never flies more than ${ULT.bombletR} m: if its target dies it only retargets within ${ULT.bombletR} m of the blast, and otherwise bursts where it is`, gb:'Execute: a missile kills any non-boss target below 15% health outright', pb:'Salvo: fires 3 missiles at once, at the 3 weakest enemies, and every missile hit on an enemy makes the next one against it 25% stronger (compounding)'},
  {k:'firebomb',cost:1,n:'Firebomb',col:'fire',d:()=>`Every ${S1(uv('firebomb','cd'))}, lobs a firebomb at the enemy that has stood still the longest. It leaves a flaming carpet with a ${fmt(uv('firebomb','radius'))} m radius for ${S1(uv('firebomb','dur'))}. Anything on it takes ×${fmt(uv('firebomb','dmg'))} spire damage per second, +${PC1(ULT.heat)} for every second it has ever spent on a carpet. The bonus never resets, even if it steps off or reaches another carpet later.`,
   icon:'<path d="M12 21c-4 0-6.5-2.6-6.5-6 0-3.2 2.2-5 3.5-7.5.6 1.6 1.6 2.6 2.6 3 .2-2.8 1.4-5.6 3.9-7.5-.3 2.8.8 4.6 2 6.3 1 1.5 1.5 3 1.5 4.7 0 4-2.9 7-7 7z"/><path d="M12 21c-1.7 0-3-1.2-3-3 0-1.6 1.3-2.6 2-4 .9 1.6 4 2.4 4 4.2 0 1.6-1.3 2.8-3 2.8z"/>',
-  t:[{k:'dmg',n:'Fire damage',base:.5,pow:ULT.dmgPow,f:v=>`×${fmt(v)} crit-averaged damage /s`},{k:'radius',lv:14,n:'Carpet radius',base:15,end:50,f:v=>(+v.toFixed(1))+' m'},
+  t:[{k:'dmg',n:'Fire damage',base:.5,pow:ULT.dmgPow,f:v=>`×${fmt(v)} crit-averaged damage /s`},{k:'radius',lv:14,n:'Carpet radius',base:15,end:100,f:v=>(+v.toFixed(1))+' m'},
      {k:'cd',lv:20,n:'Cooldown',base:12,end:2,f:S1},{k:'dur',lv:16,n:'Carpet duration',base:4,end:12,f:S1}],
   sb:`Spreading flames: an enemy that dies on the carpet sets the ground where it fell alight (a carpet with ${PC1(ULT.spreadFire)} of the radius, for ${PC1(ULT.spreadFire)} of the time)`, gb:'Searing: burning builds up twice as fast (+50% for every second on the carpet)', pb:'Carpet bombing: 2 firebombs per launch, at the 2 stillest enemies'}
 ];

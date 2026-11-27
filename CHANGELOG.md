@@ -1,5 +1,10 @@
 # What's new in Spire
 
+## 1.75.0 — 2026-11-27
+- **Crit past 100%:** crit chance and super crit chance now go up to 500%. Past 100%, every shot crits (or super crits), and the extra boosts the bonus: at 150% crit chance, crits deal 1 + 1.5 × (crit damage − 1). Ultimates use the same average, so crit keeps raising their damage too.
+- **Higher caps:** range 1,000 m (was 600), damage per distance 4%/m (was 2%), multishot, bounce shot and knockback chance 100% (were 80%), barrier 300% of max health (was 100%), barrier recharge down to 10 s (was 30), defense 90% (was 75%), thorns 200% of attacker max health (was 99%, so it now beats elite and boss resistance), death defy 70% (was 50%), lifesteal 50% (was 20%), free upgrade chances 80% (were 50%). Multishot and bounce targets stay at 8 to keep the frame rate up.
+- **Ultimate tracks go further** (same levels, so every level is now worth more): Chain Lightning proc chance up to 100% (was 60%) and 8 bounce targets (was 6), Frost Field brittle +4% per stack (was 2%), Shockwave shake ×10 (was ×5), Gravity Well radius 300 m (was 150), Laser width 80 m (was 40) and duration 30 s (was 15), Firebomb carpet radius 100 m (was 50).
+
 ## 1.74.0 — 2026-11-27
 - **Crit stats power Ultimates:** Chain Lightning, Laser, Missiles and Firebomb now deal spire damage × your average crit multiplier (1 + crit × (crit damage − 1) + crit × super crit × crit damage × (super crit damage − 1)). Raising damage, crit chance, crit damage, super crit chance or super crit damage all make them hit harder. Ultimates still don't roll crits unless one says so (Chain Lightning's Silver bolts do, on top).
 - **To balance it, Ultimate damage tracks were lowered:** they start at half their old value and grow more slowly (× (1 + level/10)^0.6 instead of ^1.2). Early on, with low crit, Ultimates hit softer. With a crit build they hit much harder than before.

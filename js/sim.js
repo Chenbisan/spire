@@ -7,6 +7,13 @@ const speeds=()=>[1,2,3,5,8,12,16,24].filter(s=>s<=labVal('speed'));
 // ================= stats =================
 // maxOfRange: the stat is capped at that share of your current range (bounce range)
 const curRange=()=>run&&run.s&&run.s.range!=null?run.s.range:valAt(SK.range,0,save.ws.range||0);
+// average damage multiplier from crits: 1 + crit × (crit damage − 1) + crit × super crit × crit damage × (super crit damage − 1).
+// Ultimates use it; shots average out to the same thing (see critDmg)
+const critX=s=>1+s.crit*(s.critMult-1)+s.crit*s.superCrit*s.critMult*(s.superMult-1);
+// one hit's crit roll (c: 0 none, 1 crit, 2 super crit) and its multiplier. Chances past 100% always proc, and the extra
+// scales the bonus instead: at 150% crit every shot crits for 1 + 1.5 × (crit damage − 1); likewise for super crits
+function critRoll(s){const pc=Math.min(1,s.crit),ps=Math.min(1,s.superCrit);let c=Math.random()<pc?1:0;if(c&&ps>0&&Math.random()<ps)c=2;return c}
+const critDmg=(s,c)=>{if(!c)return 1;const kc=Math.max(1,s.crit),m=1+kc*(s.critMult-1);return c===2?m+kc*Math.max(1,s.superCrit)*s.critMult*(s.superMult-1):m};
 const statMax=s=>s.maxOfRange?curRange()*s.maxOfRange:s.max;
 function valAt(s,r,w){let v=s.mul?s.base*(1+s.ra*r)*s.wm**w:s.base+(s.ra||0)*r+(s.wa||0)*w;const m=statMax(s);if(m!=null)v=Math.min(v,m);return s.min!=null?Math.max(v,s.min):v}
 // enemies always spawn beyond your range
@@ -174,8 +181,8 @@ let rankKey='',rankMap=null;
 // target priority: types above 'closest' in save.set.prio are shot first, in order; the rest share one rank (closest first)
 function targetRank(){const P=save.set.prio,ci=P.indexOf('closest');if(ci<=0)return null;const k=P.join();
   if(k!==rankKey){rankKey=k;rankMap={};TYPES.forEach(t=>rankMap[t]=ci);for(let i=0;i<ci;i++)rankMap[P[i]]=i}return rankMap}
-function fire(tgt){const s=run.s,b=bPool.pop()||{};let c=Math.random()<s.crit?1:0;save.stats.shots++;if(c){save.stats.crits++;if(s.superCrit>0&&Math.random()<s.superCrit){c=2;save.stats.supers++}}
-  b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*(c?s.critMult:1)*(c===2?s.superMult:1);b.l=2;
+function fire(tgt){const s=run.s,b=bPool.pop()||{};const c=critRoll(s);save.stats.shots++;if(c){save.stats.crits++;if(c===2)save.stats.supers++}
+  b.x=b.y=b.px=b.py=b.rx=b.ry=0;b.e=tgt;b.g=tgt.gen;b.c=c;b.dmg=s.damage*critDmg(s,c);b.l=2;
   b.bn=s.bounceChance>0&&Math.random()<s.bounceChance?Math.floor(s.bounceTargets):0;bullets.push(b)}
 // one step of walking towards the spire, up to `stop`: small moves are saved up until they reach walkMin, and an enemy that
 // managed under a quarter of its move (the crowd ahead leaves no room) rests restSteps before checking again
